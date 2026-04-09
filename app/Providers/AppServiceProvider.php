@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,73 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->implicitlyGrantSuperAdminAllPermissions();
+
+        $this->registerDynamicPermissionsGate();
+    }
+
+    private function implicitlyGrantSuperAdminAllPermissions(): void
+    {
+        // Implicitly grant "Super Admin" role all permissions
+        Gate::before(function (User $user, $ability) {
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+
+            return null;
+        });
+    }
+
+    private function registerDynamicPermissionsGate(): void
+    {
+        // Dynamic Gate to bypass the need for individual Policy classes
+        Gate::before(function (User $user, $ability, $models) {
+
+            // Standard Laravel or specific gates to skip
+            $standardLaravelAbilities = ['access-admin-panel', 'use-translation-manager'];
+
+            if (in_array($ability, $standardLaravelAbilities)) {
+                return null;
+            }
+
+            // Get the model class or instance
+            $model = $models[0] ?? null;
+            $modelName = is_string($model) ? class_basename($model) : ($model ? class_basename(get_class($model)) : null);
+
+            // The default expected Spatie permission is the raw ability
+            $permissionName = $ability;
+
+            if ($modelName) {
+                // Map 'viewAny' on 'Store' to 'view_any_store'
+                $snakeAbility = Str::snake($ability);
+                $snakeModel = Str::snake($modelName);
+                $permissionName = "{$snakeAbility}_{$snakeModel}";
+            }
+
+            $registrar = app(PermissionRegistrar::class);
+            $permissions = $registrar->getPermissions();
+            $guardName = 'web';
+
+            // Check if the primary targeted permission exists in the database
+            $primaryExists = $permissions->where('name', $permissionName)->where('guard_name', $guardName)->isNotEmpty();
+            // Check if the raw fallback ability exists in the database
+            $fallbackExists = $permissions->where('name', $ability)->where('guard_name', $guardName)->isNotEmpty();
+
+            if (! $primaryExists && ! $fallbackExists) {
+                return null;
+            }
+
+            // If we are here, at least one of them exists. Check if user has either.
+            if ($primaryExists && $user->hasPermissionTo($permissionName, $guardName)) {
+                return true;
+            }
+
+            if ($fallbackExists && $user->hasPermissionTo($ability, $guardName)) {
+                return true;
+            }
+
+            // If permission exists but user doesn't have it
+            return false;
+        });
     }
 }
