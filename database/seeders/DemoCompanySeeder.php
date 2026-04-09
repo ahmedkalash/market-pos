@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Actions\CreateDefaultTenantRolesAction;
+use App\Actions\CreateDefaultCompanyRolesAction;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Models\Store;
@@ -60,10 +60,10 @@ class DemoCompanySeeder extends Seeder
             ]
         );
 
-        app(CreateDefaultTenantRolesAction::class)->execute($company);
+        app(CreateDefaultCompanyRolesAction::class)->execute($company);
         app(PermissionRegistrar::class)->setPermissionsTeamId($company->id);
 
-        // Tenant Admin
+        // Company Admin
         $admin = User::firstOrCreate(
             ['email' => 'admin@mool.test'],
             [
@@ -75,7 +75,7 @@ class DemoCompanySeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $admin->assignRole(\App\Enums\Roles::TENANT_ADMIN->value);
+        $admin->assignRole(\App\Enums\Roles::COMPANY_ADMIN->value);
 
         // Store Managers
         $managerNasr = User::firstOrCreate(

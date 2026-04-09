@@ -2,12 +2,11 @@
 
 namespace App\Actions;
 
-use App\Enums\Roles;
 use App\Models\Company;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Arr;
 use Spatie\Permission\Models\Role;
 
-class CreateDefaultTenantRolesAction
+class CreateDefaultCompanyRolesAction
 {
     public function execute(Company $company): void
     {
@@ -24,15 +23,8 @@ class CreateDefaultTenantRolesAction
 
             $permissionsToSync = $roleConfig['permissions'] ?? [];
 
-            if (in_array('ALL_TENANT_PERMISSIONS', $permissionsToSync)) {
-                $permissionsToSync = Permission::where('guard_name', $guardName)
-                    ->where(function($query) {
-                        $query->where('name', 'like', '%_user')
-                            ->orWhere('name', 'like', '%_store')
-                            ->orWhere('name', 'like', '%_company')
-                            ->orWhere('name', 'like', '%_setting')
-                            ->orWhere('name', 'company_dashboard');
-                    })->get();
+            if (in_array('ALL_COMPANY_PERMISSIONS', $permissionsToSync)) {
+                $permissionsToSync = Arr::flatten(config('company_permissions.permissions', []));
             }
 
             $role->syncPermissions($permissionsToSync);
