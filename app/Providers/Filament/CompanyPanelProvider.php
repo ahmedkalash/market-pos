@@ -33,9 +33,9 @@ class CompanyPanelProvider extends PanelProvider
             ])
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
-                __('Store Management'),
-                __('User Management'),
-                __('Settings'),
+                __('app.store_management'),
+                __('app.user_management'),
+                __('app.settings'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -57,10 +57,8 @@ class CompanyPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
-            ->tenantMiddleware([
-                ApplyTenantScopes::class,
-            ], isPersistent: true)
             ->authMiddleware([
+                ApplyTenantScopes::class,
                 Authenticate::class,
             ]);
     }

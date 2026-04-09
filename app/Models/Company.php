@@ -80,6 +80,7 @@ class Company extends Model
     public function isSubscriptionValid(): bool
     {
         // TODO
+        return true;
     }
 
     public function isOnTrial(): bool

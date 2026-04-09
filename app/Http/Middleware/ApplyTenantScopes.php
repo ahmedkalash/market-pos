@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -30,7 +29,7 @@ class ApplyTenantScopes
             $request->session()->regenerateToken();
 
             return redirect()->route('filament.company.auth.login')
-                ->with('error', __('Your company account has been suspended. Please contact support.'));
+                ->with('error', __('app.suspended_msg'));
         }
 
         if (! $company->isSubscriptionValid()) {
@@ -39,13 +38,12 @@ class ApplyTenantScopes
             $request->session()->regenerateToken();
 
             return redirect()->route('filament.company.auth.login')
-                ->with('error', __('Your subscription has expired. Please renew to continue.'));
+                ->with('error', __('app.expired_msg'));
         }
 
-        // Inform Spatie exactly which "team" (company) permissions context we are currently in
-        app(PermissionRegistrar::class)->setPermissionsTeamId($company->id);
+        // Set the team ID for Spatie permissions
+        setPermissionsTeamId($company->id);
 
         return $next($request);
     }
-
 }
