@@ -54,4 +54,13 @@ return [
     'hours' => 'Hours',
     'eg_saturday' => 'e.g. Saturday',
     'eg_hours' => 'e.g. 08:00-22:00',
+    'company_info' => 'Company Info',
+    'company_name_ar' => 'Company Name (Arabic)',
+    'company_name_en' => 'Company Name (English)',
+    'company_phone' => 'Company Phone',
+    'admin_account' => 'Admin Account',
+    'login_link_before' => 'Already have an account?',
+    'login_link' => 'Login here',
+    'register_link_before' => "Don't have an account?",
+    'register_link' => 'Register your company',
 ];

@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\Login;
+use App\Filament\Pages\Auth\RegisterCompany;
 use App\Http\Middleware\ApplyTenantScopes;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -27,7 +29,8 @@ class CompanyPanelProvider extends PanelProvider
             ->default()
             ->id('company')
             ->path('company')
-            ->login()
+            ->login(Login::class)
+            ->registration(RegisterCompany::class)
             ->colors([
                 'primary' => Color::Amber,
             ])

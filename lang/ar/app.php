@@ -56,4 +56,13 @@ return [
     'eg_hours' => 'مثال: 08:00-22:00',
     'name_english' => 'الاسم (انجليزي)',
     'name_arabic' => 'الاسم (عربي)',
+    'company_info' => 'معلومات الشركة',
+    'company_name_ar' => 'اسم الشركة (عربي)',
+    'company_name_en' => 'اسم الشركة (انجليزي)',
+    'company_phone' => 'رقم هاتف الشركة',
+    'admin_account' => 'حساب المدير',
+    'login_link_before' => 'هل لديك حساب بالفعل؟',
+    'login_link' => 'تسجيل الدخول من هنا',
+    'register_link_before' => 'ليس لديك حساب؟',
+    'register_link' => 'سجل شركتك الآن',
 ];
