@@ -74,14 +74,4 @@ class UserResource extends Resource
     /**
      * Scope users to the current user's company.
      */
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-
-        if (Auth::check()) {
-            $query->where('company_id', Auth::user()->company_id);
-        }
-
-        return $query;
-    }
 }

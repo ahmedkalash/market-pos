@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToStore;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -14,7 +16,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use BelongsToCompany, BelongsToStore, HasFactory, HasRoles, Notifiable;
 
     /**
      * @var list<string>
@@ -63,14 +65,6 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * @return BelongsTo<Company, $this>
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
-    }
-
-    /**
      * @return BelongsTo<Store, $this>
      */
     public function store(): BelongsTo
@@ -85,22 +79,22 @@ class User extends Authenticatable implements FilamentUser
 
     public function isStoreManager(): bool
     {
-        return $this->hasRole('Store Manager');
+        return $this->hasRole(\App\Enums\Roles::STORE_MANAGER->value);
     }
 
     public function isCashier(): bool
     {
-        return $this->hasRole('Cashier');
+        return $this->hasRole(\App\Enums\Roles::CASHIER->value);
     }
 
     public function isStockClerk(): bool
     {
-        return $this->hasRole('Stock Clerk');
+        return $this->hasRole(\App\Enums\Roles::STOCK_CLERK->value);
     }
 
     public function isAccountant(): bool
     {
-        return $this->hasRole('Accountant');
+        return $this->hasRole(\App\Enums\Roles::ACCOUNTANT->value);
     }
 
     public function isSuperAdmin(): bool

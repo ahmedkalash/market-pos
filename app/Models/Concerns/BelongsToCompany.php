@@ -18,7 +18,7 @@ trait BelongsToCompany
     public static function bootBelongsToCompany(): void
     {
         static::addGlobalScope('company', function (Builder $query) {
-            if (auth()->hasUser()) {
+            if (auth()->hasUser() && ! auth()->user()->isSuperAdmin()) {
                 $query->where(
                     (new static)->getTable().'.company_id',
                     auth()->user()->company_id

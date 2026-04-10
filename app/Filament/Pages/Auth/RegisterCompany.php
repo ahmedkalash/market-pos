@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Actions\CreateDefaultCompanyRolesAction;
 use App\Enums\Roles;
 use App\Models\Company;
 use App\Models\Plan;
@@ -106,6 +107,9 @@ class RegisterCompany extends Register
                 'slug' => Str::slug($this->data['company_name_en']),
             ]);
 
+            // Initialize standard roles and permissions for the new company
+            app(CreateDefaultCompanyRolesAction::class)->execute($company);
+
             // 2. Create User
             /** @var User $user */
             $user = User::create([
@@ -116,9 +120,10 @@ class RegisterCompany extends Register
                 'is_active' => true,
             ]);
 
-            // 3. Assign COMPANY_ADMIN role
+            // 3. Assign COMPANY_ADMIN role (Scoping to this company)
             $role = Role::where('name', Roles::COMPANY_ADMIN->value)
                 ->where('guard_name', 'web')
+                ->where('company_id', $company->id)
                 ->first();
 
             // Set Spatie team id for this transaction/session scope
