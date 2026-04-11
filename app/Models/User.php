@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Roles;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
 use Database\Factories\UserFactory;
@@ -29,6 +30,7 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'phone',
         'is_active',
+        'email_verified_at',
     ];
 
     /**
@@ -74,31 +76,31 @@ class User extends Authenticatable implements FilamentUser
 
     public function isCompanyAdmin(): bool
     {
-        return $this->hasRole(\App\Enums\Roles::COMPANY_ADMIN->value);
+        return $this->hasRole(Roles::COMPANY_ADMIN->value);
     }
 
     public function isStoreManager(): bool
     {
-        return $this->hasRole(\App\Enums\Roles::STORE_MANAGER->value);
+        return $this->hasRole(Roles::STORE_MANAGER->value);
     }
 
     public function isCashier(): bool
     {
-        return $this->hasRole(\App\Enums\Roles::CASHIER->value);
+        return $this->hasRole(Roles::CASHIER->value);
     }
 
     public function isStockClerk(): bool
     {
-        return $this->hasRole(\App\Enums\Roles::STOCK_CLERK->value);
+        return $this->hasRole(Roles::STOCK_CLERK->value);
     }
 
     public function isAccountant(): bool
     {
-        return $this->hasRole(\App\Enums\Roles::ACCOUNTANT->value);
+        return $this->hasRole(Roles::ACCOUNTANT->value);
     }
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(\App\Enums\Roles::SUPER_ADMIN->value);
+        return $this->hasRole(Roles::SUPER_ADMIN->value);
     }
 }
