@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\ForgotPassword;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\RegisterCompany;
 use App\Http\Middleware\ApplyTenantScopes;
@@ -31,6 +32,7 @@ class CompanyPanelProvider extends PanelProvider
             ->path('company')
             ->login(Login::class)
             ->registration(RegisterCompany::class)
+            ->passwordReset(ForgotPassword::class)
             ->colors([
                 'primary' => Color::Amber,
             ])

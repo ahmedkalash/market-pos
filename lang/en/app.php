@@ -75,4 +75,11 @@ return [
     'otp_line1' => 'Your verification code is:',
     'otp_line2' => 'This code is valid for 10 minutes.',
     'otp_salutation' => 'Thank you, Market POS Team',
+    'forgot_password' => 'Forgot Password?',
+    'reset_password' => 'Reset Password',
+    'new_password' => 'New Password',
+    'confirm_new_password' => 'Confirm New Password',
+    'password_reset_success' => 'Your password has been reset successfully.',
+    'user_not_found' => 'No user found with this email address.',
+    'back_to_login' => 'Back to login',
 ];

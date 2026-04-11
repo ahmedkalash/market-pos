@@ -77,4 +77,11 @@ return [
     'otp_line1' => 'رمز التحقق الخاص بك هو:',
     'otp_line2' => 'هذا الرمز صالح لمدة 10 دقائق.',
     'otp_salutation' => 'شكراً لك، فريق Market POS',
+    'forgot_password' => 'نسيت كلمة المرور؟',
+    'reset_password' => 'إعادة تعيين كلمة المرور',
+    'new_password' => 'كلمة المرور الجديدة',
+    'confirm_new_password' => 'تأكيد كلمة المرور الجديدة',
+    'password_reset_success' => 'تم إعادة تعيين كلمة المرور بنجاح.',
+    'user_not_found' => 'لم يتم العثور على مستخدم لهذا البريد الإلكتروني.',
+    'back_to_login' => 'العودة لتسجيل الدخول',
 ];
