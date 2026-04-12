@@ -2,12 +2,18 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Models\User;
+use App\Services\OtpService;
+use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 class EditProfile extends BaseEditProfile
 {
@@ -22,7 +28,22 @@ class EditProfile extends BaseEditProfile
                     ->imageEditor()
                     ->circleCropper(),
                 $this->getNameFormComponent(),
-                $this->getEmailFormComponent(),
+                $this->getEmailFormComponent()
+                    ->live()
+                    ->suffixAction(
+                        Action::make('sendOtp')
+                            ->label(__('app.send_otp'))
+                            ->icon('heroicon-m-paper-airplane')
+                            ->action($this->sendOtp(...))
+                            ->visible(fn (Get $get): bool => filled($get('email')) && $get('email') !== $this->getUser()->email)
+                    ),
+                TextInput::make('otp_code')
+                    ->label(__('app.otp_code'))
+                    ->length(6)
+                    ->numeric()
+                    ->required()
+                    ->visible(fn (Get $get): bool => filled($get('email')) && $get('email') !== $this->getUser()->email)
+                    ->dehydrated(false),
                 TextInput::make('phone')
                     ->label(__('app.phone'))
                     ->tel()
@@ -32,5 +53,68 @@ class EditProfile extends BaseEditProfile
                     ->visible(true)
                     ->required(fn (Get $get): bool => filled($get('password'))),
             ]);
+    }
+
+    public function sendOtp(): void
+    {
+        $email = $this->data['email'] ?? null;
+
+        if (blank($email) || $email === $this->getUser()->email) {
+            return;
+        }
+
+        // Validate email uniqueness
+        if (User::query()->where('email', $email)->where('id', '!=', $this->getUser()->id)->exists()) {
+            FilamentNotification::make()
+                ->title(__('validation.unique', ['attribute' => __('app.email')]))
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $rateLimitKey = 'otp-send-'.sha1($email);
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 3)) {
+            FilamentNotification::make()
+                ->title(__('app.too_many_otp_attempts'))
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        app(OtpService::class)->generate($email);
+        RateLimiter::hit($rateLimitKey, 60);
+
+        FilamentNotification::make()
+            ->title(__('app.otp_sent'))
+            ->success()
+            ->send();
+    }
+
+    protected function handleRecordUpdate(Model $record, array $data): Model
+    {
+        // validate the otp code
+        $newEmail = $data['email'] ?? null;
+        $currentEmail = $record->email;
+        if ($newEmail && $newEmail !== $currentEmail) {
+            $otpCode = $this->form->getRawState()['otp_code'] ?? null;
+
+            if (blank($otpCode) || ! app(OtpService::class)->verify($newEmail, $otpCode)) {
+                FilamentNotification::make()
+                    ->title(__('app.invalid_otp'))
+                    ->danger()
+                    ->send();
+
+                throw ValidationException::withMessages([
+                    'data.otp_code' => __('app.invalid_otp'),
+                ]);
+            }
+
+            $record->email_verified_at = now();
+        }
+
+        // continue the update process
+        return parent::handleRecordUpdate($record, $data);
     }
 }

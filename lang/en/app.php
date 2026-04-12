@@ -69,6 +69,7 @@ return [
     'otp_code' => 'Verification Code',
     'resend_otp' => 'Resend Code',
     'otp_sent' => 'Verification code sent successfully.',
+    'send_otp' => 'Send Verification Code',
     'too_many_otp_attempts' => 'Too many attempts. Please wait a moment.',
     'invalid_otp' => 'Invalid or expired verification code.',
     'otp_subject' => 'Market POS Verification Code',
