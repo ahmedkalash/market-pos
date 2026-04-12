@@ -21,6 +21,12 @@ class ApplyTenantScopes
         }
 
         $user = auth()->user();
+
+        // Super Admins are global and do not belong to any company; skip all tenant checks.
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
         $company = $user->company;
 
         if (! $company || ! $company->isActive()) {
@@ -41,7 +47,7 @@ class ApplyTenantScopes
                 ->with('error', __('app.expired_msg'));
         }
 
-        // Set the team ID for Spatie permissions
+        // Set the team ID for Spatie permissions so hasRole()/hasPermissionTo() are scoped correctly.
         setPermissionsTeamId($company->id);
 
         return $next($request);

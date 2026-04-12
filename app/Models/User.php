@@ -73,8 +73,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
 
     public function getFilamentAvatarUrl(): ?string
     {
-        return $this->getFirstMediaUrl('avatar', 'thumb') 
-            ?: $this->getFirstMediaUrl('avatar') 
+        return $this->getFirstMediaUrl('avatar', 'thumb')
+            ?: $this->getFirstMediaUrl('avatar')
             ?: null;
     }
 
@@ -84,11 +84,27 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
             return false;
         }
 
+        // Super Admins are not scoped to a company
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Other users must belong to an active company
         if (! $this->company?->isActive()) {
             return false;
         }
 
         return true;
+    }
+
+    public function isCompanyLevel(): bool
+    {
+        return $this->company_id !== null && $this->store_id === null;
+    }
+
+    public function isStoreLevel(): bool
+    {
+        return $this->company_id !== null && $this->store_id !== null;
     }
 
     /**
@@ -126,6 +142,12 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(Roles::SUPER_ADMIN->value);
+        // super_admin role has company_id = NULL (global role).
+        // Spatie's hasRole() filters by the current team ID, so it would miss NULL.
+        // We qualify the table name to avoid ambiguity in the JOIN with model_has_roles.
+        return $this->roles()
+            ->where('roles.name', Roles::SUPER_ADMIN->value)
+            ->whereNull('roles.company_id')
+            ->exists();
     }
 }
