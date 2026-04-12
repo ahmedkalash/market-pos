@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -32,9 +33,9 @@ class UserForm
                         TextInput::make('password')
                             ->label(__('app.password'))
                             ->password()
-                            ->required(fn(string $operation): bool => $operation === 'create')
-                            ->dehydrated(fn(?string $state): bool => filled($state))
-                            ->visible(fn(string $operation): bool => $operation === 'create'),
+                            ->required(fn (string $operation): bool => $operation === 'create')
+                            ->dehydrated(fn (?string $state): bool => filled($state))
+                            ->visible(fn (string $operation): bool => $operation === 'create'),
 
                         TextInput::make('phone')
                             ->label(__('app.phone'))
@@ -43,6 +44,14 @@ class UserForm
                         Toggle::make('is_active')
                             ->label(__('app.active'))
                             ->default(true),
+
+                        SpatieMediaLibraryFileUpload::make('avatar')
+                            ->label(__('app.avatar'))
+                            ->collection('avatar')
+                            ->avatar()
+                            ->imageEditor()
+                            ->circleHorizontal()
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 
@@ -61,12 +70,12 @@ class UserForm
                         Select::make('store_id')
                             ->label(__('app.assigned_store'))
                             ->relationship('store', 'name_en')
-                            ->visible(fn(Get $get): bool => in_array($get('role'), [
+                            ->visible(fn (Get $get): bool => in_array($get('role'), [
                                 'Store Manager',
                                 'Cashier',
                                 'Stock Clerk',
                             ]))
-                            ->required(fn(Get $get): bool => in_array($get('role'), [
+                            ->required(fn (Get $get): bool => in_array($get('role'), [
                                 'Store Manager',
                                 'Cashier',
                                 'Stock Clerk',

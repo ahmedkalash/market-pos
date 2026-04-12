@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Stores\Schemas;
 
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -41,6 +42,14 @@ class StoreForm
                         Toggle::make('is_active')
                             ->label(__('app.active'))
                             ->default(true),
+
+                        SpatieMediaLibraryFileUpload::make('images')
+                            ->label(__('app.store_images'))
+                            ->collection('images')
+                            ->multiple()
+                            ->reorderable()
+                            ->imageEditor()
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 

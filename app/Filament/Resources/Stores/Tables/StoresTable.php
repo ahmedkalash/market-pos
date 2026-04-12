@@ -8,6 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -18,6 +19,13 @@ class StoresTable
     {
         return $table
             ->columns([
+                SpatieMediaLibraryImageColumn::make('images')
+                    ->label(__('app.image'))
+                    ->collection('images')
+                    ->conversion('thumb')
+                    ->circular()
+                    ->stacked(),
+
                 TextColumn::make('name_en')
                     ->label(__('Name (English)'))
                     ->searchable()
