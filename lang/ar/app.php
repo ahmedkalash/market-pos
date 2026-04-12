@@ -6,6 +6,7 @@ return [
     'company_name_english' => 'اسم الشركة (انجليزي)',
     'company_name_arabic' => 'اسم الشركة (عربي)',
     'logo' => 'الشعار',
+    'avatar' => 'الصورة الشخصية',
     'email' => 'البريد الإلكتروني',
     'phone' => 'رقم الهاتف',
     'address' => 'العنوان',

@@ -6,6 +6,7 @@ return [
     'company_name_english' => 'Company Name (English)',
     'company_name_arabic' => 'Company Name (Arabic)',
     'logo' => 'Logo',
+    'avatar' => 'Avatar',
     'email' => 'Email',
     'phone' => 'Phone',
     'address' => 'Address',

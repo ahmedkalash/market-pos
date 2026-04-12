@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
 use App\Filament\Pages\Auth\ForgotPassword;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\RegisterCompany;
@@ -33,6 +34,7 @@ class CompanyPanelProvider extends PanelProvider
             ->login(Login::class)
             ->registration(RegisterCompany::class)
             ->passwordReset(ForgotPassword::class)
+            ->profile(EditProfile::class, isSimple: false)
             ->colors([
                 'primary' => Color::Amber,
             ])

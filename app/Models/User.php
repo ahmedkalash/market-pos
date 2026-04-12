@@ -7,6 +7,7 @@ use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,7 +18,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser, HasMedia
+class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
 {
     /** @use HasFactory<UserFactory> */
     use BelongsToCompany, BelongsToStore, HasFactory, HasRoles, InteractsWithMedia, Notifiable;
@@ -59,6 +60,7 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('avatar')
+            ->useDisk('public')
             ->singleFile();
     }
 
@@ -67,6 +69,13 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         $this->addMediaConversion('thumb')
             ->width(150)
             ->height(150);
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('avatar', 'thumb') 
+            ?: $this->getFirstMediaUrl('avatar') 
+            ?: null;
     }
 
     public function canAccessPanel(Panel $panel): bool
