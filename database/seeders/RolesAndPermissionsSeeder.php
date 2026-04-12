@@ -19,7 +19,7 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         $permissionsList = Arr::flatten(config('company_permissions.permissions', []));
         $guardName = 'web';
-//        $superAdminName = Roles::SUPER_ADMIN->value;
+        //        $superAdminName = Roles::SUPER_ADMIN->value;
 
         // Clear permission cache
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -42,6 +42,9 @@ class RolesAndPermissionsSeeder extends Seeder
 //
 //        $superAdmin->syncPermissions(Permission::where('guard_name', $guardName)->get());
 
+        if ($this->command) {
+            $this->command->info('Role & Permission synchronization completed.');
+        }
     }
 
     private function prepareUpsertData(array $permissionsList, string $guardName): array
@@ -83,4 +86,3 @@ class RolesAndPermissionsSeeder extends Seeder
         }
     }
 }
-
