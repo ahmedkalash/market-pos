@@ -2,12 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Roles;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -34,13 +31,13 @@ class RolesAndPermissionsSeeder extends Seeder
         // 2. Perform Upsert
         $this->performUpsert($upsertData, $guardName, $permissionsList);
 
-        // 3. Ensure a Super Admin role exists and has all permissions
-//        $superAdmin = Role::firstOrCreate([
-//            'name' => $superAdminName,
-//            'guard_name' => $guardName, // todo: change it to admin later
-//        ]);
-//
-//        $superAdmin->syncPermissions(Permission::where('guard_name', $guardName)->get());
+        //        // super admin will be handled later, it will have its own admin table and guard
+        //        $superAdmin = Role::firstOrCreate([
+        //            'name' => Roles::SUPER_ADMIN->value,
+        //            'guard_name' => $guardName,
+        //            'company_id' => null, // Global role
+        //        ]);
+        //        $superAdmin->syncPermissions(Permission::where('guard_name', $guardName)->get());
 
         if ($this->command) {
             $this->command->info('Role & Permission synchronization completed.');
