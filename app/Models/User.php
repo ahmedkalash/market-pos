@@ -150,4 +150,77 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
             ->whereNull('roles.company_id')
             ->exists();
     }
+
+    /**
+     * Determine if the current user ($this) can be managed by the given administrator ($admin).
+     *
+     * RULES ENFORCED:
+     *  A user cannot perform CRUD on themselves via this interface.
+     *  Strict company isolation (tenant barrier).
+     *  A user can not manage or perform crud on his manager
+     *  Company Admins can manage anyone in their company (including other Company Admins).
+     *  Store-level users cannot manage company-level users.
+     *  Store-level users can only manage users within their exact same store.
+     *  A store user cannot manage a Store Manager, UNLESS they themselves are also a Store Manager.
+     */
+    public function isManageableBy(User $admin): bool
+    {
+        // 1. Cannot manage self
+        if ($this->id === $admin->id) {
+            return false;
+        }
+
+        // 2. Super admins
+        if ($admin->isSuperAdmin()) {
+            return true;
+        }
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        // 3. Strict Company Isolation
+        if ($this->company_id !== $admin->company_id) {
+            return false;
+        }
+
+        // 4. Company Admins have supreme power in their company
+        // (This allows them to manage ANYONE, including other Company Admins)
+        if ($admin->isCompanyAdmin()) {
+            return true;
+        }
+
+        // 5. Protect Company Admins from lower roles
+        // If we reach here, $admin is NOT a Company Admin.
+        if ($this->isCompanyAdmin()) {
+            return false;
+        }
+
+        // 6. Store-Level Admin Restrictions
+        if ($admin->isStoreLevel()) {
+
+            // Cannot escalate out of store to manage company-level users
+            if ($this->isCompanyLevel()) {
+                return false;
+            }
+
+            // Must be mathematically restricted to their exact physical store
+            if ($this->store_id !== $admin->store_id) {
+                return false;
+            }
+
+            // Protect Store Managers from lower store roles
+            // If the target is a Store Manager, the admin MUST also be a Store Manager
+            if ($this->isStoreManager() && ! $admin->isStoreManager()) {
+                return false;
+            }
+
+            return true;
+        }
+
+        // 7. Company-Level Custom Role (e.g. HR Manager)
+        // If we reach here, $admin is Company-Level but NOT a Company Admin.
+        // They are allowed to manage any store-level user natively, OR any peer company-level user
+        // (Given they have the correct Spatie permissions)
+        return true;
+    }
 }

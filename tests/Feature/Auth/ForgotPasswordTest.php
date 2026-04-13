@@ -64,7 +64,7 @@ class ForgotPasswordTest extends TestCase
                 'email' => 'nonexistent@example.com',
             ])
             ->call('identifyUser')
-            ->assertHasFormErrors(['data.email']);
+            ->assertHasFormErrors(['email']);
     }
 
     public function test_can_verify_otp_and_reset_password(): void
@@ -122,11 +122,7 @@ class ForgotPasswordTest extends TestCase
 
         // 4th attempt should be rate limited
         $livewire->call('sendOtp')
-            ->assertNotified(
-                FilamentNotification::make()
-                    ->title(__('app.too_many_otp_attempts'))
-                    ->danger()
-            );
+            ->assertNotified(__('app.too_many_otp_attempts'));
     }
 
     public function test_can_identify_user_from_different_company_bypass_global_scope(): void

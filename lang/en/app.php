@@ -84,4 +84,20 @@ return [
     'password_reset_success' => 'Your password has been reset successfully.',
     'user_not_found' => 'No user found with this email address.',
     'back_to_login' => 'Back to login',
+    'change_password' => 'Change Password',
+    'password_updated' => 'Password updated successfully',
+    'change_email' => 'Change Email',
+    'email_updated' => 'Email updated successfully',
+    'view_active' => 'View Active Status',
+    'new_email' => 'New Email Address',
+    'unauthorized' => 'Unauthorized',
+    'unauthorized_management_body' => 'You do not have permission to manage one or more of the selected users.',
+
+    'roles' => [
+        'company_admin' => 'Company Admin',
+        'store_manager' => 'Store Manager',
+        'cashier' => 'Cashier',
+        'stock_clerk' => 'Stock Clerk',
+        'accountant' => 'Accountant',
+    ],
 ];

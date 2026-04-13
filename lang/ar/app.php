@@ -86,4 +86,20 @@ return [
     'password_reset_success' => 'تم إعادة تعيين كلمة المرور بنجاح.',
     'user_not_found' => 'لم يتم العثور على مستخدم لهذا البريد الإلكتروني.',
     'back_to_login' => 'العودة لتسجيل الدخول',
+    'change_password' => 'تغيير كلمة المرور',
+    'password_updated' => 'تم تحديث كلمة المرور بنجاح',
+    'change_email' => 'تغيير البريد الإلكتروني',
+    'email_updated' => 'تم تحديث البريد الإلكتروني بنجاح',
+    'view_active' => 'عرض حالة النشاط',
+    'new_email' => 'البريد الإلكتروني الجديد',
+    'unauthorized' => 'غير مصرح',
+    'unauthorized_management_body' => 'ليس لديك صلاحية لإدارة واحد أو أكثر من المستخدمين المختارين.',
+
+    'roles' => [
+        'company_admin' => 'مدير الشركة',
+        'store_manager' => 'مدير فرع',
+        'cashier' => 'كاشير',
+        'stock_clerk' => 'أمين مستودع',
+        'accountant' => 'محاسب',
+    ],
 ];

@@ -8,6 +8,7 @@ use App\Models\Store;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ScopingTest extends TestCase
@@ -18,6 +19,16 @@ class ScopingTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolesAndPermissionsSeeder::class);
+    }
+
+    private function createRole(string $name, int $companyId): void
+    {
+        setPermissionsTeamId($companyId);
+        Role::firstOrCreate([
+            'name' => $name,
+            'company_id' => $companyId,
+            'guard_name' => 'web',
+        ]);
     }
 
     public function test_store_manager_is_scoped_to_their_store()
@@ -32,6 +43,8 @@ class ScopingTest extends TestCase
             'store_id' => $store1->id,
             'is_active' => true,
         ]);
+
+        $this->createRole(Roles::STORE_MANAGER->value, $company->id);
         $manager->assignRole(Roles::STORE_MANAGER->value);
 
         $userInStore1 = User::factory()->create([
@@ -66,6 +79,8 @@ class ScopingTest extends TestCase
             'store_id' => null, // Company level
             'is_active' => true,
         ]);
+
+        $this->createRole(Roles::ACCOUNTANT->value, $company->id);
         $accountant->assignRole(Roles::ACCOUNTANT->value);
 
         $userInStore1 = User::factory()->create([

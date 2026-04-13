@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Filament\Pages\Auth\EditProfile;
+use App\Models\OtpVerification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -33,12 +34,20 @@ class ProfileTest extends TestCase
 
         $this->actingAs($user);
 
-        Livewire::test(EditProfile::class)
+        $livewire = Livewire::test(EditProfile::class)
             ->fillForm([
                 'name' => 'New Name',
                 'email' => 'new@example.com',
                 'phone' => '0987654321',
             ])
+            ->call('sendOtp');
+
+        $otp = OtpVerification::where('identifier', 'new@example.com')->first();
+        $this->assertNotNull($otp);
+
+        $livewire->fillForm([
+            'otp_code' => $otp->code,
+        ])
             ->call('save')
             ->assertHasNoFormErrors();
 

@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         $this->implicitlyGrantSuperAdminAllPermissions();
 
         $this->registerDynamicPermissionsGate();
+
+        Livewire::addPersistentMiddleware([
+            ApplyTenantScopes::class,
+        ]);
     }
 
     private function implicitlyGrantSuperAdminAllPermissions(): void
@@ -79,12 +85,10 @@ class AppServiceProvider extends ServiceProvider
                 return null;
             }
 
-            // If we are here, at least one of them exists. Check if user has either.
-            if ($primaryExists && $user->hasPermissionTo($permissionName, $guardName)) {
-                return true;
-            }
+            $hasPermission = ($primaryExists && $user->hasPermissionTo($permissionName, $guardName)) ||
+                             ($fallbackExists && $user->hasPermissionTo($ability, $guardName));
 
-            if ($fallbackExists && $user->hasPermissionTo($ability, $guardName)) {
+            if ($hasPermission) {
                 return true;
             }
 

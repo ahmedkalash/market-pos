@@ -13,9 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
-use UnitEnum;
+use Illuminate\Database\Eloquent\Model;
 
 class UserResource extends Resource
 {
@@ -62,16 +60,60 @@ class UserResource extends Resource
         ];
     }
 
+    public static function canViewAny(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return $user?->hasPermissionTo('view_any_user') ?? false;
+    }
+
+    public static function canCreate(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return $user?->hasPermissionTo('create_user') ?? false;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return ($user?->hasPermissionTo('view_user') ?? false) && $record->isManageableBy($user);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return ($user?->hasPermissionTo('update_user') ?? false) && $record->isManageableBy($user);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return ($user?->hasPermissionTo('delete_user') ?? false) && $record->isManageableBy($user);
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+
+        return $user?->hasPermissionTo('delete_user') ?? false;
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
-            'edit' => EditUser::route('/{record}/edit'),
+            //            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
-
-    /**
-     * Scope users to the current user's company.
-     */
 }

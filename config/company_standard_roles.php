@@ -11,10 +11,17 @@ return [
         ],
         Roles::STORE_MANAGER->value => [
             'permissions' => [
+                // users
                 'view_any_user',
                 'view_user',
+                'create_user',
+                'update_user',
+                'delete_user',
+                'assign_role',
+                // stores
                 'view_any_store',
                 'view_store',
+                // main dashboard '/company'
                 'company_dashboard',
             ],
         ],

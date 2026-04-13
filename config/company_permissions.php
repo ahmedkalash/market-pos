@@ -40,6 +40,7 @@ return [
             'update_user',
             'delete_user',
             'delete_any_user',
+            'assign_role',
         ],
         'Stores' => [
             'view_any_store',
