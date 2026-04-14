@@ -26,4 +26,5 @@ return [
     'update_setting' => 'Update Settings',
 
     'company_dashboard' => 'View Dashboard',
+    'assign_role_to_user' => 'Assign Role To User',
 ];

@@ -105,4 +105,7 @@ return [
         'stock_clerk' => 'أمين مستودع',
         'accountant' => 'محاسب',
     ],
+    'roles_and_permissions' => 'الأدوار والصلاحيات',
+    'current_roles' => 'الأدوار الحالية',
+    'current_permissions' => 'الصلاحيات الحالية',
 ];

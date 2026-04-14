@@ -17,10 +17,9 @@ return [
                 'create_user',
                 'update_user',
                 'delete_user',
+                'delete_any_user',
                 'assign_role_to_user',
-                // stores
-                'view_any_store',
-                'view_store',
+
                 // main dashboard '/company'
                 'company_dashboard',
             ],

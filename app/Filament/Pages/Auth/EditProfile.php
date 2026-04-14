@@ -8,7 +8,9 @@ use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification as FilamentNotification;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +54,32 @@ class EditProfile extends BaseEditProfile
                 $this->getPasswordConfirmationFormComponent()
                     ->visible(true)
                     ->required(fn (Get $get): bool => filled($get('password'))),
+
+                Section::make(__('app.roles_and_permissions'))
+                    ->schema([
+                        TextEntry::make('roles')
+                            ->label(__('app.current_roles'))
+                            ->badge()
+                            ->color('primary')
+                            ->state(fn (User $user) => $user->getRoleNames())
+                            ->formatStateUsing(fn ($state) => __('app.roles.'.$state)),
+
+                        TextEntry::make('permissions')
+                            ->label(__('app.current_permissions'))
+                            ->badge()
+                            ->color('primary')
+                            ->state(fn (User $user) => $user->getAllPermissions()->pluck('name'))
+                            ->formatStateUsing(function ($state) {
+                                $label = __('permissions.'.$state);
+
+                                return $label === 'permissions.'.$state
+                                    ? str($state)->replace('_', ' ')->title()
+                                    : $label;
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(1)
+                    ->collapsed(false),
             ]);
     }
 

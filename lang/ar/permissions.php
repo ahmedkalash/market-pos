@@ -26,4 +26,5 @@ return [
     'update_setting' => 'تعديل الإعدادات',
 
     'company_dashboard' => 'لوحة معلومات الشركة',
+    'assign_role_to_user' => 'تعيين دور للمستخدم',
 ];

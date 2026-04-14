@@ -103,4 +103,7 @@ return [
         'stock_clerk' => 'Stock Clerk',
         'accountant' => 'Accountant',
     ],
+    'roles_and_permissions' => 'Roles & Permissions',
+    'current_roles' => 'Current Roles',
+    'current_permissions' => 'Current Permissions',
 ];
