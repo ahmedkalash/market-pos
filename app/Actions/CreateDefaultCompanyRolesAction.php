@@ -18,7 +18,7 @@ class CreateDefaultCompanyRolesAction
             $role = Role::firstOrCreate([
                 'name' => $roleName,
                 'guard_name' => $guardName,
-                'company_id' => $companyId
+                'company_id' => $companyId,
             ]);
 
             $permissionsToSync = $roleConfig['permissions'] ?? [];

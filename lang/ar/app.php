@@ -95,6 +95,9 @@ return [
     'unauthorized' => 'غير مصرح',
     'unauthorized_management_body' => 'ليس لديك صلاحية لإدارة واحد أو أكثر من المستخدمين المختارين.',
 
+    'store_assignment_changed' => 'تم تغيير المتجر المعين',
+    'store_assignment_changed_body' => 'تم نقل حسابك إلى متجر مختلف. للضرورة الأمنية، قد تكون جلساتك النشطة قد أُبطلت.',
+
     'roles' => [
         'company_admin' => 'مدير الشركة',
         'store_manager' => 'مدير فرع',

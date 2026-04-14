@@ -17,7 +17,7 @@ return [
                 'create_user',
                 'update_user',
                 'delete_user',
-                'assign_role',
+                'assign_role_to_user',
                 // stores
                 'view_any_store',
                 'view_store',

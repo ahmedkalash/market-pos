@@ -93,6 +93,9 @@ return [
     'unauthorized' => 'Unauthorized',
     'unauthorized_management_body' => 'You do not have permission to manage one or more of the selected users.',
 
+    'store_assignment_changed' => 'Store Assignment Changed',
+    'store_assignment_changed_body' => 'Your account has been transferred to a different store. Your active sessions may have been revoked for security reasons.',
+
     'roles' => [
         'company_admin' => 'Company Admin',
         'store_manager' => 'Store Manager',

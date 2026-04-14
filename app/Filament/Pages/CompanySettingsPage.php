@@ -17,7 +17,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 class CompanySettingsPage extends Page implements HasForms
 {

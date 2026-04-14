@@ -5,7 +5,9 @@ namespace App\Filament\Resources\Users\Tables;
 use App\Enums\Roles;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -74,13 +76,19 @@ class UsersTable
                     ->relationship('roles', 'name', function ($query) use ($authUser) {
                         $query->where('roles.company_id', $authUser->company_id);
 
+                        // 1. Enforce Company Admin Protection
+                        // Only top-level administrators (Company Admins & Super Admins)
+                        // have the authority to even see or filter by the 'company_admin' role.
                         if (! $authUser->isCompanyAdmin() && ! $authUser->isSuperAdmin()) {
-                            // Non-company admins should not see or filter by the Company Admin role
                             $query->where('name', '!=', Roles::COMPANY_ADMIN->value);
                         }
 
+                        // 2. Enforce Store Manager Protection
+                        // In the store level, only a Store Manager can see or filter by the 'store_manager' role.
+                        // Lower-level store staff (like Cashiers or Stock Clerks) are shielded from seeing this role.
+                        // Note: In the company level, Company Admins (and other authorized company-level staff)
+                        // bypass this block and CAN see/filter by the 'store_manager' role.
                         if ($authUser->isStoreLevel() && ! $authUser->isStoreManager()) {
-                            // Store level staff should not see or filter by the Store Manager role
                             $query->where('name', '!=', Roles::STORE_MANAGER->value);
                         }
 
@@ -99,9 +107,15 @@ class UsersTable
                     ->label(__('app.view_active')),
             ])
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make()
-                    ->visible(fn ($record) => UserResource::canEdit($record)),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->visible(fn ($record) => UserResource::canView($record)),
+                    EditAction::make()
+                        ->visible(fn ($record) => UserResource::canEdit($record)),
+                    DeleteAction::make()
+                        ->visible(fn ($record) => UserResource::canDelete($record)),
+                ])->button(),
+
             ])
             ->bulkActions([
                 BulkActionGroup::make([

@@ -81,7 +81,7 @@ class UserResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('view_user') ?? false) && $record->isManageableBy($user);
+        return $user?->hasPermissionTo('view_user') ?? false;
     }
 
     public static function canEdit(Model $record): bool
@@ -113,7 +113,7 @@ class UserResource extends Resource
         return [
             'index' => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
-            //            'edit' => EditUser::route('/{record}/edit'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 }

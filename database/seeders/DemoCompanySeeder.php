@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Actions\CreateDefaultCompanyRolesAction;
+use App\Enums\Roles;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Models\Store;
@@ -75,7 +76,7 @@ class DemoCompanySeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $admin->assignRole(\App\Enums\Roles::COMPANY_ADMIN->value);
+        $admin->assignRole(Roles::COMPANY_ADMIN->value);
 
         // Store Managers
         $managerNasr = User::firstOrCreate(
@@ -90,7 +91,7 @@ class DemoCompanySeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $managerNasr->assignRole(\App\Enums\Roles::STORE_MANAGER->value);
+        $managerNasr->assignRole(Roles::STORE_MANAGER->value);
 
         $managerMaadi = User::firstOrCreate(
             ['email' => 'manager.maadi@mool.test'],
@@ -104,7 +105,7 @@ class DemoCompanySeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $managerMaadi->assignRole(\App\Enums\Roles::STORE_MANAGER->value);
+        $managerMaadi->assignRole(Roles::STORE_MANAGER->value);
 
         // Cashiers - Nasr City
         foreach (['Cashier NC 1', 'Cashier NC 2'] as $index => $name) {
@@ -119,7 +120,7 @@ class DemoCompanySeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            $cashier->assignRole(\App\Enums\Roles::CASHIER->value);
+            $cashier->assignRole(Roles::CASHIER->value);
         }
 
         // Cashiers - Maadi
@@ -135,7 +136,7 @@ class DemoCompanySeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            $cashier->assignRole(\App\Enums\Roles::CASHIER->value);
+            $cashier->assignRole(Roles::CASHIER->value);
         }
 
         // Accountant
@@ -150,6 +151,6 @@ class DemoCompanySeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $accountant->assignRole(\App\Enums\Roles::ACCOUNTANT->value);
+        $accountant->assignRole(Roles::ACCOUNTANT->value);
     }
 }
