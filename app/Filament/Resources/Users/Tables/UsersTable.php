@@ -115,7 +115,7 @@ class UsersTable
                         ->visible(fn ($record) => UserResource::canEdit($record)),
                     DeleteAction::make()
                         ->visible(fn ($record) => UserResource::canDelete($record)),
-                ])->button(),
+                ])->badge(),
 
             ])
             ->bulkActions([
