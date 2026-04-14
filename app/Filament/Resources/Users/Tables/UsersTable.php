@@ -49,7 +49,7 @@ class UsersTable
                 TextColumn::make('roles.name')
                     ->label(__('app.role'))
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => __('app.roles.'.$state)),
+                    ->formatStateUsing(fn (string $state): string => __('roles.'.$state)),
 
                 TextColumn::make('store.name_en')
                     ->label(__('app.store'))
@@ -95,7 +95,7 @@ class UsersTable
 
                         return $query;
                     })
-                    ->getOptionLabelFromRecordUsing(fn (Role $record) => __('app.roles.'.$record->name))
+                    ->getOptionLabelFromRecordUsing(fn (Role $record) => __('roles.'.$record->name))
                     ->multiple()
                     ->preload(),
 

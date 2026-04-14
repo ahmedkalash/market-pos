@@ -98,14 +98,14 @@ return [
     'store_assignment_changed' => 'تم تغيير المتجر المعين',
     'store_assignment_changed_body' => 'تم نقل حسابك إلى متجر مختلف. للضرورة الأمنية، قد تكون جلساتك النشطة قد أُبطلت.',
 
-    'roles' => [
-        'company_admin' => 'مدير الشركة',
-        'store_manager' => 'مدير فرع',
-        'cashier' => 'كاشير',
-        'stock_clerk' => 'أمين مستودع',
-        'accountant' => 'محاسب',
-    ],
+    'role_details' => 'تفاصيل الدور',
+    'permissions' => 'الصلاحيات',
+    'assign_permissions_to_role' => 'حدد الصلاحيات التي تريد تعيينها لهذا الدور.',
     'roles_and_permissions' => 'الأدوار والصلاحيات',
     'current_roles' => 'الأدوار الحالية',
     'current_permissions' => 'الصلاحيات الحالية',
+    'roles' => 'الأدوار',
+    'plans' => 'الخطط',
+    'companies' => 'الشركات',
+    'dashboard' => 'لوحة التحكم',
 ];

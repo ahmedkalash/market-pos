@@ -8,6 +8,13 @@ return [
     'delete_user' => 'حذف مستخدم',
     'delete_any_user' => 'حذف عدة مستخدمين',
 
+    'view_any_role' => 'عرض كل الأدوار',
+    'view_role' => 'عرض الدور',
+    'create_role' => 'إضافة دور',
+    'update_role' => 'تعديل دور',
+    'delete_role' => 'حذف دور',
+    'delete_any_role' => 'حذف عدة أدوار',
+
     'view_any_store' => 'عرض كل الفروع',
     'view_store' => 'عرض الفرع',
     'create_store' => 'إضافة فرع',

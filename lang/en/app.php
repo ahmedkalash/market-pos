@@ -96,14 +96,14 @@ return [
     'store_assignment_changed' => 'Store Assignment Changed',
     'store_assignment_changed_body' => 'Your account has been transferred to a different store. Your active sessions may have been revoked for security reasons.',
 
-    'roles' => [
-        'company_admin' => 'Company Admin',
-        'store_manager' => 'Store Manager',
-        'cashier' => 'Cashier',
-        'stock_clerk' => 'Stock Clerk',
-        'accountant' => 'Accountant',
-    ],
+    'role_details' => 'Role Details',
+    'permissions' => 'Permissions',
+    'assign_permissions_to_role' => 'Select the permissions to assign to this role.',
     'roles_and_permissions' => 'Roles & Permissions',
     'current_roles' => 'Current Roles',
     'current_permissions' => 'Current Permissions',
+    'roles' => 'Roles',
+    'plans' => 'Plans',
+    'companies' => 'Companies',
+    'dashboard' => 'Dashboard',
 ];

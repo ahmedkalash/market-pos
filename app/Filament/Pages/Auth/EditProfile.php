@@ -62,7 +62,7 @@ class EditProfile extends BaseEditProfile
                             ->badge()
                             ->color('primary')
                             ->state(fn (User $user) => $user->getRoleNames())
-                            ->formatStateUsing(fn ($state) => __('app.roles.'.$state)),
+                            ->formatStateUsing(fn ($state) => __('roles.'.$state)),
 
                         TextEntry::make('permissions')
                             ->label(__('app.current_permissions'))

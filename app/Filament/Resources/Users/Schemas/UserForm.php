@@ -93,7 +93,7 @@ class UserForm
                                 }
 
                                 return $query->pluck('name', 'name')
-                                    ->mapWithKeys(fn ($name) => [$name => __('app.roles.'.$name)]);
+                                    ->mapWithKeys(fn ($name) => [$name => __('roles.'.$name)]);
                             })
                             ->visible($authUser->hasPermissionTo('assign_role_to_user'))
                             ->required()

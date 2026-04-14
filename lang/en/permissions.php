@@ -8,6 +8,13 @@ return [
     'delete_user' => 'Delete User',
     'delete_any_user' => 'Delete Multiple Users',
 
+    'view_any_role' => 'View All Roles',
+    'view_role' => 'View Role',
+    'create_role' => 'Create Role',
+    'update_role' => 'Update Role',
+    'delete_role' => 'Delete Role',
+    'delete_any_role' => 'Delete Multiple Roles',
+
     'view_any_store' => 'View All Stores',
     'view_store' => 'View Store',
     'create_store' => 'Create Store',

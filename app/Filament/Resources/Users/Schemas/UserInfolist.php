@@ -52,7 +52,7 @@ class UserInfolist
                             ->label(__('app.role'))
                             ->badge()
                             ->state(fn (User $record): ?string => $record->getRoleNames()->first())
-                            ->formatStateUsing(fn (?string $state): string => $state ? __('app.roles.'.$state) : '—'),
+                            ->formatStateUsing(fn (?string $state): string => $state ? __('roles.'.$state) : '—'),
 
                         TextEntry::make('store.name_en')
                             ->label(__('app.assigned_store'))

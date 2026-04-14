@@ -42,6 +42,15 @@ return [
             'delete_any_user',
             'assign_role_to_user',
         ],
+        'Roles' => [
+            'view_any_role',
+            'view_role',
+            'create_role',
+            'update_role',
+            'delete_role',
+            'delete_any_role',
+        ],
+
         'Stores' => [
             'view_any_store',
             'view_store',
