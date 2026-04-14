@@ -30,6 +30,7 @@ class UsersTable
         $authUser = Auth::user();
 
         return $table
+            ->recordUrl(null)
             ->columns([
                 SpatieMediaLibraryImageColumn::make('avatar')
                     ->label(__('app.avatar'))
