@@ -7,15 +7,18 @@ use App\Enums\RoundingRule;
 use App\Models\User;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -59,7 +62,7 @@ class CompanySettingsPage extends Page implements HasForms
     public static function canAccess(): bool
     {
         /** @var User $user */
-        $user = auth()->user();
+        $user = Auth::user();
 
         return $user &&
                $user->isCompanyLevel() &&
@@ -132,6 +135,54 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->nullable(),
                                     ])
                                     ->columns(2),
+                            ]),
+
+                        // tab: Scheduling
+                        Tab::make(__('app.working_hours'))
+                            ->schema([
+                                Section::make(__('company_settings.sections.working_hours'))
+                                    ->description(__('company_settings.sections.working_hours_description'))
+                                    ->schema([
+                                        Repeater::make('working_hours')
+                                            ->label(__('store_settings.sections.working_hours'))
+                                            ->schema([
+                                                Grid::make(3)
+                                                    ->schema([
+                                                        Select::make('day')
+                                                            ->label(__('store_settings.fields.day'))
+                                                            ->options([
+                                                                'saturday' => __('app.days.saturday'),
+                                                                'sunday' => __('app.days.sunday'),
+                                                                'monday' => __('app.days.monday'),
+                                                                'tuesday' => __('app.days.tuesday'),
+                                                                'wednesday' => __('app.days.wednesday'),
+                                                                'thursday' => __('app.days.thursday'),
+                                                                'friday' => __('app.days.friday'),
+                                                            ])
+                                                            ->required(),
+                                                        TimePicker::make('from')
+                                                            ->label(__('company_settings.fields.from'))
+                                                            ->native(false)
+                                                            ->displayFormat('h:i A')
+                                                            ->format('H:i')
+                                                            ->seconds(false)
+                                                            ->required(),
+                                                        TimePicker::make('to')
+                                                            ->label(__('company_settings.fields.to'))
+                                                            ->native(false)
+                                                            ->displayFormat('h:i A')
+                                                            ->format('H:i')
+                                                            ->seconds(false)
+                                                            ->required(),
+                                                    ]),
+                                            ])
+                                            ->itemLabel(fn (array $state): ?string => isset($state['day']) ? __('app.days.'.$state['day']) : null)
+                                            ->addActionLabel(__('store_settings.actions.add_day'))
+                                            ->reorderable(false)
+                                            ->collapsible()
+                                            ->defaultItems(1)
+                                            ->columnSpanFull(),
+                                    ]),
                             ]),
 
                         // tab 2: Localization

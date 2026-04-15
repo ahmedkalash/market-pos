@@ -8,8 +8,8 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -77,7 +77,7 @@ class StoreSettingsPage extends Page implements HasForms
             ->statePath('data')
             ->components([
                 Callout::make(__('store_settings.info'))
-                    ->description(str('<li>' . __('store_settings.inheritance.callout_description') . '</li> <li>' . __('store_settings.fields.compliance_note') . '</li>')
+                    ->description(str('<li>'.__('store_settings.inheritance.callout_description').'</li> <li>'.__('store_settings.fields.compliance_note').'</li>')
                         ->toHtmlString())
                     ->icon('heroicon-m-information-circle')
                     ->info(),
@@ -115,7 +115,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                 Action::make('pull_phone')
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
-                                                    ->action(fn(Set $set) => $set('phone', $company?->phone))
+                                                    ->action(fn (Set $set) => $set('phone', $company?->phone))
                                             )
                                             ->nullable(),
 
@@ -128,7 +128,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
                                                     ->tooltip(__('store_settings.actions.pull_tooltip'))
-                                                    ->action(fn(Set $set) => $set('whatsapp_number', $company?->whatsapp_number))
+                                                    ->action(fn (Set $set) => $set('whatsapp_number', $company?->whatsapp_number))
                                             )
                                             ->nullable(),
 
@@ -139,7 +139,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                 Action::make('pull_address')
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
-                                                    ->action(fn(Set $set) => $set('address', $company?->address))
+                                                    ->action(fn (Set $set) => $set('address', $company?->address))
                                             )
                                             ->nullable(),
                                     ])
@@ -153,42 +153,63 @@ class StoreSettingsPage extends Page implements HasForms
                                     ->schema([
                                         Repeater::make('working_hours')
                                             ->label(__('store_settings.sections.working_hours'))
+                                            /* ->hintAction(
+                                                Action::make('pull_from_company')
+                                                    ->label(__('store_settings.actions.pull_from_company'))
+                                                    ->icon('heroicon-m-arrow-path')
+                                                    ->action(function (Set $set) {
+                                                        $company = Auth::user()->company;
+
+                                                        if ($company?->working_hours) {
+                                                            $set('working_hours', $company->working_hours);
+
+                                                            Notification::make()
+                                                                ->title(__('store_settings.notifications.pulled_from_company'))
+                                                                ->success()
+                                                                ->send();
+                                                        } else {
+                                                            Notification::make()
+                                                                ->title(__('store_settings.notifications.no_company_hours'))
+                                                                ->warning()
+                                                                ->send();
+                                                        }
+                                                    }),
+                                            ) */
                                             ->schema([
                                                 Grid::make(3)
                                                     ->schema([
                                                         Select::make('day')
                                                             ->label(__('store_settings.fields.day'))
                                                             ->options([
-                                                                'saturday' => __('store_settings.days.saturday'),
-                                                                'sunday' => __('store_settings.days.sunday'),
-                                                                'monday' => __('store_settings.days.monday'),
-                                                                'tuesday' => __('store_settings.days.tuesday'),
-                                                                'wednesday' => __('store_settings.days.wednesday'),
-                                                                'thursday' => __('store_settings.days.thursday'),
-                                                                'friday' => __('store_settings.days.friday'),
+                                                                'saturday' => __('app.days.saturday'),
+                                                                'sunday' => __('app.days.sunday'),
+                                                                'monday' => __('app.days.monday'),
+                                                                'tuesday' => __('app.days.tuesday'),
+                                                                'wednesday' => __('app.days.wednesday'),
+                                                                'thursday' => __('app.days.thursday'),
+                                                                'friday' => __('app.days.friday'),
                                                             ])
                                                             ->required(),
                                                         TimePicker::make('from')
                                                             ->label(__('store_settings.fields.from'))
                                                             ->native(false)
                                                             ->displayFormat('h:i A')
-                                                            ->format('h:i A')
+                                                            ->format('H:i')
                                                             ->seconds(false)
                                                             ->required(),
                                                         TimePicker::make('to')
                                                             ->label(__('store_settings.fields.to'))
                                                             ->native(false)
                                                             ->displayFormat('h:i A')
-                                                            ->format('h:i A')
+                                                            ->format('H:i')
                                                             ->seconds(false)
                                                             ->required(),
                                                     ]),
                                             ])
-                                            ->itemLabel(fn(array $state): ?string => isset($state['day']) ? __('store_settings.days.' . $state['day']) : null)
+                                            ->itemLabel(fn (array $state): ?string => isset($state['day']) ? __('app.days.'.$state['day']) : null)
                                             ->addActionLabel(__('store_settings.actions.add_day'))
                                             ->reorderable(false)
                                             ->collapsible()
-                                            ->collapsed()
                                             ->defaultItems(1)
                                             ->columnSpanFull(),
                                     ]),
@@ -208,7 +229,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
                                                     ->tooltip(__('store_settings.actions.pull_tooltip'))
-                                                    ->action(fn(Set $set) => $set('receipt_header', $company?->receipt_header))
+                                                    ->action(fn (Set $set) => $set('receipt_header', $company?->receipt_header))
                                             )
                                             ->nullable(),
 
@@ -221,7 +242,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
                                                     ->tooltip(__('store_settings.actions.pull_tooltip'))
-                                                    ->action(fn(Set $set) => $set('receipt_footer', $company?->receipt_footer))
+                                                    ->action(fn (Set $set) => $set('receipt_footer', $company?->receipt_footer))
                                             )
                                             ->nullable(),
 
@@ -237,7 +258,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                 Action::make('pull_logo')
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
-                                                    ->action(fn(Set $set) => $set('receipt_show_logo', $company?->receipt_show_logo ? '1' : '0'))
+                                                    ->action(fn (Set $set) => $set('receipt_show_logo', $company?->receipt_show_logo ? '1' : '0'))
                                             )
                                             ->selectablePlaceholder(false),
 
@@ -253,7 +274,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                 Action::make('pull_vat')
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
-                                                    ->action(fn(Set $set) => $set('receipt_show_vat_number', $company?->receipt_show_vat_number ? '1' : '0'))
+                                                    ->action(fn (Set $set) => $set('receipt_show_vat_number', $company?->receipt_show_vat_number ? '1' : '0'))
                                             )
                                             ->selectablePlaceholder(false),
 
@@ -269,7 +290,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                 Action::make('pull_address_toggle')
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
-                                                    ->action(fn(Set $set) => $set('receipt_show_address', $company?->receipt_show_address ? '1' : '0'))
+                                                    ->action(fn (Set $set) => $set('receipt_show_address', $company?->receipt_show_address ? '1' : '0'))
                                             )
                                             ->selectablePlaceholder(false),
                                     ])
@@ -284,7 +305,7 @@ class StoreSettingsPage extends Page implements HasForms
                                         Select::make('timezone')
                                             ->label(__('store_settings.fields.timezone'))
                                             ->helperText(__('store_settings.helpers.timezone'))
-                                            ->options(collect(timezone_identifiers_list())->mapWithKeys(fn($tz) => [$tz => $tz]))
+                                            ->options(collect(timezone_identifiers_list())->mapWithKeys(fn ($tz) => [$tz => $tz]))
                                             ->searchable()
                                             ->default('Africa/Cairo')
                                             ->required()
@@ -303,7 +324,7 @@ class StoreSettingsPage extends Page implements HasForms
                                                 Action::make('pull_locale')
                                                     ->label(__('store_settings.actions.pull_from_company'))
                                                     ->icon('heroicon-m-arrow-path')
-                                                    ->action(fn(Set $set) => $set('locale', $company?->locale))
+                                                    ->action(fn (Set $set) => $set('locale', $company?->locale))
                                             )
                                             ->selectablePlaceholder(false),
                                     ])

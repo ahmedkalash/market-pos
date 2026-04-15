@@ -31,6 +31,7 @@ class Company extends Model implements HasMedia
         'email',
         'phone',
         'address',
+        'working_hours',
         'vat_number',
         'vat_rate',
         'tax_label',
@@ -75,6 +76,7 @@ class Company extends Model implements HasMedia
             'invoice_next_number' => 'integer',
             'enable_zatca_qr' => 'boolean',
             'is_active' => 'boolean',
+            'working_hours' => 'array',
         ];
     }
 

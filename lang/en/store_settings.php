@@ -33,15 +33,6 @@ return [
         'to' => 'To',
         'compliance_note' => 'Regional tax compliance (E-invoicing) and VAT registration are managed by company headquarters.',
     ],
-    'days' => [
-        'saturday' => 'Saturday',
-        'sunday' => 'Sunday',
-        'monday' => 'Monday',
-        'tuesday' => 'Tuesday',
-        'wednesday' => 'Wednesday',
-        'thursday' => 'Thursday',
-        'friday' => 'Friday',
-    ],
     'helpers' => [
         'whatsapp_number' => 'Official WhatsApp contact for branch-specific customer support.',
         'receipt_header' => 'Appears at the very top of receipts. Ideal for branch names or welcome messages.',
@@ -68,4 +59,8 @@ return [
     'settings_updated_successfully' => 'Settings updated successfully.',
     'error_updating_settings' => 'Error updating settings.',
     'info' => 'Notes',
+    'notifications' => [
+        'pulled_from_company' => 'Working hours pulled from company successfully.',
+        'no_company_hours' => 'No company working hours found.',
+    ],
 ];

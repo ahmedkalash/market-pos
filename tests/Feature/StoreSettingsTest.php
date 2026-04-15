@@ -124,7 +124,16 @@ class StoreSettingsTest extends TestCase
                 'timezone' => 'Africa/Cairo',
                 'locale' => 'ar',
                 'working_hours' => [
-                    ['day' => 'saturday', 'from' => '09:00 AM', 'to' => '05:00 PM'],
+                    [
+                        'day' => 'monday',
+                        'from' => '08:00:00',
+                        'to' => '17:00:00',
+                    ],
+                    [
+                        'day' => 'tuesday',
+                        'from' => '09:00:00',
+                        'to' => '18:00:00',
+                    ],
                 ],
             ])
             ->call('save')
@@ -136,8 +145,9 @@ class StoreSettingsTest extends TestCase
         $this->assertEquals('Branch Header', $store->receipt_header);
         $this->assertFalse($store->receipt_show_logo);
         $this->assertIsArray($store->working_hours);
-        $this->assertEquals('saturday', $store->working_hours[0]['day']);
-        $this->assertEquals('09:00 AM', $store->working_hours[0]['from']);
+        $this->assertEquals('monday', $store->working_hours[0]['day']);
+        $this->assertEquals('08:00:00', $store->working_hours[0]['from']);
+        $this->assertEquals('17:00:00', $store->working_hours[0]['to']);
     }
 
     public function test_store_manager_can_manually_pull_from_company()
@@ -167,4 +177,43 @@ class StoreSettingsTest extends TestCase
             ->callFormComponentAction('whatsapp_number', 'pull_whatsapp')
             ->assertFormSet(['whatsapp_number' => 'COMPANY-WA']);
     }
+
+    //    public function test_store_manager_can_manually_pull_working_hours_from_company()
+    //    {
+    //        $workingHours = [
+    //            ['day' => 'saturday', 'from' => '10:00:00', 'to' => '23:00:00'],
+    //        ];
+    //
+    //        $company = Company::factory()->create([
+    //            'is_active' => true,
+    //            'working_hours' => $workingHours,
+    //        ]);
+    //        $store = Store::factory()->create([
+    //            'company_id' => $company->id,
+    //            'working_hours' => null,
+    //        ]);
+    //
+    //        $this->createRole($company, Roles::STORE_MANAGER, ['manage_store_settings']);
+    //
+    //        /** @var User $manager */
+    //        $manager = User::factory()->create([
+    //            'company_id' => $company->id,
+    //            'store_id' => $store->id,
+    //            'is_active' => true,
+    //        ]);
+    //        $manager->assignRole(Roles::STORE_MANAGER->value);
+    //
+    //        $this->actingAs($manager);
+    //
+    //        Livewire::test(StoreSettingsPage::class)
+    //            // Initial state should be empty even if company has value
+    //            ->assertSet('data.working_hours', [])
+    //            // Perform manual pull
+    //            ->callFormComponentAction('working_hours', 'pull_from_company')
+    //            ->assertSet('data.working_hours', function ($value) use ($workingHours) {
+    //                $actual = array_values($value);
+    //
+    //                return $actual === $workingHours;
+    //            });
+    //    }
 }

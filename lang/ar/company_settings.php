@@ -35,4 +35,12 @@ return [
     'preview_label_standard' => 'مثال: مبلغ قياسي',
     'preview_label_small' => 'مثال: فكة بسيطة',
     'preview_label_psychological' => 'مثال: سعر تسويقي',
+    'sections' => [
+        'working_hours' => 'ساعات العمل القياسية',
+        'working_hours_description' => 'تحديد ساعات العمل القياسية للشركة.',
+    ],
+    'fields' => [
+        'from' => 'من',
+        'to' => 'إلى',
+    ],
 ];

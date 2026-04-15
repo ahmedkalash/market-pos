@@ -35,4 +35,12 @@ return [
     'preview_label_standard' => 'Example: Standard Amount',
     'preview_label_small' => 'Example: Small Change',
     'preview_label_psychological' => 'Example: Psychological Pricing',
+    'sections' => [
+        'working_hours' => 'Standard Working Hours',
+        'working_hours_description' => 'Define the standard operating hours for the company.',
+    ],
+    'fields' => [
+        'from' => 'From',
+        'to' => 'To',
+    ],
 ];
