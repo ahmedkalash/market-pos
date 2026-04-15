@@ -58,7 +58,6 @@ return [
     'enable_e_invoicing_q_r_zatca' => 'تفعيل QR الفاتورة الإلكترونية (ZATCA)',
     'zatca_future_proofing_toggle' => 'توليد كود QR متوافق مع متطلبات هيئة الزكاة والدخل (للمستقبل).',
 
-
     'users' => 'المستخدمين',
     'user' => 'مستخدم',
     'stores' => 'المتاجر',

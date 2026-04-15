@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CurrencyPosition;
 use App\Enums\Roles;
+use App\Enums\RoundingRule;
+use App\Filament\Pages\CompanySettingsPage;
 use App\Models\Company;
 use App\Models\Store;
 use App\Models\User;
-use App\Filament\Pages\CompanySettingsPage;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -23,17 +25,17 @@ class CompanySettingsTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
-    private function createRole(Company $company, Roles $role, array $permissions = []): \Spatie\Permission\Models\Role
+    private function createRole(Company $company, Roles $role, array $permissions = []): Role
     {
         setPermissionsTeamId($company->id);
-        
-        $roleModel = \Spatie\Permission\Models\Role::firstOrCreate([
+
+        $roleModel = Role::firstOrCreate([
             'name' => $role->value,
             'company_id' => $company->id,
             'guard_name' => 'web',
         ]);
 
-        if (!empty($permissions)) {
+        if (! empty($permissions)) {
             $roleModel->syncPermissions($permissions);
         }
 
@@ -43,7 +45,7 @@ class CompanySettingsTest extends TestCase
     public function test_only_company_level_users_with_permission_can_access_settings_page()
     {
         $company = Company::factory()->create(['is_active' => true]);
-        
+
         // Create Company Admin role and give it 'update_setting' permission
         $this->createRole($company, Roles::COMPANY_ADMIN, ['update_setting']);
 
@@ -65,7 +67,7 @@ class CompanySettingsTest extends TestCase
     {
         $company = Company::factory()->create(['is_active' => true]);
         $store = Store::factory()->create(['company_id' => $company->id]);
-        
+
         // Create Store Manager role and give it 'update_setting' permission
         $this->createRole($company, Roles::STORE_MANAGER, ['update_setting', 'view_any_setting']);
 
@@ -75,7 +77,7 @@ class CompanySettingsTest extends TestCase
             'store_id' => $store->id, // Store level
             'is_active' => true,
         ]);
-        
+
         $manager->assignRole(Roles::STORE_MANAGER->value);
 
         $this->actingAs($manager);
@@ -88,7 +90,7 @@ class CompanySettingsTest extends TestCase
     public function test_company_admin_can_update_advanced_settings()
     {
         $company = Company::factory()->create(['is_active' => true]);
-        
+
         $this->createRole($company, Roles::COMPANY_ADMIN, ['update_setting']);
 
         /** @var User $admin */
@@ -105,9 +107,9 @@ class CompanySettingsTest extends TestCase
             ->fillForm([
                 'tax_label' => 'Custom VAT',
                 'tax_is_inclusive' => true,
-                'rounding_rule' => \App\Enums\RoundingRule::NEAREST_050->value,
+                'rounding_rule' => RoundingRule::NEAREST_050->value,
                 'currency_symbol' => 'EGP',
-                'currency_position' => \App\Enums\CurrencyPosition::LEFT->value,
+                'currency_position' => CurrencyPosition::LEFT->value,
                 'decimal_precision' => 3,
                 'invoice_prefix' => 'MARKET-',
                 'invoice_next_number' => 500,
@@ -119,7 +121,7 @@ class CompanySettingsTest extends TestCase
 
         $this->assertEquals('Custom VAT', $company->tax_label);
         $this->assertTrue($company->tax_is_inclusive);
-        $this->assertEquals(\App\Enums\RoundingRule::NEAREST_050, $company->rounding_rule);
+        $this->assertEquals(RoundingRule::NEAREST_050, $company->rounding_rule);
         $this->assertEquals(3, $company->decimal_precision);
         $this->assertEquals('MARKET-', $company->invoice_prefix);
         $this->assertEquals(500, $company->invoice_next_number);

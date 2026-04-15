@@ -69,8 +69,9 @@ return [
             'view_plan',
         ],
         'Settings' => [
-            'view_any_setting',
-            'update_setting',
+            'view_any_setting', // company settings
+            'update_setting', // company settings
+            'manage_store_settings',
         ],
         'Dashboard' => [
             'company_dashboard',

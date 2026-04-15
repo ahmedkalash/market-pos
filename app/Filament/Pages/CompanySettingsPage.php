@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\CurrencyPosition;
+use App\Enums\RoundingRule;
 use App\Models\User;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
@@ -208,13 +210,12 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->placeholder('ج.م')
                                             ->live(),
 
-
                                         Select::make('currency_position')
                                             ->label(__('app.currency_symbol_position'))
                                             ->helperText(__('company_settings.currency_position_helper'))
                                             ->options([
-                                                \App\Enums\CurrencyPosition::LEFT->value => __('app.before_amount'),
-                                                \App\Enums\CurrencyPosition::RIGHT->value => __('app.after_amount'),
+                                                CurrencyPosition::LEFT->value => __('app.before_amount'),
+                                                CurrencyPosition::RIGHT->value => __('app.after_amount'),
                                             ])
                                             ->required()
                                             ->live(),
@@ -222,10 +223,10 @@ class CompanySettingsPage extends Page implements HasForms
                                         Select::make('rounding_rule')
                                             ->label(__('app.cash_rounding_rule'))
                                             ->options([
-                                                \App\Enums\RoundingRule::NONE->value => __('app.no_rounding'),
-                                                \App\Enums\RoundingRule::NEAREST_025->value => __('app.nearest_025'),
-                                                \App\Enums\RoundingRule::NEAREST_050->value => __('app.nearest_050'),
-                                                \App\Enums\RoundingRule::NEAREST_100->value => __('app.nearest_100'),
+                                                RoundingRule::NONE->value => __('app.no_rounding'),
+                                                RoundingRule::NEAREST_025->value => __('app.nearest_025'),
+                                                RoundingRule::NEAREST_050->value => __('app.nearest_050'),
+                                                RoundingRule::NEAREST_100->value => __('app.nearest_100'),
                                             ])
                                             ->helperText(__('app.rounding_explanation_egypt'))
                                             ->required()
@@ -302,19 +303,6 @@ class CompanySettingsPage extends Page implements HasForms
                             ->schema([
                                 Section::make()
                                     ->schema([
-                                        TextInput::make('invoice_prefix')
-                                            ->label(__('app.invoice_prefix'))
-                                            ->helperText(__('company_settings.invoice_prefix_helper'))
-                                            ->required()
-                                            ->default('INV-'),
-
-                                        TextInput::make('invoice_next_number')
-                                            ->label(__('app.next_invoice_number'))
-                                            ->helperText(__('company_settings.invoice_next_number_helper'))
-                                            ->numeric()
-                                            ->required()
-                                            ->default(1),
-
                                         Textarea::make('receipt_header')
                                             ->label(__('app.receipt_header'))
                                             ->helperText(__('company_settings.receipt_header_helper'))
@@ -324,6 +312,12 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->label(__('app.receipt_footer'))
                                             ->helperText(__('company_settings.receipt_footer_helper'))
                                             ->rows(3),
+
+                                        TextInput::make('invoice_prefix')
+                                            ->label(__('app.invoice_prefix'))
+                                            ->helperText(__('company_settings.invoice_prefix_helper'))
+                                            ->required()
+                                            ->default('INV-'),
 
                                         Toggle::make('receipt_show_logo')
                                             ->label(__('app.show_logo_on_receipt'))
@@ -339,11 +333,6 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->label(__('app.show_address_on_receipt'))
                                             ->helperText(__('company_settings.show_address_helper'))
                                             ->default(true),
-
-//                                        Toggle::make('enable_zatca_qr')
-//                                            ->label(__('app.enable_e_invoicing_q_r_zatca'))
-//                                            ->helperText(__('app.zatca_future_proofing_toggle'))
-//                                            ->default(false),
                                     ])
                                     ->columns(2),
                             ]),
@@ -358,21 +347,21 @@ class CompanySettingsPage extends Page implements HasForms
     public function formatPreview(float $amount, Get $get): string
     {
         $symbol = $get('currency_symbol') ?? 'EGP';
-        $position = $get('currency_position') ?? \App\Enums\CurrencyPosition::LEFT->value;
+        $position = $get('currency_position') ?? CurrencyPosition::LEFT->value;
         $precision = (int) ($get('decimal_precision') ?? 2);
         $thousandSep = $get('thousand_separator') ?? ',';
         $decimalSep = $get('decimal_separator') ?? '.';
-        $rounding = $get('rounding_rule') ?? \App\Enums\RoundingRule::NONE->value;
+        $rounding = $get('rounding_rule') ?? RoundingRule::NONE->value;
 
         // 1. Apply rounding rule
         switch ($rounding) {
-            case \App\Enums\RoundingRule::NEAREST_025->value:
+            case RoundingRule::NEAREST_025->value:
                 $amount = round($amount * 4) / 4;
                 break;
-            case \App\Enums\RoundingRule::NEAREST_050->value:
+            case RoundingRule::NEAREST_050->value:
                 $amount = round($amount * 2) / 2;
                 break;
-            case \App\Enums\RoundingRule::NEAREST_100->value:
+            case RoundingRule::NEAREST_100->value:
                 $amount = round($amount);
                 break;
         }
@@ -381,7 +370,7 @@ class CompanySettingsPage extends Page implements HasForms
         $formatted = number_format($amount, $precision, $decimalSep, $thousandSep);
 
         // 3. Position
-        return $position === \App\Enums\CurrencyPosition::LEFT->value
+        return $position === CurrencyPosition::LEFT->value
             ? "{$symbol} {$formatted}"
             : "{$formatted} {$symbol}";
     }

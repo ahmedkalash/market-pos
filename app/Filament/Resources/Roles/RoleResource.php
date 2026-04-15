@@ -72,7 +72,7 @@ class RoleResource extends Resource
         $query = parent::getEloquentQuery();
 
         $user = auth()->user();
-        
+
         // Scope by company_id unless the user is a global Super Admin
         if ($user && ! $user->isSuperAdmin()) {
             $query->where('company_id', $user->company_id);

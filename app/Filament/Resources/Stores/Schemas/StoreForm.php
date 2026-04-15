@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Stores\Schemas;
 
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -39,6 +40,10 @@ class StoreForm
                             ->label(__('app.email'))
                             ->email(),
 
+                        TextInput::make('whatsapp_number')
+                            ->label(__('store_settings.fields.whatsapp_number'))
+                            ->tel(),
+
                         Toggle::make('is_active')
                             ->label(__('app.active'))
                             ->default(true),
@@ -62,6 +67,56 @@ class StoreForm
                             ->keyPlaceholder(__('app.eg_saturday'))
                             ->valuePlaceholder(__('app.eg_hours')),
                     ]),
+
+                Section::make(__('store_settings.sections.receipt'))
+                    ->description(__('store_settings.sections.receipt_description'))
+                    ->schema([
+                        Textarea::make('receipt_header')
+                            ->label(__('store_settings.fields.receipt_header'))
+                            ->rows(3),
+
+                        Textarea::make('receipt_footer')
+                            ->label(__('store_settings.fields.receipt_footer'))
+                            ->rows(3),
+
+                        Select::make('receipt_show_logo')
+                            ->label(__('store_settings.fields.show_logo'))
+                            ->options([
+                                '1' => __('store_settings.inheritance.show'),
+                                '0' => __('store_settings.inheritance.hide'),
+                            ])
+                            ->placeholder(__('store_settings.inheritance.inherit', ['value' => '...'])),
+
+                        Select::make('receipt_show_vat_number')
+                            ->label(__('store_settings.fields.show_vat_number'))
+                            ->options([
+                                '1' => __('store_settings.inheritance.show'),
+                                '0' => __('store_settings.inheritance.hide'),
+                            ])
+                            ->placeholder(__('store_settings.inheritance.inherit', ['value' => '...'])),
+
+                        Select::make('receipt_show_address')
+                            ->label(__('store_settings.fields.show_address'))
+                            ->options([
+                                '1' => __('store_settings.inheritance.show'),
+                                '0' => __('store_settings.inheritance.hide'),
+                            ])
+                            ->placeholder(__('store_settings.inheritance.inherit', ['value' => '...'])),
+                    ])
+                    ->columns(2),
+
+                Section::make(__('store_settings.sections.regional'))
+                    ->description(__('store_settings.sections.regional_description'))
+                    ->schema([
+                        TextInput::make('timezone')
+                            ->label(__('store_settings.fields.timezone'))
+                            ->placeholder(__('store_settings.inheritance.inherit', ['value' => config('app.timezone')])),
+
+                        TextInput::make('locale')
+                            ->label(__('store_settings.fields.locale'))
+                            ->placeholder(__('store_settings.inheritance.inherit', ['value' => config('app.locale')])),
+                    ])
+                    ->columns(2),
             ]);
     }
 }

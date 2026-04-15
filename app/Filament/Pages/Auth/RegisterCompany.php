@@ -3,7 +3,9 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Actions\CreateDefaultCompanyRolesAction;
+use App\Enums\CurrencyPosition;
 use App\Enums\Roles;
+use App\Enums\RoundingRule;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Models\User;
@@ -158,10 +160,10 @@ class RegisterCompany extends Register
                 'locale' => app()->getLocale(),
                 'currency' => 'EGP',
                 'currency_symbol' => 'ج.م',
-                'currency_position' => \App\Enums\CurrencyPosition::LEFT->value,
+                'currency_position' => CurrencyPosition::LEFT->value,
                 'tax_is_inclusive' => true,
                 'vat_rate' => 14,
-                'rounding_rule' => \App\Enums\RoundingRule::NONE->value,
+                'rounding_rule' => RoundingRule::NONE->value,
                 'slug' => Str::slug($data['company_name_en']).'-'.rand(10000, 99999),
             ]);
 

@@ -105,7 +105,7 @@ class EditUser extends EditRecord
         // If the 'originalStoreId' differs from the newly saved 'store_id', a structural transfer occurred.
         // It is a massive security risk to leave a transferred user's active sessions open in their old store.
         if ($this->originalStoreId !== $record->store_id) {
-            
+
             // 1. INVALIDATE ACTIVE SESSIONS
             if (config('session.driver') === 'database') {
                 try {

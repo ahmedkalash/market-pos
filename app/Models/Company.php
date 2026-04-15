@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\CurrencyPosition;
+use App\Enums\RoundingRule;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -64,9 +66,9 @@ class Company extends Model implements HasMedia
         return [
             'vat_rate' => 'decimal:2',
             'tax_is_inclusive' => 'boolean',
-            'currency_position' => \App\Enums\CurrencyPosition::class,
+            'currency_position' => CurrencyPosition::class,
             'decimal_precision' => 'integer',
-            'rounding_rule' => \App\Enums\RoundingRule::class,
+            'rounding_rule' => RoundingRule::class,
             'receipt_show_logo' => 'boolean',
             'receipt_show_vat_number' => 'boolean',
             'receipt_show_address' => 'boolean',

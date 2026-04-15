@@ -19,9 +19,10 @@ return [
                 'delete_user',
                 'delete_any_user',
                 'assign_role_to_user',
-
                 // main dashboard '/company'
                 'company_dashboard',
+                // store settings page
+                'manage_store_settings',
             ],
         ],
         Roles::CASHIER->value => [

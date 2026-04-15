@@ -26,9 +26,17 @@ class Store extends Model implements HasMedia
         'name_ar',
         'address',
         'phone',
+        'whatsapp_number',
         'email',
         'working_hours',
         'is_active',
+        'receipt_header',
+        'receipt_footer',
+        'receipt_show_logo',
+        'receipt_show_vat_number',
+        'receipt_show_address',
+        'timezone',
+        'locale',
     ];
 
     /**
@@ -39,6 +47,9 @@ class Store extends Model implements HasMedia
         return [
             'working_hours' => 'array',
             'is_active' => 'boolean',
+            'receipt_show_logo' => 'boolean',
+            'receipt_show_vat_number' => 'boolean',
+            'receipt_show_address' => 'boolean',
         ];
     }
 
@@ -60,5 +71,50 @@ class Store extends Model implements HasMedia
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function getSetting(string $key)
+    {
+        return $this->getAttribute($key);
+    }
+
+    public function getResolvedWhatsappNumber(): ?string
+    {
+        return $this->getSetting('whatsapp_number');
+    }
+
+    public function getResolvedReceiptHeader(): ?string
+    {
+        return $this->getSetting('receipt_header');
+    }
+
+    public function getResolvedReceiptFooter(): ?string
+    {
+        return $this->getSetting('receipt_footer');
+    }
+
+    public function shouldShowLogo(): bool
+    {
+        return (bool) $this->getSetting('receipt_show_logo');
+    }
+
+    public function shouldShowVatNumber(): bool
+    {
+        return (bool) $this->getSetting('receipt_show_vat_number');
+    }
+
+    public function shouldShowAddress(): bool
+    {
+        return (bool) $this->getSetting('receipt_show_address');
+    }
+
+    public function getResolvedTimezone(): string
+    {
+        return $this->getSetting('timezone') ?? config('app.timezone');
+    }
+
+    public function getResolvedLocale(): string
+    {
+        return $this->getSetting('locale') ?? config('app.locale');
     }
 }

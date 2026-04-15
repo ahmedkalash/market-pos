@@ -1,7 +1,7 @@
 <?php
- 
+
 namespace App\Enums;
- 
+
 enum RoundingRule: string
 {
     case NONE = 'none';
