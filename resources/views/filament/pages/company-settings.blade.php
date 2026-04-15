@@ -4,7 +4,7 @@
 
         <div class="mt-6">
             <x-filament::button type="submit">
-                {{ __('Save Settings') }}
+                {{ __('app.save_settings') }}
             </x-filament::button>
         </div>
     </form>
