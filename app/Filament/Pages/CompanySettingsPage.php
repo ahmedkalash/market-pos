@@ -39,12 +39,12 @@ class CompanySettingsPage extends Page implements HasForms
 
     public static function getNavigationLabel(): string
     {
-        return __('app.company_settings');
+        return __('company_settings.title');
     }
 
     public function getTitle(): string
     {
-        return __('app.company_settings');
+        return __('company_settings.title');
     }
 
     /**
@@ -88,35 +88,44 @@ class CompanySettingsPage extends Page implements HasForms
                                     ->schema([
                                         TextInput::make('name_en')
                                             ->label(__('app.company_name_english'))
+                                            ->helperText(__('company_settings.name_en_helper'))
                                             ->required()
                                             ->maxLength(255),
 
                                         TextInput::make('name_ar')
                                             ->label(__('app.company_name_arabic'))
+                                            ->helperText(__('company_settings.name_ar_helper'))
                                             ->maxLength(255),
 
                                         FileUpload::make('logo')
                                             ->label(__('app.logo'))
+                                            ->helperText(__('company_settings.logo_helper'))
                                             ->image()
                                             ->directory('logos')
                                             ->disk('public'),
 
                                         TextInput::make('email')
                                             ->label(__('app.email'))
-                                            ->email(),
+                                            ->helperText(__('company_settings.email_helper'))
+                                            ->email()
+                                            ->nullable(),
 
                                         TextInput::make('phone')
                                             ->label(__('app.phone'))
-                                            ->tel(),
+                                            ->helperText(__('company_settings.phone_helper'))
+                                            ->tel()
+                                            ->nullable(),
 
                                         Textarea::make('address')
                                             ->label(__('app.address'))
+                                            ->helperText(__('company_settings.address_helper'))
                                             ->rows(3),
 
                                         TextInput::make('whatsapp_number')
                                             ->label(__('app.whatsapp_number'))
                                             ->tel()
-                                            ->helperText(__('app.shown_on_receipt_for_customer_support')),
+                                            ->helperText(__('company_settings.whatsapp_number_helper'))
+                                            ->nullable(),
                                     ])
                                     ->columns(2),
                             ]),
@@ -128,22 +137,26 @@ class CompanySettingsPage extends Page implements HasForms
                                     ->schema([
                                         Select::make('timezone')
                                             ->label(__('app.timezone'))
+                                            ->helperText(__('company_settings.timezone_helper'))
                                             ->options(collect(timezone_identifiers_list())->mapWithKeys(fn ($tz) => [$tz => $tz]))
                                             ->searchable()
-                                            ->required(),
+                                            ->disabled(),
 
                                         Select::make('locale')
                                             ->label(__('app.default_language'))
+                                            ->helperText(__('company_settings.locale_helper'))
                                             ->options(__('languages'))
                                             ->required(),
 
                                         Select::make('date_format')
                                             ->label(__('app.date_format'))
+                                            ->helperText(__('company_settings.date_format_helper'))
                                             ->options(__('date_time_formats.date_formats'))
                                             ->required(),
 
                                         Select::make('time_format')
                                             ->label(__('app.time_format'))
+                                            ->helperText(__('company_settings.time_format_helper'))
                                             ->options(__('date_time_formats.time_formats'))
                                             ->required(),
                                     ])
@@ -157,18 +170,21 @@ class CompanySettingsPage extends Page implements HasForms
                                     ->schema([
                                         TextInput::make('currency')
                                             ->label(__('app.currency_code'))
+                                            ->helperText(__('company_settings.currency_helper'))
                                             ->required()
                                             ->placeholder('EGP')
                                             ->disabled(),
 
                                         TextInput::make('currency_symbol')
                                             ->label(__('app.currency_symbol'))
+                                            ->helperText(__('company_settings.currency_symbol_helper'))
                                             ->required()
                                             ->placeholder('ج.م'),
 
 
                                         Select::make('currency_position')
                                             ->label(__('app.currency_symbol_position'))
+                                            ->helperText(__('company_settings.currency_position_helper'))
                                             ->options([
                                                 \App\Enums\CurrencyPosition::LEFT->value => __('app.before_amount'),
                                                 \App\Enums\CurrencyPosition::RIGHT->value => __('app.after_amount'),
@@ -188,16 +204,19 @@ class CompanySettingsPage extends Page implements HasForms
 
                                         TextInput::make('thousand_separator')
                                             ->label(__('app.thousand_separator'))
+                                            ->helperText(__('company_settings.thousand_separator_helper'))
                                             ->maxLength(1)
                                             ->default(','),
 
                                         TextInput::make('decimal_separator')
                                             ->label(__('app.decimal_separator'))
+                                            ->helperText(__('company_settings.decimal_separator_helper'))
                                             ->maxLength(1)
                                             ->default('.'),
 
                                         TextInput::make('decimal_precision')
                                             ->label(__('app.decimal_precision'))
+                                            ->helperText(__('company_settings.decimal_precision_helper'))
                                             ->numeric()
                                             ->minValue(0)
                                             ->maxValue(4)
@@ -219,10 +238,13 @@ class CompanySettingsPage extends Page implements HasForms
 
                                         TextInput::make('vat_number')
                                             ->label(__('app.tax_registration_number_t_r_n'))
-                                            ->maxLength(50),
+                                            ->helperText(__('company_settings.vat_number_helper'))
+                                            ->maxLength(50)
+                                            ->nullable(),
 
                                         TextInput::make('vat_rate')
                                             ->label(__('app.default_v_a_t_rate'))
+                                            ->helperText(__('company_settings.vat_rate_helper'))
                                             ->numeric()
                                             ->minValue(0)
                                             ->maxValue(100)
@@ -244,33 +266,40 @@ class CompanySettingsPage extends Page implements HasForms
                                     ->schema([
                                         TextInput::make('invoice_prefix')
                                             ->label(__('app.invoice_prefix'))
+                                            ->helperText(__('company_settings.invoice_prefix_helper'))
                                             ->required()
                                             ->default('INV-'),
 
                                         TextInput::make('invoice_next_number')
                                             ->label(__('app.next_invoice_number'))
+                                            ->helperText(__('company_settings.invoice_next_number_helper'))
                                             ->numeric()
                                             ->required()
                                             ->default(1),
 
                                         Textarea::make('receipt_header')
                                             ->label(__('app.receipt_header'))
+                                            ->helperText(__('company_settings.receipt_header_helper'))
                                             ->rows(3),
 
                                         Textarea::make('receipt_footer')
                                             ->label(__('app.receipt_footer'))
+                                            ->helperText(__('company_settings.receipt_footer_helper'))
                                             ->rows(3),
 
                                         Toggle::make('receipt_show_logo')
                                             ->label(__('app.show_logo_on_receipt'))
+                                            ->helperText(__('company_settings.show_logo_helper'))
                                             ->default(true),
 
                                         Toggle::make('receipt_show_vat_number')
                                             ->label(__('app.show_tax_number_on_receipt'))
+                                            ->helperText(__('company_settings.show_tax_number_helper'))
                                             ->default(true),
 
                                         Toggle::make('receipt_show_address')
                                             ->label(__('app.show_address_on_receipt'))
+                                            ->helperText(__('company_settings.show_address_helper'))
                                             ->default(true),
 
 //                                        Toggle::make('enable_zatca_qr')
@@ -299,7 +328,7 @@ class CompanySettingsPage extends Page implements HasForms
             $user->company->update($data);
 
             Notification::make()
-                ->title(__('app.settings_saved_successfully'))
+                ->title(__('company_settings.settings_saved_successfully'))
                 ->success()
                 ->send();
         }

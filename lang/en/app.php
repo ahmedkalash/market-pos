@@ -58,8 +58,7 @@ return [
     'enable_e_invoicing_q_r_zatca' => 'Enable E-Invoicing QR (ZATCA)',
     'zatca_future_proofing_toggle' => 'Compliant QR code generation for Saudi/Regional requirements.',
 
-    'save_settings' => 'Save Settings',
-    'settings_saved_successfully' => 'Settings saved successfully',
+
     'users' => 'Users',
     'user' => 'User',
     'stores' => 'Stores',
