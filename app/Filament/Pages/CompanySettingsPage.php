@@ -11,11 +11,13 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
@@ -166,6 +168,30 @@ class CompanySettingsPage extends Page implements HasForms
                         // tab 3: Financials
                         Tab::make(__('app.financials'))
                             ->schema([
+                                Section::make(__('company_settings.financial_preview_title'))
+                                    ->description(__('company_settings.financial_preview_footer'))
+                                    ->schema([
+                                        TextEntry::make('standard_preview')
+                                            ->label(__('company_settings.preview_label_standard'))
+                                            ->state(fn (Get $get) => $this->formatPreview(1234.5678, $get))
+                                            ->badge()
+                                            ->color('info'),
+
+                                        TextEntry::make('small_preview')
+                                            ->label(__('company_settings.preview_label_small'))
+                                            ->state(fn (Get $get) => $this->formatPreview(5.31, $get))
+                                            ->badge()
+                                            ->color('info'),
+
+                                        TextEntry::make('psychological_preview')
+                                            ->label(__('company_settings.preview_label_psychological'))
+                                            ->state(fn (Get $get) => $this->formatPreview(0.99, $get))
+                                            ->badge()
+                                            ->color('info'),
+                                    ])
+                                    ->columns(3)
+                                    ->compact(),
+
                                 Section::make()
                                     ->schema([
                                         TextInput::make('currency')
@@ -179,7 +205,8 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->label(__('app.currency_symbol'))
                                             ->helperText(__('company_settings.currency_symbol_helper'))
                                             ->required()
-                                            ->placeholder('ج.م'),
+                                            ->placeholder('ج.م')
+                                            ->live(),
 
 
                                         Select::make('currency_position')
@@ -189,7 +216,8 @@ class CompanySettingsPage extends Page implements HasForms
                                                 \App\Enums\CurrencyPosition::LEFT->value => __('app.before_amount'),
                                                 \App\Enums\CurrencyPosition::RIGHT->value => __('app.after_amount'),
                                             ])
-                                            ->required(),
+                                            ->required()
+                                            ->live(),
 
                                         Select::make('rounding_rule')
                                             ->label(__('app.cash_rounding_rule'))
@@ -200,19 +228,28 @@ class CompanySettingsPage extends Page implements HasForms
                                                 \App\Enums\RoundingRule::NEAREST_100->value => __('app.nearest_100'),
                                             ])
                                             ->helperText(__('app.rounding_explanation_egypt'))
-                                            ->required(),
+                                            ->required()
+                                            ->live(),
 
-                                        TextInput::make('thousand_separator')
+                                        Select::make('thousand_separator')
                                             ->label(__('app.thousand_separator'))
                                             ->helperText(__('company_settings.thousand_separator_helper'))
-                                            ->maxLength(1)
-                                            ->default(','),
+                                            ->options([
+                                                ',' => ',',
+                                                '.' => '.',
+                                            ])
+                                            ->default(',')
+                                            ->live(),
 
-                                        TextInput::make('decimal_separator')
+                                        Select::make('decimal_separator')
                                             ->label(__('app.decimal_separator'))
                                             ->helperText(__('company_settings.decimal_separator_helper'))
-                                            ->maxLength(1)
-                                            ->default('.'),
+                                            ->options([
+                                                ',' => ',',
+                                                '.' => '.',
+                                            ])
+                                            ->default('.')
+                                            ->live(),
 
                                         TextInput::make('decimal_precision')
                                             ->label(__('app.decimal_precision'))
@@ -220,7 +257,8 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->numeric()
                                             ->minValue(0)
                                             ->maxValue(4)
-                                            ->default(2),
+                                            ->default(2)
+                                            ->live(),
                                     ])
                                     ->columns(2),
                             ]),
@@ -312,6 +350,40 @@ class CompanySettingsPage extends Page implements HasForms
                     ]),
             ])
             ->statePath('data');
+    }
+
+    /**
+     * Format a preview amount based on the current form state.
+     */
+    public function formatPreview(float $amount, Get $get): string
+    {
+        $symbol = $get('currency_symbol') ?? 'EGP';
+        $position = $get('currency_position') ?? \App\Enums\CurrencyPosition::LEFT->value;
+        $precision = (int) ($get('decimal_precision') ?? 2);
+        $thousandSep = $get('thousand_separator') ?? ',';
+        $decimalSep = $get('decimal_separator') ?? '.';
+        $rounding = $get('rounding_rule') ?? \App\Enums\RoundingRule::NONE->value;
+
+        // 1. Apply rounding rule
+        switch ($rounding) {
+            case \App\Enums\RoundingRule::NEAREST_025->value:
+                $amount = round($amount * 4) / 4;
+                break;
+            case \App\Enums\RoundingRule::NEAREST_050->value:
+                $amount = round($amount * 2) / 2;
+                break;
+            case \App\Enums\RoundingRule::NEAREST_100->value:
+                $amount = round($amount);
+                break;
+        }
+
+        // 2. Format
+        $formatted = number_format($amount, $precision, $decimalSep, $thousandSep);
+
+        // 3. Position
+        return $position === \App\Enums\CurrencyPosition::LEFT->value
+            ? "{$symbol} {$formatted}"
+            : "{$formatted} {$symbol}";
     }
 
     /**

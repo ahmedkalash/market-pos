@@ -9,6 +9,7 @@ return [
     'logo_helper' => 'Upload your business logo. Recommended size: 512x512px. Supported formats: PNG, JPG.',
     'email_helper' => 'The primary business email for administrative communications.',
     'phone_helper' => 'The main contact number for your company.',
+    'whatsapp_number_helper' => 'The primary WhatsApp number for customer communication and automated notifications.',
     'address_helper' => 'The physical address of your business as it should appear on receipts.',
     'timezone_helper' => 'Set the local time for your region. All transactions will be timestamped using this timezone.',
     'locale_helper' => 'Choose the primary language for the administration dashboard and default receipt templates.',
@@ -29,4 +30,9 @@ return [
     'show_logo_helper' => 'Toggle to display your company logo on printed and digital receipts.',
     'show_tax_number_helper' => 'Toggle to display your tax registration number on receipts.',
     'show_address_helper' => 'Toggle to display your business address on receipts.',
+    'financial_preview_title' => 'Financial Representation Preview',
+    'financial_preview_footer' => 'This preview shows how prices are calculated and displayed across the system based on your current settings.',
+    'preview_label_standard' => 'Example: Standard Amount',
+    'preview_label_small' => 'Example: Small Change',
+    'preview_label_psychological' => 'Example: Psychological Pricing',
 ];
