@@ -84,6 +84,29 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
+    'full_locale' => env('APP_FULL_LOCALE', 'ar_EG'),
+
+    'supported_locales' => [
+        'ar_EG' => [
+            'name' => 'العربية (مصر)',
+            'script' => 'Latn',
+            'dir' => 'rtl',
+            'native' => 'العربية',
+            'regional' => 'ar_EG',
+            'language' => 'ar',
+            'region' => 'EG',
+        ],
+        'en_US' => [
+            'name' => 'English (United States)',
+            'script' => 'Latn',
+            'dir' => 'ltr',
+            'native' => 'English',
+            'regional' => 'en_US',
+            'language' => 'en',
+            'region' => 'US',
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\User;
+use BezhanSalleh\LanguageSwitch\Enums\TriggerStyle;
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -32,6 +35,13 @@ class AppServiceProvider extends ServiceProvider
         Livewire::addPersistentMiddleware([
             ApplyTenantScopes::class,
         ]);
+
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
+            $switch
+                ->locales(['en', 'ar'])
+                ->nativeLabel()
+                ->trigger(TriggerStyle::IconLabel, icon: Heroicon::Language);
+        });
     }
 
     private function implicitlyGrantSuperAdminAllPermissions(): void
