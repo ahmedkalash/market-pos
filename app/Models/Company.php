@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CurrencyPosition;
 use App\Enums\RoundingRule;
+use App\Models\Concerns\HandlesFileStorage;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Company extends Model implements HasMedia
 {
     /** @use HasFactory<CompanyFactory> */
-    use HasFactory, InteractsWithMedia, SoftDeletes;
+    use HandlesFileStorage, HasFactory, InteractsWithMedia, SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    protected array $fileAttributes = ['logo'];
 
     /**
      * @var list<string>
