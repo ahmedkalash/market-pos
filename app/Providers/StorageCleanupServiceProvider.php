@@ -17,9 +17,10 @@ class StorageCleanupServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // 1. Handle Attribute-Based File Cleanup (Standard FileUpload)
+        // Optimized with early bails for non-file-bearing models.
         Event::listen('eloquent.deleting: *', function (string $event, array $models) {
             foreach ($models as $model) {
-                if ($this->shouldCleanupOnDeletion($model)) {
+                if ($this->shouldCleanup($model) && $this->shouldCleanupOnDeletion($model)) {
                     $this->cleanupAttributeFiles($model);
                 }
             }
@@ -27,7 +28,9 @@ class StorageCleanupServiceProvider extends ServiceProvider
 
         Event::listen('eloquent.updating: *', function (string $event, array $models) {
             foreach ($models as $model) {
-                $this->cleanupAttributeFilesOnUpdate($model);
+                if ($this->shouldCleanup($model)) {
+                    $this->cleanupAttributeFilesOnUpdate($model);
+                }
             }
         });
 
@@ -47,14 +50,25 @@ class StorageCleanupServiceProvider extends ServiceProvider
         // These catch manual removals or updates directly on the Media record.
 
         // Handle physical file cleanup when a Media record is manually updated to a new file.
+        // Also purges associated conversions to prevent stale artifacts.
         Event::listen('eloquent.updating: Spatie\MediaLibrary\MediaCollections\Models\Media', function (Media $media) {
             if ($media->isDirty('file_name') || $media->isDirty('disk')) {
                 $oldFileName = $media->getOriginal('file_name');
                 $oldDisk = $media->getOriginal('disk');
-                $directory = $media->id;
+                $directory = (string) $media->id;
 
-                if ($oldFileName && Storage::disk($oldDisk)->exists($directory.'/'.$oldFileName)) {
-                    Storage::disk($oldDisk)->delete($directory.'/'.$oldFileName);
+                $storage = Storage::disk($oldDisk);
+
+                // 1. Delete the main old file
+                if ($oldFileName && $storage->exists($directory.'/'.$oldFileName)) {
+                    $storage->delete($directory.'/'.$oldFileName);
+                }
+
+                // 2. Deep purge the conversions directory
+                // Spatie stores conversions in a subfolder. If the main file changed,
+                // old conversions are definitely stale.
+                if ($storage->exists($directory.'/conversions')) {
+                    $storage->deleteDirectory($directory.'/conversions');
                 }
             }
         });
@@ -116,6 +130,15 @@ class StorageCleanupServiceProvider extends ServiceProvider
                 Storage::disk($disk)->deleteDirectory($directory);
             }
         }
+    }
+
+    /**
+     * Determine if the model should be considered for cleanup.
+     * Prevents unnecessary checks on models that don't have file attributes.
+     */
+    protected function shouldCleanup(Model $model): bool
+    {
+        return method_exists($model, 'getFileAttributes');
     }
 
     /**
