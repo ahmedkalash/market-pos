@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Stores;
 use App\Filament\Resources\Stores\Pages\CreateStore;
 use App\Filament\Resources\Stores\Pages\EditStore;
 use App\Filament\Resources\Stores\Pages\ListStores;
+use App\Filament\Resources\Stores\RelationManagers\UsersRelationManager;
 use App\Filament\Resources\Stores\Schemas\StoreForm;
 use App\Filament\Resources\Stores\Tables\StoresTable;
 use App\Models\Store;
@@ -34,6 +35,36 @@ class StoreResource extends Resource
         return __('app.stores');
     }
 
+    public static function canView($record): bool
+    {
+        return auth()->user()->can('view_store');
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->can('view_any_store');
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()->can('create_store');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()->can('update_store');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()->can('delete_store');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()->can('delete_any_store');
+    }
+
     public static function getModelLabel(): string
     {
         return __('app.store');
@@ -57,7 +88,7 @@ class StoreResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            UsersRelationManager::class,
         ];
     }
 

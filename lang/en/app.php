@@ -60,6 +60,7 @@ return [
 
     'users' => 'Users',
     'user' => 'User',
+    'manager' => 'Manager',
     'stores' => 'Stores',
     'store' => 'Store',
     'store_management' => 'Store Management',
@@ -68,6 +69,10 @@ return [
     'suspended_msg' => 'Your company account has been suspended. Please contact support.',
     'expired_msg' => 'Your subscription has expired. Please renew to continue.',
     'name' => 'Name',
+    'name_en' => 'Name (English)',
+    'name_ar' => 'Name (Arabic)',
+    'managers' => 'Managers',
+    'none' => 'None',
     'role' => 'Role',
     'active' => 'Active',
     'created' => 'Created',
@@ -88,6 +93,7 @@ return [
     'company_name_ar' => 'Company Name (Arabic)',
     'company_name_en' => 'Company Name (English)',
     'company_phone' => 'Company Phone',
+    'store_images' => 'Store Images',
     'admin_account' => 'Admin Account',
     'login_link_before' => 'Already have an account?',
     'login_link' => 'Login here',
@@ -145,4 +151,5 @@ return [
         'thursday' => 'Thursday',
         'friday' => 'Friday',
     ],
+    'image' => 'Image',
 ];

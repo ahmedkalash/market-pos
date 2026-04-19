@@ -55,14 +55,16 @@ class Store extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('images');
+        $this->addMediaCollection('images')
+            ->useDisk('public');
     }
 
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
             ->width(300)
-            ->height(300);
+            ->height(300)
+            ->nonQueued();
     }
 
     /**

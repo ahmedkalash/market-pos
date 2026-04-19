@@ -55,12 +55,15 @@ return [
         'pull_from_company' => 'Pull from Company',
         'pull_tooltip' => 'Click to fetch and edit the current company value.',
         'add_day' => 'Add Working Day',
+        'add_user_to_store' => 'Add User to Store',
+        'dissociate_user_from_store' => 'Dissociate from Store',
     ],
     'settings_updated_successfully' => 'Settings updated successfully.',
     'error_updating_settings' => 'Error updating settings.',
     'info' => 'Notes',
     'notifications' => [
-        'pulled_from_company' => 'Working hours pulled from company successfully.',
-        'no_company_hours' => 'No company working hours found.',
+        'pulled_from_company' => 'Value pulled from company successfully.',
+        'no_company_setting' => 'No company-level value found for this setting.',
     ],
+    'users'=> 'Users',
 ];

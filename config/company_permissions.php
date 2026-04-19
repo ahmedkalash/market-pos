@@ -52,6 +52,7 @@ return [
         ],
 
         'Stores' => [
+            'view_any',
             'view_any_store',
             'view_store',
             'create_store',

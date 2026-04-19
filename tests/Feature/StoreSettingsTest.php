@@ -126,13 +126,13 @@ class StoreSettingsTest extends TestCase
                 'working_hours' => [
                     [
                         'day' => 'monday',
-                        'from' => '08:00:00',
-                        'to' => '17:00:00',
+                        'from' => '08:00',
+                        'to' => '17:00',
                     ],
                     [
                         'day' => 'tuesday',
-                        'from' => '09:00:00',
-                        'to' => '18:00:00',
+                        'from' => '09:00',
+                        'to' => '18:00',
                     ],
                 ],
             ])
@@ -146,8 +146,8 @@ class StoreSettingsTest extends TestCase
         $this->assertFalse($store->receipt_show_logo);
         $this->assertIsArray($store->working_hours);
         $this->assertEquals('monday', $store->working_hours[0]['day']);
-        $this->assertEquals('08:00:00', $store->working_hours[0]['from']);
-        $this->assertEquals('17:00:00', $store->working_hours[0]['to']);
+        $this->assertEquals('08:00', $store->working_hours[0]['from']);
+        $this->assertEquals('17:00', $store->working_hours[0]['to']);
     }
 
     public function test_store_manager_can_manually_pull_from_company()
@@ -174,46 +174,46 @@ class StoreSettingsTest extends TestCase
             // Initial state should be empty/null even if company has value
             ->assertFormSet(['whatsapp_number' => null])
             // Perform manual pull
-            ->callFormComponentAction('whatsapp_number', 'pull_whatsapp')
+            ->callFormComponentAction('whatsapp_number', 'pull_whatsapp_number')
             ->assertFormSet(['whatsapp_number' => 'COMPANY-WA']);
     }
 
-    //    public function test_store_manager_can_manually_pull_working_hours_from_company()
-    //    {
-    //        $workingHours = [
-    //            ['day' => 'saturday', 'from' => '10:00:00', 'to' => '23:00:00'],
-    //        ];
-    //
-    //        $company = Company::factory()->create([
-    //            'is_active' => true,
-    //            'working_hours' => $workingHours,
-    //        ]);
-    //        $store = Store::factory()->create([
-    //            'company_id' => $company->id,
-    //            'working_hours' => null,
-    //        ]);
-    //
-    //        $this->createRole($company, Roles::STORE_MANAGER, ['manage_store_settings']);
-    //
-    //        /** @var User $manager */
-    //        $manager = User::factory()->create([
-    //            'company_id' => $company->id,
-    //            'store_id' => $store->id,
-    //            'is_active' => true,
-    //        ]);
-    //        $manager->assignRole(Roles::STORE_MANAGER->value);
-    //
-    //        $this->actingAs($manager);
-    //
-    //        Livewire::test(StoreSettingsPage::class)
-    //            // Initial state should be empty even if company has value
-    //            ->assertSet('data.working_hours', [])
-    //            // Perform manual pull
-    //            ->callFormComponentAction('working_hours', 'pull_from_company')
-    //            ->assertSet('data.working_hours', function ($value) use ($workingHours) {
-    //                $actual = array_values($value);
-    //
-    //                return $actual === $workingHours;
-    //            });
-    //    }
+    public function test_store_manager_can_manually_pull_working_hours_from_company()
+    {
+        $workingHours = [
+            ['day' => 'saturday', 'from' => '10:00', 'to' => '23:00'],
+        ];
+
+        $company = Company::factory()->create([
+            'is_active' => true,
+            'working_hours' => $workingHours,
+        ]);
+        $store = Store::factory()->create([
+            'company_id' => $company->id,
+            'working_hours' => null,
+        ]);
+
+        $this->createRole($company, Roles::STORE_MANAGER, ['manage_store_settings']);
+
+        /** @var User $manager */
+        $manager = User::factory()->create([
+            'company_id' => $company->id,
+            'store_id' => $store->id,
+            'is_active' => true,
+        ]);
+        $manager->assignRole(Roles::STORE_MANAGER->value);
+
+        $this->actingAs($manager);
+
+        Livewire::test(StoreSettingsPage::class)
+            // Initial state should be empty even if company has value
+            ->assertSet('data.working_hours', [])
+            // Perform manual pull
+            ->callFormComponentAction('working_hours', 'pull_from_company')
+            ->assertSet('data.working_hours', function ($value) use ($workingHours) {
+                $actual = array_values($value);
+
+                return $actual === $workingHours;
+            });
+    }
 }

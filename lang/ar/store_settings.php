@@ -55,12 +55,16 @@ return [
         'pull_from_company' => 'سحب من الشركة',
         'pull_tooltip' => 'انقر لجلب وتعديل القيمة الحالية للشركة.',
         'add_day' => 'إضافة يوم عمل',
+        'add_user_to_store' => 'إضافة مستخدم الي هذا المتجر',
+        'dissociate_user_from_store' => 'إزالة من هذا المتجر',
+
     ],
     'settings_updated_successfully' => 'تم تحديث الإعدادات بنجاح.',
     'error_updating_settings' => 'حدث خطأ أثناء تحديث الإعدادات.',
     'info' => 'ملاحظات',
     'notifications' => [
-        'pulled_from_company' => 'تم سحب ساعات العمل من الشركة بنجاح.',
-        'no_company_hours' => 'لم يتم العثور على ساعات عمل خاصة بالشركة.',
+        'pulled_from_company' => 'تم جلب القيمة من الشركة بنجاح.',
+        'no_company_setting' => 'لم يتم العثور على قيمة لهذا الإعداد على مستوى الشركة.',
     ],
+    'users'=> 'المستخدمين',
 ];
