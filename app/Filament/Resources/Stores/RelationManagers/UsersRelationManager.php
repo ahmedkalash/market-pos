@@ -41,6 +41,7 @@ class UsersRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->recordActionsColumnLabel(__('app.actions'))
             ->recordTitleAttribute('name')
             ->recordUrl(fn (User $record): string => UserResource::getUrl('edit', ['record' => $record]))
             ->columns([
@@ -93,7 +94,7 @@ class UsersRelationManager extends RelationManager
                         ->visible(fn () => auth()->user()->can('update_store'))
                         ->label(__('store_settings.actions.dissociate_user_from_store')),
 
-                ])->badge()
+                ])
 
             ])
             ->toolbarActions([

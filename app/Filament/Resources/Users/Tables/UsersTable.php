@@ -143,7 +143,7 @@ class UsersTable
                     ->tooltip(__('app.actions')),
 
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->before(function (Collection $records, DeleteBulkAction $action) use ($authUser) {
