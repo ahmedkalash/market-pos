@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\User;
+use App\Observers\UserObserver;
 use BezhanSalleh\LanguageSwitch\Enums\TriggerStyle;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Filament\Support\Icons\Heroicon;
@@ -28,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        User::observe(UserObserver::class);
+
         $this->implicitlyGrantSuperAdminAllPermissions();
 
         $this->registerDynamicPermissionsGate();

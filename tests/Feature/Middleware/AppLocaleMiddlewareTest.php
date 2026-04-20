@@ -28,17 +28,27 @@ class AppLocaleMiddlewareTest extends TestCase
         $response->assertSee('ar');
     }
 
-    public function test_it_sets_app_locale_from_header(): void
+    public function test_it_sets_app_locale_from_custom_header(): void
     {
-        Session::forget('locale');
+        Session::forget(['locale', 'language']);
 
         $response = $this->get('/test-locale', [
-            'Accept-Language' => 'ar-EG',
+            'App-Language' => 'en-US',
         ]);
 
         $response->assertStatus(200);
+        $this->assertEquals('en', app()->getLocale());
+    }
+
+    public function test_it_ignores_accept_language_header(): void
+    {
+        Session::forget(['locale', 'language']);
+
+        $response = $this->get('/test-locale', [
+            'Accept-Language' => 'en-US',
+        ]);
+
         $this->assertEquals('ar', app()->getLocale());
-        $this->assertEquals('ar_EG', Session::get('locale'));
     }
 
     public function test_it_handles_invalid_session_locale_by_falling_back(): void

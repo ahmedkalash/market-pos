@@ -67,14 +67,10 @@ class LocaleService
      */
     private function resolveLocale(Request $request): string
     {
-        if ($request->hasHeader('App-Language')) {
-            $candidate = $request->header('App-Language');
-        } elseif ($request->hasSession() && Session::has('language')) {
+        if ($request->hasSession() && Session::has('language')) {
             $candidate = Session::get('language');
         } elseif ($request->hasSession() && Session::has('locale')) {
             $candidate = Session::get('locale');
-        } elseif ($request->hasHeader('Accept-Language')) {
-            $candidate = $this->parseAcceptLanguage($request->header('Accept-Language'));
         } else {
             $candidate = config('app.locale', 'ar');
         }

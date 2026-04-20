@@ -6,21 +6,12 @@ use App\Enums\Roles;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\User;
 use Filament\Actions\DeleteAction;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class EditUser extends EditRecord
 {
     protected static string $resource = UserResource::class;
-
-    /**
-     * Stores the user's original store_id before any changes are saved.
-     * We need this to detect if a "store transfer" occurred, triggering session invalidation.
-     */
-    public ?int $originalStoreId = null;
 
     protected function getHeaderActions(): array
     {
@@ -72,16 +63,6 @@ class EditUser extends EditRecord
     }
 
     /**
-     * Hook that runs before the save transaction begins.
-     * We capture the original store_id here because once the record saves,
-     * $record->store_id will reflect the new value.
-     */
-    protected function beforeSave(): void
-    {
-        $this->originalStoreId = $this->getRecord()->store_id;
-    }
-
-    /**
      * Hook that runs immediately after the updated User record is written to the database.
      * Used exclusively to handle manual Role synchronization and security actions (transfers).
      */
@@ -99,34 +80,6 @@ class EditUser extends EditRecord
             // automatically scopes Spatie to their company context behind the scenes.
             // Ergo, `setPermissionsTeamId` is redundant and removed. We confidently sync directly.
             $record->syncRoles([$role]);
-        }
-
-        // DETECT STORE TRANSFER & ENFORCE SECURITY
-        // If the 'originalStoreId' differs from the newly saved 'store_id', a structural transfer occurred.
-        // It is a massive security risk to leave a transferred user's active sessions open in their old store.
-        if ($this->originalStoreId !== $record->store_id) {
-
-            // 1. INVALIDATE ACTIVE SESSIONS
-            if (config('session.driver') === 'database') {
-                try {
-                    // Wipe this user off all active devices instantly
-                    DB::table('sessions')
-                        ->where('user_id', $record->id)
-                        ->delete();
-                } catch (\Exception $e) {
-                    // Silent fail but log it for DevOps tracking
-                    Log::error('Failed to revoke session on transfer: '.$e->getMessage());
-                }
-            }
-
-            // 2. NOTIFY THE USER
-            // Using Filament's database notifications to leave a papertrail that they were transferred.
-            // On their next login (since sessions were killed), they will see this alert.
-            Notification::make()
-                ->title(__('app.store_assignment_changed'))
-                ->body(__('app.store_assignment_changed_body'))
-                ->warning()
-                ->sendToDatabase($record);
         }
     }
 }
