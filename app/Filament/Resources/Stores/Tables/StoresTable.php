@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Stores\Tables;
 
+use App\Enums\Roles;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -18,6 +20,7 @@ class StoresTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->recordActionsColumnLabel(__('app.actions'))
             ->columns([
                 SpatieMediaLibraryImageColumn::make('images')
                     ->label(__('app.image'))
@@ -27,38 +30,51 @@ class StoresTable
                     ->stacked(),
 
                 TextColumn::make('name_en')
-                    ->label(__('Name (English)'))
+                    ->label(__('app.name_en'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('name_ar')
-                    ->label(__('Name (Arabic)'))
+                    ->label(__('app.name_ar'))
                     ->searchable(),
+
+                TextColumn::make('managers')
+                    ->label(__('app.managers'))
+                    ->state(fn ($record) => $record->users()
+                        ->role(Roles::STORE_MANAGER->value)
+                        ->pluck('name')
+                        ->toArray())
+                    ->badge()
+                    ->listWithLineBreaks()
+                    ->color('info'),
 
                 TextColumn::make('phone')
                     ->label(__('app.phone'))
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable()
+                    ->tooltip(__('app.click_to_copy_item')),
 
                 IconColumn::make('is_active')
                     ->label(__('app.active'))
-                    ->boolean(),
-
-                TextColumn::make('users_count')
-                    ->label(__('app.users'))
-                    ->counts('users')
-                    ->badge(),
+                    ->boolean()
+                    ->width('80px'),
 
                 TextColumn::make('created_at')
                     ->label(__('app.created'))
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->dateTime('j - M - Y')
+                    ->sortable(),
             ])
             ->filters([
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
+                ActionGroup::make([
+                       //                DeleteAction::make(),
+                    EditAction::make(),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->label(null)
+                    ->tooltip(__('app.actions')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
