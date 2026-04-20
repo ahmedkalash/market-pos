@@ -22,7 +22,6 @@ return new class extends Migration
             $table->json('working_hours')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
 
             $table->index('company_id');
         });

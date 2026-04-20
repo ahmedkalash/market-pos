@@ -7,7 +7,6 @@ use Database\Factories\StoreFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -15,7 +14,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Store extends Model implements HasMedia
 {
     /** @use HasFactory<StoreFactory> */
-    use BelongsToCompany, HasFactory, InteractsWithMedia, SoftDeletes;
+    use BelongsToCompany, HasFactory, InteractsWithMedia;
 
     /**
      * @var list<string>
