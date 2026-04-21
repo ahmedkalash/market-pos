@@ -52,7 +52,7 @@ return [
         ],
 
         'Stores' => [
-            'view_any',
+            'view_any_store',
             'view_any_store',
             'view_store',
             'create_store',
@@ -76,6 +76,14 @@ return [
         ],
         'Dashboard' => [
             'company_dashboard',
+        ],
+        'Catalog' => [
+            'view_any_product_category',
+            'view_product_category',
+            'create_product_category',
+            'update_product_category',
+            'delete_product_category',
+            'delete_any_product_category',
         ],
     ],
 ];

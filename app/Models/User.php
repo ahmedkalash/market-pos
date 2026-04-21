@@ -68,7 +68,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
     {
         $this->addMediaConversion('thumb')
             ->width(150)
-            ->height(150);
+            ->height(150)
+            ->nonQueued();
     }
 
     public function getFilamentAvatarUrl(): ?string

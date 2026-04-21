@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\AppLocale;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\User;
 use App\Observers\UserObserver;
@@ -37,10 +38,12 @@ class AppServiceProvider extends ServiceProvider
 
         Livewire::addPersistentMiddleware([
             ApplyTenantScopes::class,
+            AppLocale::class,
         ]);
 
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
             $switch
+                ->userPreferredLocale(config('app.locale'))
                 ->locales(['en', 'ar'])
                 ->nativeLabel()
                 ->trigger(TriggerStyle::IconLabel, icon: Heroicon::Language);

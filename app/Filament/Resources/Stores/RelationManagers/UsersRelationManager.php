@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Stores\RelationManagers;
 
 use App\Enums\Roles;
+use App\Filament\Resources\Users\UserResource;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\AssociateAction;
@@ -10,8 +12,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DissociateAction;
 use Filament\Actions\DissociateBulkAction;
-use App\Filament\Resources\Users\UserResource;
-use App\Events\UserTransferred;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -20,19 +20,12 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 use Spatie\Permission\Models\Role;
 
 class UsersRelationManager extends RelationManager
 {
     protected static string $relationship = 'users';
 
-
-    /**
-     * @param Model $ownerRecord
-     * @param string $pageClass
-     * @return string
-     */
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('store_settings.users');
@@ -93,8 +86,7 @@ class UsersRelationManager extends RelationManager
                     DissociateAction::make()
                         ->visible(fn () => auth()->user()->can('update_store'))
                         ->label(__('store_settings.actions.dissociate_user_from_store')),
-
-                ])
+                ]),
 
             ])
             ->toolbarActions([

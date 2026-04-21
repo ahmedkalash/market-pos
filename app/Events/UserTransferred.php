@@ -19,6 +19,5 @@ class UserTransferred
         public User $user,
         public ?Store $oldStore,
         public ?Store $newStore,
-    ) {
-    }
+    ) {}
 }

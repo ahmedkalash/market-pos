@@ -96,7 +96,8 @@ class Company extends Model implements HasMedia
     {
         $this->addMediaConversion('thumb')
             ->width(200)
-            ->height(200);
+            ->height(200)
+            ->nonQueued();
     }
 
     /**

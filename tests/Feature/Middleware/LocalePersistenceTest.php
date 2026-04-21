@@ -30,7 +30,7 @@ class LocalePersistenceTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        
+
         // Final expectation: getLocale() should be 'ar' because 'ar_EG' is the fallback and it's truncated to 'ar'
         $this->assertEquals('ar', app()->getLocale());
     }

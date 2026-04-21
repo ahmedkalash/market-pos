@@ -34,4 +34,11 @@ return [
 
     'company_dashboard' => 'View Dashboard',
     'assign_role_to_user' => 'Assign Role To User',
+
+    'view_any_product_category' => 'View All Product Categories',
+    'view_product_category' => 'View Product Category',
+    'create_product_category' => 'Create Product Category',
+    'update_product_category' => 'Update Product Category',
+    'delete_product_category' => 'Delete Product Category',
+    'delete_any_product_category' => 'Delete Multiple Product Categories',
 ];

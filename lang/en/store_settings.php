@@ -65,5 +65,5 @@ return [
         'pulled_from_company' => 'Value pulled from company successfully.',
         'no_company_setting' => 'No company-level value found for this setting.',
     ],
-    'users'=> 'Users',
+    'users' => 'Users',
 ];

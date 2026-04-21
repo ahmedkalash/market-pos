@@ -34,4 +34,11 @@ return [
 
     'company_dashboard' => 'لوحة معلومات الشركة',
     'assign_role_to_user' => 'تعيين دور للمستخدم',
+
+    'view_any_product_category' => 'عرض كل فئات المنتجات',
+    'view_product_category' => 'عرض فئة المنتج',
+    'create_product_category' => 'إضافة فئة منتج',
+    'update_product_category' => 'تعديل فئة منتج',
+    'delete_product_category' => 'حذف فئة منتج',
+    'delete_any_product_category' => 'حذف عدة فئات منتجات',
 ];
