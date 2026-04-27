@@ -8,6 +8,8 @@ use App\Enums\Roles;
 use App\Enums\RoundingRule;
 use App\Models\Company;
 use App\Models\Plan;
+use App\Models\TaxClass;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Services\OtpService;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
@@ -162,13 +164,32 @@ class RegisterCompany extends Register
                 'currency_symbol' => 'ج.م',
                 'currency_position' => CurrencyPosition::LEFT->value,
                 'tax_is_inclusive' => true,
-                'vat_rate' => 14,
                 'rounding_rule' => RoundingRule::NONE->value,
                 'slug' => Str::slug($data['company_name_en']).'-'.rand(10000, 99999),
             ]);
 
             // Initialize standard roles and permissions for the new company
             app(CreateDefaultCompanyRolesAction::class)->execute($company);
+
+            // Seed default tax class (14%) for the new company
+            TaxClass::create([
+                'company_id' => $company->id,
+                'name_en' => 'Standard (14%)',
+                'name_ar' => 'أساسي (14%)',
+                'rate' => 14.00,
+            ]);
+
+            // Seed default units of measure for the new company
+            $defaultUoms = config('company_unit_of_measurements', []);
+            foreach ($defaultUoms as $uom) {
+                UnitOfMeasure::create([
+                    'company_id' => $company->id,
+                    'name_en' => $uom['name_en'],
+                    'name_ar' => $uom['name_ar'],
+                    'abbreviation_en' => $uom['abbreviation_en'],
+                    'abbreviation_ar' => $uom['abbreviation_ar'],
+                ]);
+            }
 
             // 2. Create User
             /** @var User $user */
