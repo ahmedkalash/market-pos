@@ -52,8 +52,17 @@ class ProductForm
                 // Sidebar (1/3)
                 Section::make(__('app.organization'))
                     ->schema([
+                        Select::make('store_id')
+                            ->label(__('app.store'))
+                            ->relationship('store', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn () => auth()->user()->isCompanyLevel()),
+
                         Hidden::make('store_id')
-                            ->default($user->store_id),
+                            ->default($user->store_id)
+                            ->visible(fn () => auth()->user()->isStoreLevel()),
                         Select::make('category_id')
                             ->label(__('app.category'))
                             ->helperText(__('app.category_helper'))

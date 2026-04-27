@@ -39,7 +39,6 @@ class Company extends Model implements HasMedia
         'address',
         'working_hours',
         'vat_number',
-        'vat_rate',
         'tax_label',
         'tax_is_inclusive',
         'currency',
@@ -71,7 +70,6 @@ class Company extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'vat_rate' => 'decimal:2',
             'tax_is_inclusive' => 'boolean',
             'currency_position' => CurrencyPosition::class,
             'decimal_precision' => 'integer',
@@ -106,6 +104,30 @@ class Company extends Model implements HasMedia
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * @return HasMany<TaxClass, $this>
+     */
+    public function taxClasses(): HasMany
+    {
+        return $this->hasMany(TaxClass::class);
+    }
+
+    /**
+     * @return HasMany<UnitOfMeasure, $this>
+     */
+    public function unitsOfMeasure(): HasMany
+    {
+        return $this->hasMany(UnitOfMeasure::class);
+    }
+
+    /**
+     * @return HasMany<Attribute, $this>
+     */
+    public function attributes(): HasMany
+    {
+        return $this->hasMany(Attribute::class);
     }
 
     /**

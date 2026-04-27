@@ -77,7 +77,7 @@ return [
         'Dashboard' => [
             'company_dashboard',
         ],
-        'Catalog' => [
+        'Product Category' => [
             'view_any_product_category',
             'view_product_category',
             'create_product_category',
@@ -85,5 +85,14 @@ return [
             'delete_product_category',
             'delete_any_product_category',
         ],
+        'Products' => [
+            'view_any_product',
+            'view_product',
+            'create_product',
+            'update_product',
+            'delete_product',
+            'delete_any_product',
+        ],
+
     ],
 ];

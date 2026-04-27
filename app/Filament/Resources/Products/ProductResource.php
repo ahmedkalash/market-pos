@@ -46,7 +46,7 @@ class ProductResource extends Resource
         /** @var User $user */
         $user = Auth::user();
 
-        return $user && $user->isStoreLevel() && $user->can('view_any_product');
+        return $user && $user->can('view_any_product');
     }
 
     public static function canCreate(): bool
@@ -54,7 +54,7 @@ class ProductResource extends Resource
         /** @var User $user */
         $user = Auth::user();
 
-        return $user && $user->isStoreLevel() && $user->can('create_product');
+        return $user && $user->can('create_product');
     }
 
     public static function canEdit(Model $record): bool
@@ -62,7 +62,7 @@ class ProductResource extends Resource
         /** @var User $user */
         $user = Auth::user();
 
-        return $user && $user->isStoreLevel() && $user->can('update_product');
+        return $user && $user->can('update_product');
     }
 
     public static function canDelete(Model $record): bool
@@ -70,7 +70,7 @@ class ProductResource extends Resource
         /** @var User $user */
         $user = Auth::user();
 
-        return $user && $user->isStoreLevel() && $user->can('delete_product');
+        return $user && $user->can('delete_product');
     }
 
     public static function canDeleteAny(): bool
@@ -78,7 +78,7 @@ class ProductResource extends Resource
         /** @var User $user */
         $user = Auth::user();
 
-        return $user && $user->isStoreLevel() && $user->can('delete_any_product');
+        return $user && $user->can('delete_any_product');
     }
 
     public static function form(Schema $schema): Schema

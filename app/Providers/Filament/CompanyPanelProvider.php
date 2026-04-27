@@ -39,11 +39,6 @@ class CompanyPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->sidebarCollapsibleOnDesktop()
-            ->navigationGroups([
-                __('app.store_management'),
-                __('app.user_management'),
-                __('app.settings'),
-            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

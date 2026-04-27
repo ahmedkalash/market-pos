@@ -23,18 +23,36 @@ return [
                 'company_dashboard',
                 // store settings page
                 'manage_store_settings',
+                // products
+                'view_any_product',
+                'view_product',
+                'create_product',
+                'update_product',
+                'delete_product',
+                'delete_any_product',
             ],
         ],
         Roles::CASHIER->value => [
             'permissions' => [
                 'company_dashboard',
-                // Add more as POS features are implemented
+                // products
+                'view_any_product',
+                'view_product',
+                'create_product',
+                'update_product',
+                'delete_product',
+                'delete_any_product',
             ],
         ],
         Roles::STOCK_CLERK->value => [
             'permissions' => [
-                'view_any_store',
-                'view_store',
+                // products
+                'view_any_product',
+                'view_product',
+                'create_product',
+                'update_product',
+                'delete_product',
+                'delete_any_product',
             ],
         ],
         Roles::ACCOUNTANT->value => [

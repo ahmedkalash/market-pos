@@ -21,8 +21,15 @@ trait BelongsToStore
             if (auth()->hasUser()) {
                 $user = auth()->user();
 
-                // Skip scoping for Super Admins or users not assigned to any specific store (Company-level staff)
-                if ($user->isSuperAdmin() || $user->isCompanyLevel()) {
+                // Skip scoping for Super Admins
+                if ($user->isSuperAdmin()) {
+                    return;
+                }
+
+                // If Company-level staff, scope by company across all their stores
+                if ($user->isCompanyLevel()) {
+                    $query->whereHas('store', fn ($q) => $q->where('company_id', $user->company_id));
+
                     return;
                 }
 
