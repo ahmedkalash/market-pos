@@ -28,17 +28,17 @@ class ProductResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('app.catalog');
+        return __('product.catalog');
     }
 
     public static function getModelLabel(): string
     {
-        return __('app.product');
+        return __('product.product');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return __('app.products');
+        return __('product.products');
     }
 
     public static function canViewAny(): bool

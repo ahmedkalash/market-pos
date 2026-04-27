@@ -22,7 +22,7 @@ class ProductCategoryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('catalog.navigation_group');
+        return __('product.catalog');
     }
 
     protected static ?int $navigationSort = 1;
@@ -31,12 +31,12 @@ class ProductCategoryResource extends Resource
 
     public static function getLabel(): ?string
     {
-        return __('catalog.product_categories.label');
+        return __('product_category.product_category');
     }
 
     public static function getPluralLabel(): ?string
     {
-        return __('catalog.product_categories.plural_label');
+        return __('product_category.product_categories');
     }
 
     public static function form(Schema $schema): Schema

@@ -1,0 +1,51 @@
+<?php
+
+return [
+    'catalog' => 'Catalog',
+    'product' => 'Product',
+    'products' => 'Products',
+    'general_information' => 'General Information',
+    'organization' => 'Organization',
+    'name_english' => 'Name (English)',
+    'name_arabic' => 'Name (Arabic)',
+    'description_en' => 'Description (English)',
+    'description_ar' => 'Description (Arabic)',
+    
+    'variants' => 'Variants',
+    'variant' => 'Variant',
+    'variant_details' => 'Variant Details',
+    'variant_name_en' => 'Variant Name (English)',
+    'variant_name_ar' => 'Variant Name (Arabic)',
+    'variant_name_helper' => 'Enter a descriptive name for this variant.',
+    'default_variant' => 'Default',
+    'add_variant' => 'Add Variant',
+    'attribute_values' => 'Attribute Values',
+    'attribute_values_helper' => 'Select values from the product\'s assigned attributes.',
+    
+    'pricing' => 'Pricing',
+    'price' => 'Price',
+    'price_is_negotiable' => 'Negotiable Price',
+    'price_is_negotiable_helper' => 'Allow cashiers to override the price within a defined minimum.',
+    'minimum_price' => 'Minimum Price',
+    'negotiable' => 'Negotiable',
+    
+    'inventory' => 'Inventory',
+    'quantity' => 'Quantity',
+    'stock' => 'Stock',
+    'low_stock_threshold' => 'Low Stock Threshold',
+    'low_stock_threshold_helper' => 'Alert when stock falls below this quantity. Leave blank to disable.',
+    
+    'barcodes' => 'Barcodes',
+    'barcode' => 'Barcode',
+    'add_barcode' => 'Add Barcode',
+    
+    'name_en_helper' => 'The name of the product in English as it will appear on receipts and the store.',
+    'name_ar_helper' => 'The name of the product in Arabic as it will appear on receipts and the store.',
+    'description_en_helper' => 'Detailed information about the product in English.',
+    'description_ar_helper' => 'Detailed information about the product in Arabic.',
+    'price_helper' => 'The standard selling price per unit.',
+    'minimum_price_helper' => 'The lowest price allowed if negotiations are enabled.',
+    'quantity_helper' => 'The total number of units currently available in stock.',
+    'is_active_helper' => 'If disabled, this product will not be visible in the POS system.',
+    'barcode_input_helper' => 'Scan the product barcode or type it manually.',
+];

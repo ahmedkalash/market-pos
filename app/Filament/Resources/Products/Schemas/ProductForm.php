@@ -23,34 +23,34 @@ class ProductForm
         return $schema
             ->components([
                 // Main column (2/3)
-                Section::make(__('app.general_information'))
+                Section::make(__('product.general_information'))
                     ->schema([
                         TextInput::make('name_en')
-                            ->label(__('app.name_english'))
-                            ->helperText(__('app.name_en_helper'))
+                            ->label(__('product.name_english'))
+                            ->helperText(__('product.name_en_helper'))
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('name_ar')
-                            ->label(__('app.name_arabic'))
-                            ->helperText(__('app.name_ar_helper'))
+                            ->label(__('product.name_arabic'))
+                            ->helperText(__('product.name_ar_helper'))
                             ->required()
                             ->maxLength(255),
 
                         Textarea::make('description_en')
-                            ->label(__('app.description_en'))
-                            ->helperText(__('app.description_en_helper'))
+                            ->label(__('product.description_en'))
+                            ->helperText(__('product.description_en_helper'))
                             ->rows(4),
 
                         Textarea::make('description_ar')
-                            ->label(__('app.description_ar'))
-                            ->helperText(__('app.description_ar_helper'))
+                            ->label(__('product.description_ar'))
+                            ->helperText(__('product.description_ar_helper'))
                             ->rows(4),
                     ])
                     ->columns(2),
 
                 // Sidebar (1/3)
-                Section::make(__('app.organization'))
+                Section::make(__('product.organization'))
                     ->schema([
                         Select::make('store_id')
                             ->label(__('app.store'))
@@ -64,16 +64,16 @@ class ProductForm
                             ->default($user->store_id)
                             ->visible(fn () => auth()->user()->isStoreLevel()),
                         Select::make('category_id')
-                            ->label(__('app.category'))
-                            ->helperText(__('app.category_helper'))
+                            ->label(__('product_category.category'))
+                            ->helperText(__('product_category.category_helper'))
                             ->relationship('category', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
                             ->searchable()
                             ->preload()
                             ->nullable(),
 
                         Select::make('tax_class_id')
-                            ->label(__('app.tax_class'))
-                            ->helperText(__('app.tax_class_helper'))
+                            ->label(__('tax_class.tax_class'))
+                            ->helperText(__('tax_class.tax_class_helper'))
                             ->relationship('taxClass', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
                             ->required()
                             ->searchable()

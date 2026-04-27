@@ -36,17 +36,17 @@ class VariantsRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('app.variants');
+        return __('product.variants');
     }
 
     public static function getModelLabel(): ?string
     {
-        return __('app.variant');
+        return __('product.variant');
     }
 
     public static function getPluralModelLabel(): ?string
     {
-        return __('app.variants');
+        return __('product.variants');
     }
 
     public function form(Schema $schema): Schema
@@ -57,23 +57,23 @@ class VariantsRelationManager extends RelationManager
 
         return $schema
             ->components([
-                Section::make(__('app.variant_details'))
+                Section::make(__('product.variant_details'))
                     ->schema([
                         TextInput::make('name_en')
-                            ->label(__('app.variant_name_en'))
-                            ->helperText(__('app.variant_name_helper'))
+                            ->label(__('product.variant_name_en'))
+                            ->helperText(__('product.variant_name_helper'))
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('name_ar')
-                            ->label(__('app.variant_name_ar'))
-                            ->helperText(__('app.variant_name_helper'))
+                            ->label(__('product.variant_name_ar'))
+                            ->helperText(__('product.variant_name_helper'))
                             ->required()
                             ->maxLength(255),
 
                         Select::make('uom_id')
-                            ->label(__('app.unit_of_measure'))
-                            ->helperText(__('app.uom_helper'))
+                            ->label(__('unit_of_measure.unit_of_measure'))
+                            ->helperText(__('unit_of_measure.uom_helper'))
                             ->relationship('unitOfMeasure', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
                             ->required()
                             ->searchable()
@@ -81,25 +81,25 @@ class VariantsRelationManager extends RelationManager
 
                     ])->columns(2),
 
-                Section::make(__('app.pricing'))
+                Section::make(__('product.pricing'))
                     ->schema([
                         TextInput::make('price')
-                            ->label(__('app.price'))
-                            ->helperText(__('app.price_helper'))
+                            ->label(__('product.price'))
+                            ->helperText(__('product.price_helper'))
                             ->numeric()
                             ->minValue(0)
                             ->required()
                             ->prefix(fn () => $user->company->currency_symbol),
 
                         Toggle::make('price_is_negotiable')
-                            ->label(__('app.price_is_negotiable'))
-                            ->helperText(__('app.price_is_negotiable_helper'))
+                            ->label(__('product.price_is_negotiable'))
+                            ->helperText(__('product.price_is_negotiable_helper'))
                             ->live()
                             ->default(false),
 
                         TextInput::make('minimum_price')
-                            ->label(__('app.minimum_price'))
-                            ->helperText(__('app.minimum_price_helper'))
+                            ->label(__('product.minimum_price'))
+                            ->helperText(__('product.minimum_price_helper'))
                             ->numeric()
                             ->minValue(0)
                             ->required(fn (Get $get) => (bool) $get('price_is_negotiable'))
@@ -108,31 +108,31 @@ class VariantsRelationManager extends RelationManager
                     ])
                     ->columns(),
 
-                Section::make(__('app.inventory'))
+                Section::make(__('product.inventory'))
                     ->schema([
                         TextInput::make('quantity')
-                            ->label(__('app.quantity'))
-                            ->helperText(__('app.quantity_helper'))
+                            ->label(__('product.quantity'))
+                            ->helperText(__('product.quantity_helper'))
                             ->numeric()
                             ->minValue(0)
                             ->default(0)
                             ->required(),
 
                         TextInput::make('low_stock_threshold')
-                            ->label(__('app.low_stock_threshold'))
-                            ->helperText(__('app.low_stock_threshold_helper'))
+                            ->label(__('product.low_stock_threshold'))
+                            ->helperText(__('product.low_stock_threshold_helper'))
                             ->numeric()
                             ->minValue(0)
                             ->nullable(),
 
                         Toggle::make('is_active')
                             ->label(__('app.active'))
-                            ->helperText(__('app.is_active_helper'))
+                            ->helperText(__('product.is_active_helper'))
                             ->default(true),
                     ])
                     ->columns(3),
 
-                Section::make(__('app.barcodes').': '.__('app.barcode_input_helper'))
+                Section::make(__('product.barcodes').': '.__('product.barcode_input_helper'))
                     ->schema([
                         Repeater::make('barcodes')
                             ->hiddenLabel()
@@ -140,13 +140,13 @@ class VariantsRelationManager extends RelationManager
                             ->schema([
                                 TextInput::make('barcode')
                                     ->hiddenLabel()
-                                    ->placeholder(__('app.barcode'))
+                                    ->placeholder(__('product.barcode'))
                                     ->required()
                                     ->maxLength(255)
                                     ->unique('product_barcodes', 'barcode', ignoreRecord: true),
                             ])
                             ->grid(3)
-                            ->addActionLabel(__('app.add_barcode'))
+                            ->addActionLabel(__('product.add_barcode'))
                             ->reorderable(false)
                             ->columnSpanFull(),
                     ])
@@ -157,11 +157,11 @@ class VariantsRelationManager extends RelationManager
                         Repeater::make('variant_attributes')
                             ->reorderable(false)
                             ->grid(2)
-                            ->label(__('app.attributes'))
+                            ->label(__('attribute.attributes'))
                             ->schema([
                                 Select::make('attribute_id')
-                                    ->label(__('app.attribute'))
-                                    ->helperText(__('app.attribute_helper'))
+                                    ->label(__('attribute.attribute'))
+                                    ->helperText(__('attribute.attribute_helper'))
                                     ->options(function () use ($companyId) {
                                         return Attribute::where('company_id', $companyId)->pluck('name_'.app()->getLocale(), 'id');
                                     })
@@ -169,10 +169,10 @@ class VariantsRelationManager extends RelationManager
                                     ->required()
                                     ->createOptionForm([
                                         TextInput::make('name_en')
-                                            ->label(__('app.name_english'))
+                                            ->label(__('product.name_english'))
                                             ->required(),
                                         TextInput::make('name_ar')
-                                            ->label(__('app.name_arabic'))
+                                            ->label(__('product.name_arabic'))
                                             ->required(),
                                     ])
                                     ->createOptionUsing(function (array $data) use ($companyId) {
@@ -186,8 +186,8 @@ class VariantsRelationManager extends RelationManager
                                     }),
 
                                 Select::make('attribute_value_id')
-                                    ->label(__('app.value'))
-                                    ->helperText(__('app.attribute_value_item_helper'))
+                                    ->label(__('attribute.value'))
+                                    ->helperText(__('attribute.attribute_value_item_helper'))
                                     ->options(function (Get $get) {
                                         if (! $get('attribute_id')) {
                                             return [];
@@ -198,10 +198,10 @@ class VariantsRelationManager extends RelationManager
                                     ->required()
                                     ->createOptionForm([
                                         TextInput::make('value_en')
-                                            ->label(__('app.value_en'))
+                                            ->label(__('attribute.value_en'))
                                             ->required(),
                                         TextInput::make('value_ar')
-                                            ->label(__('app.value_ar'))
+                                            ->label(__('attribute.value_ar'))
                                             ->required(),
                                     ])
                                     ->createOptionUsing(function (array $data, Get $get) {
@@ -217,8 +217,8 @@ class VariantsRelationManager extends RelationManager
                             ])
                             ->columns(2)
                             ->columnSpanFull()
-                            ->addActionLabel(__('app.add_attribute'))
-                            ->helperText(__('app.attribute_values_helper')),
+                            ->addActionLabel(__('attribute.add_attribute'))
+                            ->helperText(__('product.attribute_values_helper')),
                     ])->columnSpanFull(),
 
             ]);
@@ -240,31 +240,31 @@ class VariantsRelationManager extends RelationManager
                     ->sortable(),
 
                 TextColumn::make('attributeValues.value_'.app()->getLocale())
-                    ->label(__('app.attributes'))
+                    ->label(__('attribute.attributes'))
                     ->badge()
                     ->color('primary')
                     ->listWithLineBreaks(),
 
                 TextColumn::make('price')
-                    ->label(__('app.price'))
+                    ->label(__('product.price'))
                     ->formatStateUsing(fn (?string $state) => $state.' '. $user->company->currency_symbol)
                     ->badge()
                     ->color('success')
                     ->sortable(),
 
                 TextColumn::make('quantity')
-                    ->label(__('app.stock'))
+                    ->label(__('product.stock'))
                     ->numeric(2)
                     ->sortable()
                     ->color(fn (ProductVariant $record): ?string => $record->isLowStock() ? 'danger' : null),
 
                 TextColumn::make('unitOfMeasure.abbreviation_'.app()->getLocale())
-                    ->label(__('app.uom'))
+                    ->label(__('unit_of_measure.uom'))
                     ->badge()
                     ->color('gray'),
 
                 IconColumn::make('price_is_negotiable')
-                    ->label(__('app.negotiable'))
+                    ->label(__('product.negotiable'))
                     ->boolean()
                     ->trueIcon(Heroicon::CheckBadge)
                     ->falseIcon(Heroicon::XMark),
@@ -276,7 +276,7 @@ class VariantsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->modalWidth(Width::SevenExtraLarge)
-                    ->label(__('app.add_variant'))
+                    ->label(__('product.add_variant'))
                     ->mutateDataUsing(function (array $data): array {
                         $this->tempVariantAttributes = $data['variant_attributes'] ?? [];
                         unset($data['variant_attributes']);

@@ -1,0 +1,51 @@
+<?php
+
+return [
+    'catalog' => 'الكتالوج',
+    'product' => 'منتج',
+    'products' => 'المنتجات',
+    'general_information' => 'المعلومات العامة',
+    'organization' => 'التنظيم',
+    'name_english' => 'الاسم (إنجليزي)',
+    'name_arabic' => 'الاسم (عربي)',
+    'description_en' => 'الوصف (انجليزي)',
+    'description_ar' => 'الوصف (عربي)',
+    
+    'variants' => 'الأنواع',
+    'variant' => 'نوع',
+    'variant_details' => 'تفاصيل النوع',
+    'variant_name_en' => 'اسم النوع (انجليزي)',
+    'variant_name_ar' => 'اسم النوع (عربي)',
+    'variant_name_helper' => 'أدخل اسماً وصفياً لهذا النوع.',
+    'default_variant' => 'افتراضي',
+    'add_variant' => 'إضافة نوع',
+    'attribute_values' => 'قيم الخصائص',
+    'attribute_values_helper' => 'اختر قيماً من الخصائص المعينة للمنتج.',
+    
+    'pricing' => 'التسعير',
+    'price' => 'السعر',
+    'price_is_negotiable' => 'سعر قابل للتفاوض',
+    'price_is_negotiable_helper' => 'يسمح للكاشير بتغيير السعر ضمن حد أدنى محدد.',
+    'minimum_price' => 'السعر الأدنى',
+    'negotiable' => 'قابل للتفاوض',
+    
+    'inventory' => 'المخزون',
+    'quantity' => 'الكمية',
+    'stock' => 'المخزون',
+    'low_stock_threshold' => 'حد المخزون المنخفض',
+    'low_stock_threshold_helper' => 'سيتم التنبيه عند انخفاض المخزون عن هذه الكمية. اتركه فارغاً لتعطيل التنبيه.',
+    
+    'barcodes' => 'الباركودات',
+    'barcode' => 'باركود',
+    'add_barcode' => 'إضافة باركود',
+    
+    'name_en_helper' => 'اسم المنتج باللغة الإنجليزية كما سيظهر في الإيصالات والمتجر.',
+    'name_ar_helper' => 'اسم المنتج باللغة العربية كما سيظهر في الإيصالات والمتجر.',
+    'description_en_helper' => 'معلومات مفصلة عن المنتج باللغة الإنجليزية.',
+    'description_ar_helper' => 'معلومات مفصلة عن المنتج باللغة العربية.',
+    'price_helper' => 'سعر البيع القياسي للوحدة الواحدة.',
+    'minimum_price_helper' => 'أدنى سعر مسموح به في حالة تفعيل التفاوض.',
+    'quantity_helper' => 'إجمالي عدد الوحدات المتوفرة حالياً في المخزون.',
+    'is_active_helper' => 'في حالة التعطيل، لن يظهر هذا المنتج في نظام نقاط البيع.',
+    'barcode_input_helper' => 'امسح باركود المنتج أو اكتبه يدوياً.',
+];

@@ -18,26 +18,26 @@ class ProductCategoryForm
     {
         return $schema
             ->components([
-                Section::make(__('catalog.product_categories.form.category_details'))
+                Section::make(__('product.general_information'))
                     ->columnSpanFull()
                     ->schema([
                         Grid::make(3)->schema([
                             TextInput::make('name_en')
-                                ->label(__('app.name_en'))
+                                ->label(__('product_category.name_en'))
                                 ->required()
                                 ->maxLength(255),
                             TextInput::make('name_ar')
-                                ->label(__('app.name_ar'))
+                                ->label(__('product_category.name_ar'))
                                 ->required()
                                 ->maxLength(255),
                             Toggle::make('is_active')
-                                ->label(__('catalog.product_categories.form.active_status'))
+                                ->label(__('product_category.active_status'))
                                 ->default(true)
                                 ->inline(false),
                         ]),
                         Grid::make(2)->schema([
                             Select::make('parent_id')
-                                ->label(__('catalog.product_categories.form.parent_category'))
+                                ->label(__('product_category.parent_category'))
                                 ->relationship(
                                     name: 'parent',
                                     titleAttribute: 'name_en',
@@ -53,11 +53,11 @@ class ProductCategoryForm
                         ]),
                         Grid::make(2)->schema([
                             Textarea::make('description_en')
-                                ->label(__('app.description_en'))
+                                ->label(__('product_category.description_en'))
                                 ->maxLength(65535)
                                 ->columnSpan(1),
                             Textarea::make('description_ar')
-                                ->label(__('app.description_ar'))
+                                ->label(__('product_category.description_ar'))
                                 ->maxLength(65535)
                                 ->columnSpan(1),
                         ]),
