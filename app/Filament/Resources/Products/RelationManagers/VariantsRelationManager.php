@@ -6,6 +6,7 @@ use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductVariant;
 use App\Models\User;
+use Auth;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
@@ -232,7 +234,7 @@ class VariantsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         /** @var User $user */
-        $user = auth()->user();
+        $user = Auth::user();
 
         return $table
             ->recordTitleAttribute('name_'.app()->getLocale())
@@ -292,14 +294,10 @@ class VariantsRelationManager extends RelationManager
 
                 SelectFilter::make('uom_id')
                     ->label(__('unit_of_measure.unit_of_measure'))
-                    ->relationship('unitOfMeasure', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $user->company_id))
+                    ->relationship('unitOfMeasure', 'name_'.app()->getLocale(),
+                        fn (Builder $query) => $query->filterByCompany($user->company_id))
                     ->searchable()
                     ->preload(),
-
-                Filter::make('low_stock')
-                    ->label(__('product.low_stock_threshold'))
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('low_stock_threshold')->whereColumn('quantity', '<=', 'low_stock_threshold'))
-                    ->toggle(),
 
                 Filter::make('barcode')
                     ->schema([
@@ -315,6 +313,80 @@ class VariantsRelationManager extends RelationManager
                             $query->where('barcode', $data['barcode']);
                         });
                     }),
+
+                Filter::make('attributes')
+                    ->label(__('attribute.attributes'))
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        Select::make('attribute_id')
+                            ->label(__('attribute.attribute'))
+                            ->options(fn () => Attribute::query()->filterByCompany($user->company_id)
+                                ->pluck('name_'.app()->getLocale(), 'id'))
+                            ->live()
+                            ->afterStateUpdated(fn (Set $set) => $set('attribute_value_id', null)),
+                        Select::make('attribute_value_id')
+                            ->label(__('attribute.value'))
+                            ->options(function (Get $get) {
+                                if (! $get('attribute_id')) {
+                                    return [];
+                                }
+
+                                return AttributeValue::where('attribute_id', $get('attribute_id'))
+                                    ->pluck('value_'.app()->getLocale(), 'id');
+                            })
+                            ->multiple()
+                            ->preload()
+                            ->disabled(fn (Get $get) => ! $get('attribute_id')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['attribute_value_id'])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('attributeValues', function (Builder $query) use ($data) {
+                            $query->whereIn('attribute_values.id', (array) $data['attribute_value_id']);
+                        });
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        if (empty($data['attribute_value_id'])) {
+                            return [];
+                        }
+
+                        $attribute = Attribute::find($data['attribute_id']);
+                        $values = AttributeValue::whereIn('id', (array) $data['attribute_value_id'])
+                            ->pluck('value_'.app()->getLocale())
+                            ->implode(', ');
+
+                        return [
+                            ($attribute?->{'name_'.app()->getLocale()} ?? __('attribute.attribute')).': '.$values,
+                        ];
+                    }),
+
+                Filter::make('low_stock')
+                    ->label(__('product.low_stock_threshold'))
+                    ->columnSpanFull()
+                    ->schema([
+                        Toggle::make('low_stock')
+                            ->label(__('product.low_stock_threshold'))
+                            ->default(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! ($data['low_stock'] ?? false)) {
+                            return $query;
+                        }
+
+                        return $query->whereNotNull('low_stock_threshold')
+                            ->whereColumn('quantity', '<=', 'low_stock_threshold');
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        if (! ($data['low_stock'] ?? false)) {
+                            return [];
+                        }
+
+                        return [__('product.low_stock_threshold')];
+                    }),
+
             ])
             ->filtersLayout(FiltersLayout::Modal)
             ->filtersFormColumns(4)

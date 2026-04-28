@@ -2,14 +2,21 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -24,6 +31,9 @@ class ProductsTable
 {
     public static function configure(Table $table): Table
     {
+        /** @var User $user */
+        $user = Auth::user();
+
         return $table
             ->columns([
                 TextColumn::make('name_'.app()->getLocale())
@@ -36,7 +46,7 @@ class ProductsTable
                     ->sortable()
                     ->badge()
                     ->color('gray')
-                    ->visible(fn () => auth()->user()->isCompanyLevel()),
+                    ->visible(fn () => $user->isCompanyLevel()),
 
                 TextColumn::make('category.name_'.app()->getLocale())
                     ->label(__('product_category.category'))
@@ -60,13 +70,9 @@ class ProductsTable
             ->filters([
                 SelectFilter::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(), function (Builder $query) {
-                        /** @var User $user */
-                        $user = Auth::user();
-
-                        return $query->where('company_id', $user->company_id);
-                    })
-                    ->visible(fn () => Auth::user()->isCompanyLevel()),
+                    ->relationship('store', 'name_'.app()->getLocale(),
+                        fn (Builder $query) => $query->filterByCompany($user->company_id))
+                    ->visible(fn () => $user->isCompanyLevel()),
 
                 TernaryFilter::make('is_active')
                     ->label(__('app.active')),
@@ -99,13 +105,8 @@ class ProductsTable
 
                 SelectFilter::make('uom_id')
                     ->label(__('unit_of_measure.unit_of_measure'))
-                    ->options(function () {
-                        /** @var User $user */
-                        $user = Auth::user();
-
-                        return UnitOfMeasure::where('company_id', $user->company_id)
-                            ->pluck('name_'.app()->getLocale(), 'id');
-                    })
+                    ->options(fn () => UnitOfMeasure::query()->filterByCompany($user->company_id)
+                        ->pluck('name_'.app()->getLocale(), 'id'))
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
                             return $query;
@@ -133,22 +134,90 @@ class ProductsTable
                         });
                     }),
 
+                Filter::make('attributes')
+                    ->label(__('attribute.attributes'))
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        Select::make('attribute_id')
+                            ->label(__('attribute.attribute'))
+                            ->options(fn () => Attribute::query()->filterByCompany($user->company_id)
+                                ->pluck('name_'.app()->getLocale(), 'id'))
+                            ->live()
+                            ->afterStateUpdated(fn (Set $set) => $set('attribute_value_id', null)),
+                        Select::make('attribute_value_id')
+                            ->label(__('attribute.value'))
+                            ->options(function (Get $get) {
+                                if (! $get('attribute_id')) {
+                                    return [];
+                                }
+
+                                return AttributeValue::where('attribute_id', $get('attribute_id'))
+                                    ->pluck('value_'.app()->getLocale(), 'id');
+                            })
+                            ->multiple()
+                            ->preload()
+                            ->disabled(fn (Get $get) => ! $get('attribute_id')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['attribute_value_id'])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('variants.attributeValues', function (Builder $query) use ($data) {
+                            $query->whereIn('attribute_values.id', (array) $data['attribute_value_id']);
+                        });
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        if (empty($data['attribute_value_id'])) {
+                            return [];
+                        }
+
+                        $attribute = Attribute::find($data['attribute_id']);
+                        $values = AttributeValue::whereIn('id', (array) $data['attribute_value_id'])
+                            ->pluck('value_'.app()->getLocale())
+                            ->implode(', ');
+
+                        return [
+                            ($attribute?->{'name_'.app()->getLocale()} ?? __('attribute.attribute')).': '.$values,
+                        ];
+                    }),
+
                 Filter::make('low_stock')
                     ->label(__('product.low_stock_threshold'))
-                    ->query(function (Builder $query): Builder {
+                    ->columnSpanFull()
+                    ->schema([
+                        Toggle::make('low_stock')
+                            ->label(__('product.low_stock_threshold'))
+                            ->default(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! ($data['low_stock'] ?? false)) {
+                            return $query;
+                        }
+
                         return $query->whereHas('variants', function (Builder $query) {
                             $query->whereNotNull('low_stock_threshold')
                                 ->whereColumn('quantity', '<=', 'low_stock_threshold');
                         });
                     })
-                    ->toggle(),
+                    ->indicateUsing(function (array $data): array {
+                        if (! ($data['low_stock'] ?? false)) {
+                            return [];
+                        }
+
+                        return [__('product.low_stock_threshold')];
+                    }),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->recordActionsColumnLabel(__('app.actions'))
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
