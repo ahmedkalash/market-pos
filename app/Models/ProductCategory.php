@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToStore;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -12,10 +13,11 @@ use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 class ProductCategory extends Model implements HasMedia
 {
-    use BelongsToCompany, HasFactory, HasRecursiveRelationships, InteractsWithMedia;
+    use BelongsToCompany, BelongsToStore, HasFactory, HasRecursiveRelationships, InteractsWithMedia;
 
     protected $fillable = [
         'company_id',
+        'store_id',
         'parent_id',
         'name_en',
         'name_ar',

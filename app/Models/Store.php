@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Actions\SeedDefaultStoreCatalogSettingsAction;
 use App\Models\Concerns\BelongsToCompany;
 use Database\Factories\StoreFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,13 @@ class Store extends Model implements HasMedia
 {
     /** @use HasFactory<StoreFactory> */
     use BelongsToCompany, HasFactory, InteractsWithMedia;
+
+    protected static function booted(): void
+    {
+        static::created(function (Store $store) {
+            app(SeedDefaultStoreCatalogSettingsAction::class)->execute($store);
+        });
+    }
 
     /**
      * @var list<string>

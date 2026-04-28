@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('product_categories', function (Blueprint $table) {
             // First, add a regular index to company_id so it continues to support the foreign key
             $table->index('company_id');
-            
+
             // Now we can drop the unique index and the slug column
             $table->dropUnique('product_categories_company_id_slug_unique');
             $table->dropColumn('slug');

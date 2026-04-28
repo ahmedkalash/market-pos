@@ -37,14 +37,14 @@ class UserTransferTest extends TestCase
         });
     }
 
-    public function test_user_transferred_event_is_NOT_dispatched_on_first_assignment(): void
+    public function test_user_transferred_event_is_no_t_dispatched_on_first_assignment(): void
     {
         Event::fake([UserTransferred::class]);
 
         $company = Company::factory()->create();
         $store = Store::factory()->create(['company_id' => $company->id]);
-        
-        // Use factory without store_id initially, but often factories set it. 
+
+        // Use factory without store_id initially, but often factories set it.
         // Let's create a user with store_id = null.
         $user = User::factory()->create([
             'company_id' => $company->id,
@@ -60,7 +60,7 @@ class UserTransferTest extends TestCase
     public function test_handle_user_transfer_listener_invalidates_sessions(): void
     {
         config(['session.driver' => 'database']);
-        
+
         $company = Company::factory()->create();
         $storeA = Store::factory()->create(['company_id' => $company->id]);
         $storeB = Store::factory()->create(['company_id' => $company->id]);

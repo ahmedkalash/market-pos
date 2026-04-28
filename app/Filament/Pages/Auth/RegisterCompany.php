@@ -9,7 +9,6 @@ use App\Enums\RoundingRule;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Models\TaxClass;
-use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Services\OtpService;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
@@ -178,18 +177,6 @@ class RegisterCompany extends Register
                 'name_ar' => 'أساسي (14%)',
                 'rate' => 14.00,
             ]);
-
-            // Seed default units of measure for the new company
-            $defaultUoms = config('company_unit_of_measurements', []);
-            foreach ($defaultUoms as $uom) {
-                UnitOfMeasure::create([
-                    'company_id' => $company->id,
-                    'name_en' => $uom['name_en'],
-                    'name_ar' => $uom['name_ar'],
-                    'abbreviation_en' => $uom['abbreviation_en'],
-                    'abbreviation_ar' => $uom['abbreviation_ar'],
-                ]);
-            }
 
             // 2. Create User
             /** @var User $user */

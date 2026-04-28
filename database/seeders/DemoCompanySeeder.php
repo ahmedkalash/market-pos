@@ -7,6 +7,8 @@ use App\Enums\Roles;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Models\Store;
+use App\Models\TaxClass;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -29,7 +31,6 @@ class DemoCompanySeeder extends Seeder
                 'phone' => '+201000000000',
                 'address' => 'Cairo, Egypt',
                 'vat_number' => '123-456-789',
-                'vat_rate' => 14.00,
                 'currency' => 'EGP',
                 'locale' => 'ar',
                 'receipt_header' => 'مرحباً بكم في مول',
@@ -38,6 +39,28 @@ class DemoCompanySeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        // Seed default tax class (14%) for the demo company
+        TaxClass::firstOrCreate(
+            ['company_id' => $company->id, 'name_en' => 'Standard (14%)'],
+            [
+                'name_ar' => 'أساسي (14%)',
+                'rate' => 14.00,
+            ]
+        );
+
+        // Seed default Units of Measure for the demo company
+        $defaultUoms = config('company_unit_of_measurements');
+        foreach ($defaultUoms as $uom) {
+            UnitOfMeasure::firstOrCreate(
+                ['company_id' => $company->id, 'name_en' => $uom['name_en']],
+                [
+                    'name_ar' => $uom['name_ar'],
+                    'abbreviation_en' => $uom['abbreviation_en'],
+                    'abbreviation_ar' => $uom['abbreviation_ar'],
+                ]
+            );
+        }
 
         $storeNasrCity = Store::firstOrCreate(
             ['company_id' => $company->id, 'name_en' => 'Mool - Nasr City'],

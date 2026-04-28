@@ -9,7 +9,9 @@ use App\Filament\Resources\ProductCategories\Pages\EditProductCategory;
 use App\Filament\Resources\ProductCategories\Pages\ListProductCategories;
 use App\Models\Company;
 use App\Models\ProductCategory;
+use App\Models\Store;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
@@ -22,7 +24,7 @@ class ProductCategoryResourceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
+        $this->seed(RolesAndPermissionsSeeder::class);
     }
 
     private function createAdminForCompany(Company $company): User
@@ -112,8 +114,8 @@ class ProductCategoryResourceTest extends TestCase
     public function test_store_manager_cannot_view_product_categories()
     {
         $company = Company::factory()->create(['is_active' => true]);
-        $store = \App\Models\Store::factory()->create(['company_id' => $company->id]);
-        
+        $store = Store::factory()->create(['company_id' => $company->id]);
+
         /** @var User $manager */
         $manager = User::factory()->create([
             'company_id' => $company->id,

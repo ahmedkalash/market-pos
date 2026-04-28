@@ -10,7 +10,7 @@ return [
     'name_arabic' => 'الاسم (عربي)',
     'description_en' => 'الوصف (انجليزي)',
     'description_ar' => 'الوصف (عربي)',
-    
+
     'variants' => 'الأنواع',
     'variant' => 'نوع',
     'variant_details' => 'تفاصيل النوع',
@@ -21,24 +21,24 @@ return [
     'add_variant' => 'إضافة نوع',
     'attribute_values' => 'قيم الخصائص',
     'attribute_values_helper' => 'اختر قيماً من الخصائص المعينة للمنتج.',
-    
+
     'pricing' => 'التسعير',
     'price' => 'السعر',
     'price_is_negotiable' => 'سعر قابل للتفاوض',
     'price_is_negotiable_helper' => 'يسمح للكاشير بتغيير السعر ضمن حد أدنى محدد.',
     'minimum_price' => 'السعر الأدنى',
     'negotiable' => 'قابل للتفاوض',
-    
+
     'inventory' => 'المخزون',
     'quantity' => 'الكمية',
     'stock' => 'المخزون',
     'low_stock_threshold' => 'حد المخزون المنخفض',
     'low_stock_threshold_helper' => 'سيتم التنبيه عند انخفاض المخزون عن هذه الكمية. اتركه فارغاً لتعطيل التنبيه.',
-    
+
     'barcodes' => 'الباركودات',
     'barcode' => 'باركود',
     'add_barcode' => 'إضافة باركود',
-    
+
     'name_en_helper' => 'اسم المنتج باللغة الإنجليزية كما سيظهر في الإيصالات والمتجر.',
     'name_ar_helper' => 'اسم المنتج باللغة العربية كما سيظهر في الإيصالات والمتجر.',
     'description_en_helper' => 'معلومات مفصلة عن المنتج باللغة الإنجليزية.',
