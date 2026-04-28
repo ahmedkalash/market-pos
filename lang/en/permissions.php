@@ -41,4 +41,40 @@ return [
     'update_product_category' => 'Update Product Category',
     'delete_product_category' => 'Delete Product Category',
     'delete_any_product_category' => 'Delete Multiple Product Categories',
+
+    'view_any_product' => 'View All Products',
+    'view_product' => 'View Product',
+    'create_product' => 'Create Product',
+    'update_product' => 'Update Product',
+    'delete_product' => 'Delete Product',
+    'delete_any_product' => 'Delete Multiple Products',
+
+    'view_any_attribute' => 'View All Attributes',
+    'view_attribute' => 'View Attribute',
+    'create_attribute' => 'Create Attribute',
+    'update_attribute' => 'Update Attribute',
+    'delete_attribute' => 'Delete Attribute',
+    'delete_any_attribute' => 'Delete Multiple Attributes',
+
+    'view_any_unit_of_measure' => 'View All Units of Measure',
+    'view_unit_of_measure' => 'View Unit of Measure',
+    'create_unit_of_measure' => 'Create Unit of Measure',
+    'update_unit_of_measure' => 'Update Unit of Measure',
+    'delete_unit_of_measure' => 'Delete Unit of Measure',
+    'delete_any_unit_of_measure' => 'Delete Multiple Units of Measure',
+
+    'manage_store_settings' => 'Manage Store Settings',
+
+    // Module Headers
+    'users' => 'Users',
+    'roles' => 'Roles',
+    'stores' => 'Stores',
+    'companies' => 'Companies',
+    'plans' => 'Plans',
+    'settings' => 'Settings',
+    'dashboard' => 'Dashboard',
+    'product category' => 'Product Categories',
+    'products' => 'Products',
+    'attributes' => 'Attributes',
+    'unit of measures' => 'Unit of Measures',
 ];

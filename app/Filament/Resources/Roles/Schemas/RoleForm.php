@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Roles\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
@@ -48,6 +49,7 @@ class RoleForm
                                 column: 'name',
                                 ignoreRecord: true,
                                 modifyRuleUsing: function (Unique $rule) {
+                                    /** @var User $user */
                                     $user = auth()->user();
 
                                     return $rule->where('company_id', $user->company_id)
@@ -93,18 +95,18 @@ class RoleForm
             }
 
             // Translate module headings, ensuring we handle potential array responses from __().
-            $translatedModule = __('app.'.strtolower($moduleName));
-            if (is_array($translatedModule) || $translatedModule === 'app.'.strtolower($moduleName)) {
+            $translatedModule = __('permissions.'.strtolower($moduleName));
+            if (is_array($translatedModule) || $translatedModule === 'permissions.'.strtolower($moduleName)) {
                 $translatedModule = $moduleName;
             }
 
             // Create an individual CheckboxList for each module to prevent multi-column overlap issues.
             $components[] = CheckboxList::make('permissions_'.str($moduleName)->snake())
                 ->label($translatedModule)
+                ->belowLabel('-------------')
                 ->options($options)
                 ->columns(1)
-                ->bulkToggleable()
-                ->searchable();
+                ->bulkToggleable();
         }
 
         return $components;

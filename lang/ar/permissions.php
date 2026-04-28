@@ -41,4 +41,40 @@ return [
     'update_product_category' => 'تعديل فئة منتج',
     'delete_product_category' => 'حذف فئة منتج',
     'delete_any_product_category' => 'حذف عدة فئات منتجات',
+
+    'view_any_product' => 'عرض كل المنتجات',
+    'view_product' => 'عرض المنتج',
+    'create_product' => 'إضافة منتج',
+    'update_product' => 'تعديل منتج',
+    'delete_product' => 'حذف منتج',
+    'delete_any_product' => 'حذف عدة منتجات',
+
+    'view_any_attribute' => 'عرض كل الخصائص',
+    'view_attribute' => 'عرض الخاصية',
+    'create_attribute' => 'إضافة خاصية',
+    'update_attribute' => 'تعديل خاصية',
+    'delete_attribute' => 'حذف خاصية',
+    'delete_any_attribute' => 'حذف عدة خصائص',
+
+    'view_any_unit_of_measure' => 'عرض كل وحدات القياس',
+    'view_unit_of_measure' => 'عرض وحدة القياس',
+    'create_unit_of_measure' => 'إضافة وحدة قياس',
+    'update_unit_of_measure' => 'تعديل وحدة قياس',
+    'delete_unit_of_measure' => 'حذف وحدة قياس',
+    'delete_any_unit_of_measure' => 'حذف عدة وحدات قياس',
+
+    'manage_store_settings' => 'تعديل إعدادات المتجر',
+
+    // Module Headers
+    'users' => 'المستخدمين',
+    'roles' => 'الأدوار والصلاحيات',
+    'stores' => 'المتاجر',
+    'companies' => 'الشركات',
+    'plans' => 'الخطط',
+    'settings' => 'الإعدادات',
+    'dashboard' => 'لوحة التحكم',
+    'product category' => 'فئات المنتجات',
+    'products' => 'المنتجات',
+    'attributes' => 'الخصائص',
+    'unit of measures' => 'وحدات القياس',
 ];

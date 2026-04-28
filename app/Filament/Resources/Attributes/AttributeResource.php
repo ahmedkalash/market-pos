@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\Attributes;
 
-use App\Filament\Resources\Attributes\Pages\CreateAttribute;
-use App\Filament\Resources\Attributes\Pages\EditAttribute;
 use App\Filament\Resources\Attributes\Pages\ListAttributes;
 use App\Models\Attribute;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -49,7 +48,7 @@ class AttributeResource extends Resource
     public static function form(Schema $schema): Schema
     {
         /** @var User $user */
-        $user = \Auth::user();
+        $user = Auth::user();
         return $schema
             ->components([
                 Select::make('store_id')
@@ -76,7 +75,7 @@ class AttributeResource extends Resource
     public static function table(Table $table): Table
     {
         /** @var User $user */
-        $user = \Auth::user();
+        $user = Auth::user();
         return $table
             ->columns([
                 TextColumn::make('store.name_'.app()->getLocale())

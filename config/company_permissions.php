@@ -33,6 +33,9 @@ return [
     */
 
     'permissions' => [
+        'Dashboard' => [
+            'company_dashboard',
+        ],
         'Users' => [
             'view_any_user',
             'view_user',
@@ -73,9 +76,6 @@ return [
             'view_any_setting', // company settings
             'update_setting', // company settings
             'manage_store_settings',
-        ],
-        'Dashboard' => [
-            'company_dashboard',
         ],
         'Product Category' => [
             'view_any_product_category',
