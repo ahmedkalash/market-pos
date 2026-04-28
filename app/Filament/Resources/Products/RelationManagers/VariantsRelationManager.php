@@ -24,6 +24,11 @@ use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -247,10 +252,16 @@ class VariantsRelationManager extends RelationManager
 
                 TextColumn::make('price')
                     ->label(__('product.price'))
-                    ->formatStateUsing(fn (?string $state) => $state.' '. $user->company->currency_symbol)
+                    ->formatStateUsing(fn (?string $state) => $state.' '.$user->company->currency_symbol)
                     ->badge()
                     ->color('success')
                     ->sortable(),
+
+                TextColumn::make('minimum_price')
+                    ->label(__('product.minimum_price'))
+                    ->formatStateUsing(fn (?string $state) => $state ? $state.' '.$user->company->currency_symbol : null)
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('quantity')
                     ->label(__('product.stock'))
@@ -269,10 +280,44 @@ class VariantsRelationManager extends RelationManager
                     ->trueIcon(Heroicon::CheckBadge)
                     ->falseIcon(Heroicon::XMark),
 
-                IconColumn::make('is_active')
-                    ->label(__('app.active'))
-                    ->boolean(),
+                ToggleColumn::make('is_active')
+                    ->label(__('app.active')),
             ])
+            ->filters([
+                TernaryFilter::make('is_active')
+                    ->label(__('app.active')),
+
+                TernaryFilter::make('price_is_negotiable')
+                    ->label(__('product.negotiable')),
+
+                SelectFilter::make('uom_id')
+                    ->label(__('unit_of_measure.unit_of_measure'))
+                    ->relationship('unitOfMeasure', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $user->company_id))
+                    ->searchable()
+                    ->preload(),
+
+                Filter::make('low_stock')
+                    ->label(__('product.low_stock_threshold'))
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('low_stock_threshold')->whereColumn('quantity', '<=', 'low_stock_threshold'))
+                    ->toggle(),
+
+                Filter::make('barcode')
+                    ->schema([
+                        TextInput::make('barcode')
+                            ->label(__('product.barcode')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['barcode'])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('barcodes', function (Builder $query) use ($data) {
+                            $query->where('barcode', $data['barcode']);
+                        });
+                    }),
+            ])
+            ->filtersLayout(FiltersLayout::Modal)
+            ->filtersFormColumns(4)
             ->headerActions([
                 CreateAction::make()
                     ->modalWidth(Width::SevenExtraLarge)
