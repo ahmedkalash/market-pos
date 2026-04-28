@@ -93,6 +93,22 @@ return [
             'delete_product',
             'delete_any_product',
         ],
+        'Attributes' => [
+            'view_any_attribute',
+            'view_attribute',
+            'create_attribute',
+            'update_attribute',
+            'delete_attribute',
+            'delete_any_attribute',
+        ],
+        'Unit of Measures' => [
+            'view_any_unit_of_measure',
+            'view_unit_of_measure',
+            'create_unit_of_measure',
+            'update_unit_of_measure',
+            'delete_unit_of_measure',
+            'delete_any_unit_of_measure',
+        ],
 
     ],
 ];

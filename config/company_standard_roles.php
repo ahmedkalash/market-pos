@@ -30,6 +30,27 @@ return [
                 'update_product',
                 'delete_product',
                 'delete_any_product',
+                // product categories
+                'view_any_product_category',
+                'view_product_category',
+                'create_product_category',
+                'update_product_category',
+                'delete_product_category',
+                'delete_any_product_category',
+                // attributes
+                'view_any_attribute',
+                'view_attribute',
+                'create_attribute',
+                'update_attribute',
+                'delete_attribute',
+                'delete_any_attribute',
+                // unit of measures
+                'view_any_unit_of_measure',
+                'view_unit_of_measure',
+                'create_unit_of_measure',
+                'update_unit_of_measure',
+                'delete_unit_of_measure',
+                'delete_any_unit_of_measure',
             ],
         ],
         Roles::CASHIER->value => [
@@ -38,10 +59,15 @@ return [
                 // products
                 'view_any_product',
                 'view_product',
-                'create_product',
-                'update_product',
-                'delete_product',
-                'delete_any_product',
+                 // product categories
+                'view_any_product_category',
+                'view_product_category',
+                // attributes
+                'view_any_attribute',
+                'view_attribute',
+                // unit of measures
+                'view_any_unit_of_measure',
+                'view_unit_of_measure',
             ],
         ],
         Roles::STOCK_CLERK->value => [
@@ -53,6 +79,21 @@ return [
                 'update_product',
                 'delete_product',
                 'delete_any_product',
+                // product categories
+                'view_any_product_category',
+                'view_product_category',
+                'create_product_category',
+                'update_product_category',
+                // attributes
+                'view_any_attribute',
+                'view_attribute',
+                'create_attribute',
+                'update_attribute',
+                // unit of measures
+                'view_any_unit_of_measure',
+                'view_unit_of_measure',
+                'create_unit_of_measure',
+                'update_unit_of_measure',
             ],
         ],
         Roles::ACCOUNTANT->value => [

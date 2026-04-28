@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -52,4 +54,18 @@ class ProductCategory extends Model implements HasMedia
     {
         return true;
     }
+
+    #[Scope]
+    public function active(Builder $query): Builder
+    {
+        return $query ->where('is_active', true);
+    }
+
+    #[Scope]
+    public function notActive(Builder $query): Builder
+    {
+        return $query ->where('is_active', false);
+    }
+
+
 }

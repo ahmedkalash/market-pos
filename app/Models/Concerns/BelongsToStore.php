@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Models\Store;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -58,5 +59,12 @@ trait BelongsToStore
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
+    }
+
+    #[Scope]
+    public function filterByStore(Builder $query, int $companyId): Builder
+    {
+        return $query->where('store_id', $companyId);
+
     }
 }
