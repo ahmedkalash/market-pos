@@ -54,7 +54,7 @@ class ProductCategoryResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('view_any_product_category') ?? false) && $user?->isCompanyLevel();
+        return ($user?->hasPermissionTo('view_any_product_category') ?? false);
     }
 
     public static function canCreate(): bool
@@ -62,7 +62,7 @@ class ProductCategoryResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('create_product_category') ?? false) && $user?->isCompanyLevel();
+        return ($user?->hasPermissionTo('create_product_category') ?? false);
     }
 
     public static function canView(Model $record): bool
@@ -70,7 +70,7 @@ class ProductCategoryResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('view_product_category') ?? false) && $user?->isCompanyLevel();
+        return ($user?->hasPermissionTo('view_product_category') ?? false);
     }
 
     public static function canEdit(Model $record): bool
@@ -78,7 +78,7 @@ class ProductCategoryResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('update_product_category') ?? false) && $user?->isCompanyLevel();
+        return ($user?->hasPermissionTo('update_product_category') ?? false);
     }
 
     public static function canDelete(Model $record): bool
@@ -86,7 +86,7 @@ class ProductCategoryResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('delete_product_category') ?? false) && $user?->isCompanyLevel();
+        return ($user?->hasPermissionTo('delete_product_category') ?? false);
     }
 
     public static function canDeleteAny(): bool
@@ -94,7 +94,7 @@ class ProductCategoryResource extends Resource
         /** @var User|null $user */
         $user = auth()->user();
 
-        return ($user?->hasPermissionTo('delete_any_product_category') ?? false) && $user?->isCompanyLevel();
+        return ($user?->hasPermissionTo('delete_any_product_category') ?? false);
     }
 
     public static function getRelations(): array
