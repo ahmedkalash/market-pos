@@ -129,7 +129,7 @@ class ProductsTable
                         }
 
                         return $query->whereHas('variants.barcodes', function (Builder $query) use ($data) {
-                            $query->where('barcode',  $data['barcode']);
+                            $query->where('barcode', $data['barcode']);
                         });
                     }),
 
