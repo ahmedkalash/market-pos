@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Enums\CurrencyPosition;
 use App\Enums\RoundingRule;
+use App\Models\Company;
+use App\Models\TaxClass;
 use App\Models\User;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
@@ -42,6 +44,8 @@ class CompanySettingsPage extends Page implements HasForms
 
     protected string $view = 'filament.pages.company-settings';
 
+    public ?Company $company = null;
+
     public ?array $data = [];
 
     public static function getNavigationLabel(): string
@@ -73,61 +77,58 @@ class CompanySettingsPage extends Page implements HasForms
     {
         /** @var User $user */
         $user = Auth::user();
-        $company = $user->company;
+        $this->company = $user->company;
 
-        if (! $company) {
+        if (! $this->company) {
             abort(404);
         }
 
-        $this->form->fill($company->toArray());
+        $this->form->fill($this->company->toArray());
     }
 
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->model($this->company)
             ->components([
                 Tabs::make('Settings')
+                    ->persistTabInQueryString()
                     ->tabs([
                         // tab 1: General
-                        Tab::make(__('app.general_information'))
+                        Tab::make(__('product.general_information'))
                             ->schema([
                                 Section::make()
                                     ->schema([
+                                        TextInput::make('name_ar')
+                                            ->label(__('app.company_name_arabic'))
+                                            ->helperText(__('company_settings.name_ar_helper'))
+                                            ->required()
+                                            ->maxLength(255),
                                         TextInput::make('name_en')
                                             ->label(__('app.company_name_english'))
                                             ->helperText(__('company_settings.name_en_helper'))
                                             ->required()
                                             ->maxLength(255),
-
-                                        TextInput::make('name_ar')
-                                            ->label(__('app.company_name_arabic'))
-                                            ->helperText(__('company_settings.name_ar_helper'))
-                                            ->maxLength(255),
-
                                         FileUpload::make('logo')
                                             ->label(__('app.logo'))
                                             ->helperText(__('company_settings.logo_helper'))
                                             ->image()
                                             ->directory('logos')
                                             ->disk('public'),
-
                                         TextInput::make('email')
                                             ->label(__('app.email'))
                                             ->helperText(__('company_settings.email_helper'))
                                             ->email()
                                             ->nullable(),
-
                                         TextInput::make('phone')
                                             ->label(__('app.phone'))
                                             ->helperText(__('company_settings.phone_helper'))
                                             ->tel()
                                             ->nullable(),
-
                                         Textarea::make('address')
                                             ->label(__('app.address'))
                                             ->helperText(__('company_settings.address_helper'))
                                             ->rows(3),
-
                                         TextInput::make('whatsapp_number')
                                             ->label(__('app.whatsapp_number'))
                                             ->tel()
@@ -190,25 +191,23 @@ class CompanySettingsPage extends Page implements HasForms
                             ->schema([
                                 Section::make()
                                     ->schema([
-                                        Select::make('timezone')
+                                        TextEntry::make('timezone')
                                             ->label(__('app.timezone'))
+                                            ->badge()
                                             ->helperText(__('company_settings.timezone_helper'))
-                                            ->options(collect(timezone_identifiers_list())->mapWithKeys(fn ($tz) => [$tz => $tz]))
-                                            ->searchable()
+//                                            ->options(collect(timezone_identifiers_list())->mapWithKeys(fn ($tz) => [$tz => $tz]))
+//                                            ->searchable()
                                             ->disabled(),
-
                                         Select::make('locale')
                                             ->label(__('app.default_language'))
                                             ->helperText(__('company_settings.locale_helper'))
                                             ->options(__('languages'))
                                             ->required(),
-
                                         Select::make('date_format')
                                             ->label(__('app.date_format'))
                                             ->helperText(__('company_settings.date_format_helper'))
                                             ->options(__('date_time_formats.date_formats'))
                                             ->required(),
-
                                         Select::make('time_format')
                                             ->label(__('app.time_format'))
                                             ->helperText(__('company_settings.time_format_helper'))
@@ -332,21 +331,19 @@ class CompanySettingsPage extends Page implements HasForms
                                             ->maxLength(50)
                                             ->nullable(),
 
-                                        TextInput::make('vat_rate')
-                                            ->label(__('app.default_v_a_t_rate'))
-                                            ->helperText(__('company_settings.vat_rate_helper'))
-                                            ->numeric()
-                                            ->minValue(0)
-                                            ->maxValue(100)
-                                            ->step(0.01)
-                                            ->suffix('%'),
-
                                         Toggle::make('tax_is_inclusive')
                                             ->label(__('app.prices_include_tax'))
                                             ->helperText(__('app.tax_inclusive_explanation'))
-                                            ->default(false),
+                                            ->default(false)
+                                            ->columnSpanFull(),
                                     ])
                                     ->columns(2),
+
+                                Section::make(__('tax_class.tax_classes'))
+                                    ->description(__('tax_class.tax_classes_description'))
+                                    ->schema([
+                                        $this->buildTaxClassesRepeater(),
+                                    ]),
                             ]),
 
                         // tab 5: Receipt & Invoicing
@@ -427,22 +424,54 @@ class CompanySettingsPage extends Page implements HasForms
     }
 
     /**
+     * Build a Repeater for TaxClass management, scoped to the current company.
+     */
+    private function buildTaxClassesRepeater(): Repeater
+    {
+        return Repeater::make('taxClasses')
+            ->label('')
+            ->relationship('taxClasses')
+            ->schema([
+                TextInput::make('name_ar')
+                    ->label(__('tax_class.name_ar'))
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('name_en')
+                    ->label(__('tax_class.name_en'))
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('rate')
+                    ->label(__('tax_class.rate'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->step(0.01)
+                    ->suffix('%')
+                    ->required(),
+            ])
+            ->columns(3)
+            ->addActionLabel(__('tax_class.add_tax_class'))
+            ->reorderable(false)
+            ->columnSpanFull();
+    }
+
+    /**
      * Persist the settings to the database.
      */
     public function save(): void
     {
-        $data = $this->form->getState();
+        $company = $this->company;
 
-        /** @var User $user */
-        $user = Auth::user();
-
-        if ($user->company) {
-            $user->company->update($data);
-
-            Notification::make()
-                ->title(__('company_settings.settings_saved_successfully'))
-                ->success()
-                ->send();
+        if (! $company) {
+            return;
         }
+
+        $data = $this->form->getState();
+        $company->update($data);
+
+        Notification::make()
+            ->title(__('company_settings.settings_saved_successfully'))
+            ->success()
+            ->send();
     }
 }

@@ -35,6 +35,8 @@ class StoreSchema
                     ->columnSpanFull(),
 
                 Tabs::make('Settings')
+                    ->persistTabInQueryString()
+
                     ->tabs([
                         Tab::make(__('app.general_information'))
                             ->schema([
