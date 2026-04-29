@@ -8,5 +8,7 @@ return [
     'add_unit' => 'Add Unit',
     'abbreviation_en' => 'Abbreviation (English)',
     'abbreviation_ar' => 'Abbreviation (Arabic)',
+    'name_ar' => 'Name (Arabic)',
+    'name_en' => 'Name (English)',
     'uom_helper' => 'The unit used for selling and stock (e.g., Piece, Kilogram).',
 ];
