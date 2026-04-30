@@ -77,4 +77,7 @@ return [
     'price_to' => 'Price To',
     'retail_price_from' => 'Retail Price From',
     'retail_price_to' => 'Retail Price To',
+    'wholesale_price_range' => 'Wholesale Price Range',
+    'wholesale_price_from' => 'Wholesale Price From',
+    'wholesale_price_to' => 'Wholesale Price To',
 ];

@@ -77,4 +77,7 @@ return [
     'price_to' => 'السعر إلى',
     'retail_price_from' => 'سعر التجزئة من',
     'retail_price_to' => 'سعر التجزئة إلى',
+    'wholesale_price_range' => 'نطاق سعر الجملة',
+    'wholesale_price_from' => 'سعر الجملة من',
+    'wholesale_price_to' => 'سعر الجملة إلى',
 ];

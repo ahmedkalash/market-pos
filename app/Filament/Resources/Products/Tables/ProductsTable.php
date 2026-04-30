@@ -101,7 +101,7 @@ class ProductsTable
                     ->searchable()
                     ->preload(),
 
-                TernaryFilter::make('price_is_negotiable')
+                TernaryFilter::make('retail_is_price_negotiable')
                     ->label(__('product.negotiable'))
                     ->query(function (Builder $query, array $data): Builder {
                         if (blank($data['value'])) {
@@ -111,8 +111,120 @@ class ProductsTable
                         $isNegotiable = $data['value'] == '1';
 
                         return $query->whereHas('variants', function (Builder $query) use ($isNegotiable) {
-                            $query->where('price_is_negotiable', $isNegotiable);
+                            $query->where('retail_is_price_negotiable', $isNegotiable);
                         });
+                    }),
+
+                Filter::make('retail_price_range')
+                    ->label(__('product.retail_price_range'))
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('retail_price_from')
+                            ->label(__('product.retail_price_from'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                        TextInput::make('retail_price_to')
+                            ->label(__('product.retail_price_to'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                filled($data['retail_price_from']),
+                                fn (Builder $q) => $q->whereHas('variants', fn (Builder $v) => $v->where('retail_price', '>=', $data['retail_price_from']))
+                            )
+                            ->when(
+                                filled($data['retail_price_to']),
+                                fn (Builder $q) => $q->whereHas('variants', fn (Builder $v) => $v->where('retail_price', '<=', $data['retail_price_to']))
+                            );
+                    })
+                    ->indicateUsing(function (array $data) use ($user): array {
+                        $indicators = [];
+                        $symbol = $user->company->currency_symbol;
+
+                        if (filled($data['retail_price_from'])) {
+                            $indicators[] = __('product.retail_price_from').': '.$data['retail_price_from'].' '.$symbol;
+                        }
+
+                        if (filled($data['retail_price_to'])) {
+                            $indicators[] = __('product.retail_price_to').': '.$data['retail_price_to'].' '.$symbol;
+                        }
+
+                        return $indicators;
+                    }),
+
+                TernaryFilter::make('wholesale_enabled')
+                    ->label(__('product.wholesale_enabled'))
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['value'])) {
+                            return $query;
+                        }
+
+                        $isEnabled = $data['value'] == '1';
+
+                        return $query->whereHas('variants', function (Builder $query) use ($isEnabled) {
+                            $query->where('wholesale_enabled', $isEnabled);
+                        });
+                    }),
+
+                TernaryFilter::make('wholesale_is_price_negotiable')
+                    ->label(__('product.wholesale_is_price_negotiable'))
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['value'])) {
+                            return $query;
+                        }
+
+                        $isNegotiable = $data['value'] == '1';
+
+                        return $query->whereHas('variants', function (Builder $query) use ($isNegotiable) {
+                            $query->where('wholesale_is_price_negotiable', $isNegotiable);
+                        });
+                    }),
+
+                Filter::make('wholesale_price_range')
+                    ->label(__('product.wholesale_price_range'))
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('wholesale_price_from')
+                            ->label(__('product.wholesale_price_from'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                        TextInput::make('wholesale_price_to')
+                            ->label(__('product.wholesale_price_to'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                filled($data['wholesale_price_from']),
+                                fn (Builder $q) => $q->whereHas('variants', fn (Builder $v) => $v->where('wholesale_price', '>=', $data['wholesale_price_from']))
+                            )
+                            ->when(
+                                filled($data['wholesale_price_to']),
+                                fn (Builder $q) => $q->whereHas('variants', fn (Builder $v) => $v->where('wholesale_price', '<=', $data['wholesale_price_to']))
+                            );
+                    })
+                    ->indicateUsing(function (array $data) use ($user): array {
+                        $indicators = [];
+                        $symbol = $user->company->currency_symbol;
+
+                        if (filled($data['wholesale_price_from'])) {
+                            $indicators[] = __('product.wholesale_price_from').': '.$data['wholesale_price_from'].' '.$symbol;
+                        }
+
+                        if (filled($data['wholesale_price_to'])) {
+                            $indicators[] = __('product.wholesale_price_to').': '.$data['wholesale_price_to'].' '.$symbol;
+                        }
+
+                        return $indicators;
                     }),
 
                 SelectFilter::make('uom_id')
@@ -196,11 +308,11 @@ class ProductsTable
                     }),
 
                 Filter::make('low_stock')
-                    ->label(__('product.low_stock_threshold'))
+                    ->label(__('product.low_stock'))
                     ->columnSpanFull()
                     ->schema([
                         Toggle::make('low_stock')
-                            ->label(__('product.low_stock_threshold'))
+                            ->label(__('product.low_stock'))
                             ->default(false),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -220,8 +332,56 @@ class ProductsTable
 
                         return [__('product.low_stock_threshold')];
                     }),
+
+                Filter::make('out_of_stock')
+                    ->label(__('product.out_of_stock'))
+                    ->schema([
+                        Toggle::make('out_of_stock')
+                            ->label(__('product.out_of_stock'))
+                            ->default(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! ($data['out_of_stock'] ?? false)) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('variants', function (Builder $query) {
+                            $query->where('quantity', '<=', 0);
+                        });
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        if (! ($data['out_of_stock'] ?? false)) {
+                            return [];
+                        }
+
+                        return [__('product.out_of_stock')];
+                    }),
+
+                Filter::make('no_barcode')
+                    ->label(__('product.no_barcode'))
+                    ->schema([
+                        Toggle::make('no_barcode')
+                            ->label(__('product.no_barcode'))
+                            ->default(false),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (! ($data['no_barcode'] ?? false)) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('variants', function (Builder $query) {
+                            $query->whereDoesntHave('barcodes');
+                        });
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        if (! ($data['no_barcode'] ?? false)) {
+                            return [];
+                        }
+
+                        return [__('product.no_barcode')];
+                    }),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
+            ->filtersLayout(FiltersLayout::Modal)
             ->filtersFormColumns(4)
             ->recordActionsColumnLabel(__('app.actions'))
             ->recordActions([
