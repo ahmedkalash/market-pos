@@ -80,4 +80,9 @@ return [
     'wholesale_price_range' => 'نطاق سعر الجملة',
     'wholesale_price_from' => 'سعر الجملة من',
     'wholesale_price_to' => 'سعر الجملة إلى',
+    'purchase_price_range' => 'نطاق سعر الشراء',
+    'purchase_price_from' => 'سعر الشراء من',
+    'purchase_price_to' => 'سعر الشراء إلى',
+    'retail_margin' => 'هامش ربح التجزئة',
+    'wholesale_margin' => 'هامش ربح الجملة',
 ];

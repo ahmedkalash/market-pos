@@ -23,8 +23,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -82,7 +80,7 @@ class VariantsRelationManager extends RelationManager
                         Select::make('uom_id')
                             ->label(__('unit_of_measure.unit_of_measure'))
                             ->helperText(__('unit_of_measure.uom_helper'))
-                            ->relationship('unitOfMeasure', 'name_' . app()->getLocale(), fn(Builder $query) => $query->where('company_id', $companyId))
+                            ->relationship('unitOfMeasure', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
                             ->required()
                             ->searchable()
                             ->preload(),
@@ -124,17 +122,28 @@ class VariantsRelationManager extends RelationManager
                             ->numeric()
                             ->minValue(0)
                             ->required()
-                            ->prefix(fn() => $user->company->currency_symbol)
+                            ->prefix(fn () => $user->company->currency_symbol)
                             ->columnSpanFull(),
 
                         // --- Retail ---
                         TextInput::make('retail_price')
                             ->label(__('product.retail_price'))
-                            ->helperText(__('product.retail_price_helper'))
+                            ->helperText(function (Get $get) {
+                                $retail = (float) $get('retail_price');
+                                $cost = (float) $get('purchase_price');
+                                if ($retail > 0 && $cost > 0) {
+                                    $margin = round((($retail - $cost) / $retail) * 100, 1);
+
+                                    return __('product.retail_margin').': '.$margin.'%';
+                                }
+
+                                return __('product.retail_price_helper');
+                            })
                             ->numeric()
                             ->minValue(0)
                             ->required()
-                            ->prefix(fn() => $user->company->currency_symbol),
+                            ->live(onBlur: true)
+                            ->prefix(fn () => $user->company->currency_symbol),
 
                         Toggle::make('retail_is_price_negotiable')
                             ->label(__('product.retail_is_price_negotiable'))
@@ -147,9 +156,10 @@ class VariantsRelationManager extends RelationManager
                             ->helperText(__('product.min_retail_price_helper'))
                             ->numeric()
                             ->minValue(0)
-                            ->required(fn(Get $get) => (bool) $get('retail_is_price_negotiable'))
-                            ->prefix(fn() => $user->company->currency_symbol)
-                            ->visible(fn(Get $get) => (bool) $get('retail_is_price_negotiable')),
+                            ->lte('retail_price')
+                            ->required(fn (Get $get) => (bool) $get('retail_is_price_negotiable'))
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->visible(fn (Get $get) => (bool) $get('retail_is_price_negotiable')),
 
                         // --- Wholesale ---
                         Toggle::make('wholesale_enabled')
@@ -160,12 +170,23 @@ class VariantsRelationManager extends RelationManager
 
                         TextInput::make('wholesale_price')
                             ->label(__('product.wholesale_price'))
-                            ->helperText(__('product.wholesale_price_helper'))
+                            ->helperText(function (Get $get) {
+                                $wholesale = (float) $get('wholesale_price');
+                                $cost = (float) $get('purchase_price');
+                                if ($wholesale > 0 && $cost > 0) {
+                                    $margin = round((($wholesale - $cost) / $wholesale) * 100, 1);
+
+                                    return __('product.wholesale_margin').': '.$margin.'%';
+                                }
+
+                                return __('product.wholesale_price_helper');
+                            })
                             ->numeric()
                             ->minValue(0)
-                            ->required(fn(Get $get) => (bool) $get('wholesale_enabled'))
-                            ->prefix(fn() => $user->company->currency_symbol)
-                            ->visible(fn(Get $get) => (bool) $get('wholesale_enabled')),
+                            ->required(fn (Get $get) => (bool) $get('wholesale_enabled'))
+                            ->live(onBlur: true)
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled')),
 
                         TextInput::make('wholesale_qty_threshold')
                             ->label(__('product.wholesale_qty_threshold'))
@@ -173,27 +194,28 @@ class VariantsRelationManager extends RelationManager
                             ->numeric()
                             ->minValue(0)
                             ->default(0)
-                            ->visible(fn(Get $get) => (bool) $get('wholesale_enabled')),
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled')),
 
                         Toggle::make('wholesale_is_price_negotiable')
                             ->label(__('product.wholesale_is_price_negotiable'))
                             ->helperText(__('product.wholesale_is_price_negotiable_helper'))
                             ->live()
                             ->default(false)
-                            ->visible(fn(Get $get) => (bool) $get('wholesale_enabled')),
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled')),
 
                         TextInput::make('min_wholesale_price')
                             ->label(__('product.min_wholesale_price'))
                             ->helperText(__('product.min_wholesale_price_helper'))
                             ->numeric()
                             ->minValue(0)
-                            ->required(fn(Get $get) => (bool) $get('wholesale_enabled') && (bool) $get('wholesale_is_price_negotiable'))
-                            ->prefix(fn() => $user->company->currency_symbol)
-                            ->visible(fn(Get $get) => (bool) $get('wholesale_enabled') && (bool) $get('wholesale_is_price_negotiable')),
+                            ->lte('wholesale_price')
+                            ->required(fn (Get $get) => (bool) $get('wholesale_enabled') && (bool) $get('wholesale_is_price_negotiable'))
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled') && (bool) $get('wholesale_is_price_negotiable')),
                     ])
                     ->columns(2),
 
-                Section::make(__('product.barcodes') . ': ' . __('product.barcode_input_helper'))
+                Section::make(__('product.barcodes').': '.__('product.barcode_input_helper'))
                     ->schema([
                         Repeater::make('barcodes')
                             ->hiddenLabel()
@@ -212,7 +234,7 @@ class VariantsRelationManager extends RelationManager
                     ])->columnSpan(1)
                     ->compact(),
 
-                Section::make(__('attribute.attributes') . ': ' . __('product.attribute_values_helper'))
+                Section::make(__('attribute.attributes').': '.__('product.attribute_values_helper'))
                     ->compact()
                     ->schema([
                         Repeater::make('variant_attributes')
@@ -224,7 +246,7 @@ class VariantsRelationManager extends RelationManager
                                     ->label(__('attribute.attribute'))
                                     ->helperText(__('attribute.attribute_helper'))
                                     ->options(function () use ($companyId) {
-                                        return Attribute::where('company_id', $companyId)->pluck('name_' . app()->getLocale(), 'id');
+                                        return Attribute::where('company_id', $companyId)->pluck('name_'.app()->getLocale(), 'id');
                                     })
                                     ->live()
                                     ->required()
@@ -254,7 +276,7 @@ class VariantsRelationManager extends RelationManager
                                             return [];
                                         }
 
-                                        return AttributeValue::where('attribute_id', $get('attribute_id'))->pluck('value_' . app()->getLocale(), 'id');
+                                        return AttributeValue::where('attribute_id', $get('attribute_id'))->pluck('value_'.app()->getLocale(), 'id');
                                     })
                                     ->required()
                                     ->createOptionForm([
@@ -274,7 +296,7 @@ class VariantsRelationManager extends RelationManager
 
                                         return $value->id;
                                     })
-                                    ->disabled(fn(Get $get) => ! $get('attribute_id')),
+                                    ->disabled(fn (Get $get) => ! $get('attribute_id')),
                             ])
                             ->columns(2)
                             ->columnSpanFull()
@@ -290,51 +312,52 @@ class VariantsRelationManager extends RelationManager
         $user = Auth::user();
 
         return $table
-            ->recordTitleAttribute('name_' . app()->getLocale())
+            ->recordTitleAttribute('name_'.app()->getLocale())
             ->recordActionsColumnLabel(__('app.actions'))
             ->columns([
                 TextColumn::make('name_ar')
                     ->label(__('app.name'))
-                    ->description(fn(ProductVariant $record): string => $record->name_en)
+                    ->description(fn (ProductVariant $record): string => $record->name_en)
                     ->searchable(['name_en', 'name_ar'])
                     ->sortable(),
 
-                TextColumn::make('attributeValues.value_' . app()->getLocale())
+                TextColumn::make('attributeValues.value_'.app()->getLocale())
                     ->label(__('attribute.attributes'))
                     ->badge()
                     ->color('primary')
                     ->listWithLineBreaks(),
 
-                TextColumn::make('retail_price')
-                    ->label(__('product.retail_price'))
-                    ->formatStateUsing(fn(?string $state) => $state . ' ' . $user->company->currency_symbol)
-                    ->badge()
-                    ->color('success')
-                    ->sortable(),
-
                 TextColumn::make('purchase_price')
                     ->label(__('product.purchase_price'))
-                    ->formatStateUsing(fn(?string $state) => $state . ' ' . $user->company->currency_symbol)
+                    ->formatStateUsing(fn (?string $state) => $state.' '.$user->company->currency_symbol)
                     ->badge()
                     ->color('gray')
                     ->sortable(),
 
+                TextColumn::make('retail_price')
+                    ->label(__('product.retail_price'))
+                    ->formatStateUsing(fn (?string $state) => $state.' '.$user->company->currency_symbol)
+                    ->badge()
+                    ->color('success')
+                    ->sortable(),
+
+
                 TextColumn::make('wholesale_price')
                     ->label(__('product.wholesale_price'))
-                    ->formatStateUsing(fn(?string $state) => $state ? $state . ' ' . $user->company->currency_symbol : '—')
+                    ->formatStateUsing(fn (?string $state) => $state ? $state.' '.$user->company->currency_symbol : '—')
                     ->badge()
                     ->color('warning')
                     ->sortable(),
 
                 TextColumn::make('min_retail_price')
                     ->label(__('product.min_retail_price'))
-                    ->formatStateUsing(fn(?string $state) => $state ? $state . ' ' . $user->company->currency_symbol : null)
+                    ->formatStateUsing(fn (?string $state) => $state ? $state.' '.$user->company->currency_symbol : null)
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('min_wholesale_price')
                     ->label(__('product.min_wholesale_price'))
-                    ->formatStateUsing(fn(?string $state) => $state ? $state . ' ' . $user->company->currency_symbol : '—')
+                    ->formatStateUsing(fn (?string $state) => $state ? $state.' '.$user->company->currency_symbol : '—')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -344,36 +367,81 @@ class VariantsRelationManager extends RelationManager
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                TextColumn::make('retail_margin')
+                    ->label(__('product.retail_margin'))
+                    ->state(function (ProductVariant $record): ?string {
+                        if ($record->retail_price > 0 && $record->purchase_price > 0) {
+                            return round((($record->retail_price - $record->purchase_price) / $record->retail_price) * 100, 1).'%';
+                        }
+
+                        return null;
+                    })
+                    ->badge()
+                    ->color(function (ProductVariant $record): ?string {
+                        if (! $record->retail_price || ! $record->purchase_price) {
+                            return null;
+                        }
+                        $margin = (($record->retail_price - $record->purchase_price) / $record->retail_price) * 100;
+
+                        return match (true) {
+                            $margin >= 30 => 'success',
+                            $margin >= 15 => 'warning',
+                            default => 'danger',
+                        };
+                    })
+                    ->sortable(query: function (Builder $query, string $direction) {
+                        $query->orderByRaw('((retail_price - purchase_price) / NULLIF(retail_price, 0)) '.$direction);
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('wholesale_margin')
+                    ->label(__('product.wholesale_margin'))
+                    ->state(function (ProductVariant $record): ?string {
+                        if ($record->wholesale_price > 0 && $record->purchase_price > 0) {
+                            return round((($record->wholesale_price - $record->purchase_price) / $record->wholesale_price) * 100, 1).'%';
+                        }
+
+                        return null;
+                    })
+                    ->badge()
+                    ->color(function (ProductVariant $record): ?string {
+                        if (! $record->wholesale_price || ! $record->purchase_price) {
+                            return null;
+                        }
+                        $margin = (($record->wholesale_price - $record->purchase_price) / $record->wholesale_price) * 100;
+
+                        return match (true) {
+                            $margin >= 30 => 'success',
+                            $margin >= 15 => 'warning',
+                            default => 'danger',
+                        };
+                    })
+                    ->sortable(query: function (Builder $query, string $direction) {
+                        $query->orderByRaw('((wholesale_price - purchase_price) / NULLIF(wholesale_price, 0)) '.$direction);
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('quantity')
                     ->label(__('product.stock'))
                     ->numeric(2)
                     ->sortable()
-                    ->color(fn(ProductVariant $record): ?string => $record->isLowStock() ? 'danger' : null),
+                    ->color(fn (ProductVariant $record): ?string => $record->isLowStock() ? 'danger' : null),
 
-                TextColumn::make('unitOfMeasure.abbreviation_' . app()->getLocale())
+                TextColumn::make('unitOfMeasure.abbreviation_'.app()->getLocale())
                     ->label(__('unit_of_measure.uom'))
                     ->badge()
                     ->color('gray'),
 
-                IconColumn::make('retail_is_price_negotiable')
+                ToggleColumn::make('retail_is_price_negotiable')
                     ->label(__('product.negotiable'))
-                    ->boolean()
-                    ->trueIcon(Heroicon::CheckBadge)
-                    ->falseIcon(Heroicon::XMark)
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                IconColumn::make('wholesale_is_price_negotiable')
+                ToggleColumn::make('wholesale_is_price_negotiable')
                     ->label(__('product.wholesale_is_price_negotiable'))
-                    ->boolean()
-                    ->trueIcon(Heroicon::CheckBadge)
-                    ->falseIcon(Heroicon::XMark)
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                IconColumn::make('wholesale_enabled')
+                ToggleColumn::make('wholesale_enabled')
                     ->label(__('product.wholesale_enabled'))
-                    ->boolean()
-                    ->trueIcon(Heroicon::CheckBadge)
-                    ->falseIcon(Heroicon::XMark)
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 ToggleColumn::make('is_active')
@@ -395,22 +463,22 @@ class VariantsRelationManager extends RelationManager
                             ->label(__('product.retail_price_from'))
                             ->numeric()
                             ->minValue(0)
-                            ->prefix(fn() => $user->company->currency_symbol),
+                            ->prefix(fn () => $user->company->currency_symbol),
                         TextInput::make('retail_price_to')
                             ->label(__('product.retail_price_to'))
                             ->numeric()
                             ->minValue(0)
-                            ->prefix(fn() => $user->company->currency_symbol),
+                            ->prefix(fn () => $user->company->currency_symbol),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 filled($data['retail_price_from']),
-                                fn(Builder $q) => $q->where('retail_price', '>=', $data['retail_price_from'])
+                                fn (Builder $q) => $q->where('retail_price', '>=', $data['retail_price_from'])
                             )
                             ->when(
                                 filled($data['retail_price_to']),
-                                fn(Builder $q) => $q->where('retail_price', '<=', $data['retail_price_to'])
+                                fn (Builder $q) => $q->where('retail_price', '<=', $data['retail_price_to'])
                             );
                     })
                     ->indicateUsing(function (array $data) use ($user): array {
@@ -418,11 +486,11 @@ class VariantsRelationManager extends RelationManager
                         $symbol = $user->company->currency_symbol;
 
                         if (filled($data['retail_price_from'])) {
-                            $indicators[] = __('product.price_from') . ': ' . $data['retail_price_from'] . ' ' . $symbol;
+                            $indicators[] = __('product.price_from').': '.$data['retail_price_from'].' '.$symbol;
                         }
 
                         if (filled($data['retail_price_to'])) {
-                            $indicators[] = __('product.price_to') . ': ' . $data['retail_price_to'] . ' ' . $symbol;
+                            $indicators[] = __('product.price_to').': '.$data['retail_price_to'].' '.$symbol;
                         }
 
                         return $indicators;
@@ -438,11 +506,53 @@ class VariantsRelationManager extends RelationManager
                     ->label(__('unit_of_measure.unit_of_measure'))
                     ->relationship(
                         'unitOfMeasure',
-                        'name_' . app()->getLocale(),
-                        fn(Builder $query) => $query->filterByCompany($user->company_id)
+                        'name_'.app()->getLocale(),
+                        fn (Builder $query) => $query->filterByCompany($user->company_id)
                     )
                     ->searchable()
                     ->preload(),
+
+                Filter::make('purchase_price_range')
+                    ->label(__('product.purchase_price_range'))
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('purchase_price_from')
+                            ->label(__('product.purchase_price_from'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                        TextInput::make('purchase_price_to')
+                            ->label(__('product.purchase_price_to'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                filled($data['purchase_price_from']),
+                                fn (Builder $q) => $q->where('purchase_price', '>=', $data['purchase_price_from'])
+                            )
+                            ->when(
+                                filled($data['purchase_price_to']),
+                                fn (Builder $q) => $q->where('purchase_price', '<=', $data['purchase_price_to'])
+                            );
+                    })
+                    ->indicateUsing(function (array $data) use ($user): array {
+                        $indicators = [];
+                        $symbol = $user->company->currency_symbol;
+
+                        if (filled($data['purchase_price_from'])) {
+                            $indicators[] = __('product.purchase_price_from').': '.$data['purchase_price_from'].' '.$symbol;
+                        }
+
+                        if (filled($data['purchase_price_to'])) {
+                            $indicators[] = __('product.purchase_price_to').': '.$data['purchase_price_to'].' '.$symbol;
+                        }
+
+                        return $indicators;
+                    }),
 
                 Filter::make('barcode')
                     ->schema([
@@ -466,10 +576,10 @@ class VariantsRelationManager extends RelationManager
                     ->schema([
                         Select::make('attribute_id')
                             ->label(__('attribute.attribute'))
-                            ->options(fn() => Attribute::query()->filterByCompany($user->company_id)
-                                ->pluck('name_' . app()->getLocale(), 'id'))
+                            ->options(fn () => Attribute::query()->filterByCompany($user->company_id)
+                                ->pluck('name_'.app()->getLocale(), 'id'))
                             ->live()
-                            ->afterStateUpdated(fn(Set $set) => $set('attribute_value_id', null)),
+                            ->afterStateUpdated(fn (Set $set) => $set('attribute_value_id', null)),
                         Select::make('attribute_value_id')
                             ->label(__('attribute.value'))
                             ->options(function (Get $get) {
@@ -478,11 +588,11 @@ class VariantsRelationManager extends RelationManager
                                 }
 
                                 return AttributeValue::where('attribute_id', $get('attribute_id'))
-                                    ->pluck('value_' . app()->getLocale(), 'id');
+                                    ->pluck('value_'.app()->getLocale(), 'id');
                             })
                             ->multiple()
                             ->preload()
-                            ->disabled(fn(Get $get) => ! $get('attribute_id')),
+                            ->disabled(fn (Get $get) => ! $get('attribute_id')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['attribute_value_id'])) {
@@ -500,11 +610,11 @@ class VariantsRelationManager extends RelationManager
 
                         $attribute = Attribute::find($data['attribute_id']);
                         $values = AttributeValue::whereIn('id', (array) $data['attribute_value_id'])
-                            ->pluck('value_' . app()->getLocale())
+                            ->pluck('value_'.app()->getLocale())
                             ->implode(', ');
 
                         return [
-                            ($attribute?->{'name_' . app()->getLocale()} ?? __('attribute.attribute')) . ': ' . $values,
+                            ($attribute?->{'name_'.app()->getLocale()} ?? __('attribute.attribute')).': '.$values,
                         ];
                     }),
 

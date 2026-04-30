@@ -80,4 +80,9 @@ return [
     'wholesale_price_range' => 'Wholesale Price Range',
     'wholesale_price_from' => 'Wholesale Price From',
     'wholesale_price_to' => 'Wholesale Price To',
+    'purchase_price_range' => 'Purchase Price Range',
+    'purchase_price_from' => 'Purchase Price From',
+    'purchase_price_to' => 'Purchase Price To',
+    'retail_margin' => 'Retail Margin',
+    'wholesale_margin' => 'Wholesale Margin',
 ];

@@ -25,26 +25,26 @@ class ProductForm
                 // Main column (2/3)
                 Section::make(__('product.general_information'))
                     ->schema([
-                        TextInput::make('name_en')
-                            ->label(__('product.name_english'))
-                            ->helperText(__('product.name_en_helper'))
-                            ->required()
-                            ->maxLength(255),
-
                         TextInput::make('name_ar')
                             ->label(__('product.name_arabic'))
                             ->helperText(__('product.name_ar_helper'))
                             ->required()
                             ->maxLength(255),
 
-                        Textarea::make('description_en')
-                            ->label(__('product.description_en'))
-                            ->helperText(__('product.description_en_helper'))
-                            ->rows(4),
+                        TextInput::make('name_en')
+                            ->label(__('product.name_english'))
+                            ->helperText(__('product.name_en_helper'))
+                            ->required()
+                            ->maxLength(255),
 
                         Textarea::make('description_ar')
                             ->label(__('product.description_ar'))
                             ->helperText(__('product.description_ar_helper'))
+                            ->rows(4),
+
+                        Textarea::make('description_en')
+                            ->label(__('product.description_en'))
+                            ->helperText(__('product.description_en_helper'))
                             ->rows(4),
                     ])
                     ->columns(2),

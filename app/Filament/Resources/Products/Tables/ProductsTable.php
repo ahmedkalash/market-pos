@@ -227,6 +227,48 @@ class ProductsTable
                         return $indicators;
                     }),
 
+                Filter::make('purchase_price_range')
+                    ->label(__('product.purchase_price_range'))
+                    ->columnSpan(2)
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('purchase_price_from')
+                            ->label(__('product.purchase_price_from'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                        TextInput::make('purchase_price_to')
+                            ->label(__('product.purchase_price_to'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn () => $user->company->currency_symbol),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                filled($data['purchase_price_from']),
+                                fn (Builder $q) => $q->whereHas('variants', fn (Builder $v) => $v->where('purchase_price', '>=', $data['purchase_price_from']))
+                            )
+                            ->when(
+                                filled($data['purchase_price_to']),
+                                fn (Builder $q) => $q->whereHas('variants', fn (Builder $v) => $v->where('purchase_price', '<=', $data['purchase_price_to']))
+                            );
+                    })
+                    ->indicateUsing(function (array $data) use ($user): array {
+                        $indicators = [];
+                        $symbol = $user->company->currency_symbol;
+
+                        if (filled($data['purchase_price_from'])) {
+                            $indicators[] = __('product.purchase_price_from').': '.$data['purchase_price_from'].' '.$symbol;
+                        }
+
+                        if (filled($data['purchase_price_to'])) {
+                            $indicators[] = __('product.purchase_price_to').': '.$data['purchase_price_to'].' '.$symbol;
+                        }
+
+                        return $indicators;
+                    }),
+
                 SelectFilter::make('uom_id')
                     ->label(__('unit_of_measure.unit_of_measure'))
                     ->options(fn () => UnitOfMeasure::query()->filterByCompany($user->company_id)
@@ -330,7 +372,7 @@ class ProductsTable
                             return [];
                         }
 
-                        return [__('product.low_stock_threshold')];
+                        return [__('product.low_stock')];
                     }),
 
                 Filter::make('out_of_stock')
