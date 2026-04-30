@@ -33,7 +33,7 @@ return [
     'negotiable' => 'سعر التجزئة قابل للتفاوض',
 
     // Purchase / Cost
-    'purchase_price' => 'سعر الشراء / التكلفة',
+    'purchase_price' => 'سعر الشراء',
     'purchase_price_helper' => 'السعر المدفوع للمورد. يُستخدم لحسابات هامش الربح.',
 
     // Wholesale Pricing
@@ -54,6 +54,7 @@ return [
     'stock' => 'المخزون',
     'low_stock_threshold' => 'حد المخزون المنخفض',
     'low_stock_threshold_helper' => 'سيتم التنبيه عند انخفاض المخزون عن هذه الكمية. اتركه فارغاً لتعطيل التنبيه.',
+    'low_stock' => 'منخفض المخزون',
 
     'barcodes' => 'الباركودات',
     'barcode' => 'باركود',
@@ -67,4 +68,11 @@ return [
     'quantity_helper' => 'إجمالي عدد الوحدات المتوفرة حالياً في المخزون.',
     'is_active_helper' => 'في حالة التعطيل، لن يظهر هذا المنتج في نظام نقاط البيع.',
     'barcode_input_helper' => 'امسح باركود المنتج أو اكتبه يدوياً.',
+
+    // Filters
+    'out_of_stock' => 'نافد المخزون',
+    'no_barcode' => 'بدون باركود',
+    'retail_price_range' => 'نطاق سعر التجزئة',
+    'price_from' => 'السعر من',
+    'price_to' => 'السعر إلى',
 ];

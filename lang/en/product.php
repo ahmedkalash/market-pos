@@ -33,7 +33,7 @@ return [
     'negotiable' => 'Negotiable',
 
     // Purchase / Cost
-    'purchase_price' => 'Purchase / Cost Price',
+    'purchase_price' => 'Purchase Price',
     'purchase_price_helper' => 'The price paid to the supplier. Used for profit margin calculations.',
 
     // Wholesale Pricing
@@ -54,6 +54,7 @@ return [
     'stock' => 'Stock',
     'low_stock_threshold' => 'Low Stock Threshold',
     'low_stock_threshold_helper' => 'Alert when stock falls below this quantity. Leave blank to disable.',
+    'low_stock' => 'Low Stock',
 
     'barcodes' => 'Barcodes',
     'barcode' => 'Barcode',
@@ -67,4 +68,11 @@ return [
     'quantity_helper' => 'The total number of units currently available in stock.',
     'is_active_helper' => 'If disabled, this product will not be visible in the POS system.',
     'barcode_input_helper' => 'Scan the product barcode or type it manually.',
+
+    // Filters
+    'out_of_stock' => 'Out of Stock',
+    'no_barcode' => 'No Barcode',
+    'retail_price_range' => 'Retail Price Range',
+    'price_from' => 'Price From',
+    'price_to' => 'Price To',
 ];
