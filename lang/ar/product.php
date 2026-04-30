@@ -23,11 +23,31 @@ return [
     'attribute_values_helper' => 'اختر قيماً من الخصائص المعينة للمنتج.',
 
     'pricing' => 'التسعير',
-    'price' => 'السعر',
-    'price_is_negotiable' => 'سعر قابل للتفاوض',
-    'price_is_negotiable_helper' => 'يسمح للكاشير بتغيير السعر ضمن حد أدنى محدد.',
-    'minimum_price' => 'السعر الأدنى',
-    'negotiable' => 'قابل للتفاوض',
+
+    // Retail Pricing
+    'retail_price' => 'سعر البيع بالتجزئة',
+    'retail_is_price_negotiable' => 'سعر التجزئة قابل للتفاوض',
+    'retail_is_price_negotiable_helper' => 'يسمح للكاشير بتغيير سعر التجزئة ضمن الحد الأدنى المحدد.',
+    'min_retail_price' => 'الحد الأدنى لسعر التجزئة',
+    'min_retail_price_helper' => 'أدنى سعر تجزئة مسموح به عند تفعيل التفاوض.',
+    'negotiable' => 'سعر التجزئة قابل للتفاوض',
+
+    // Purchase / Cost
+    'purchase_price' => 'سعر الشراء / التكلفة',
+    'purchase_price_helper' => 'السعر المدفوع للمورد. يُستخدم لحسابات هامش الربح.',
+
+    // Wholesale Pricing
+    'wholesale_enabled' => 'تفعيل أسعار الجملة',
+    'wholesale_enabled_helper' => 'تفعيل سعر جملة منفصل لهذا النوع.',
+    'wholesale_pricing' => 'أسعار الجملة',
+    'wholesale_price' => 'سعر الجملة',
+    'wholesale_price_helper' => 'السعر المقدَّم لعملاء الجملة.',
+    'wholesale_is_price_negotiable' => 'سعر الجملة قابل للتفاوض',
+    'wholesale_is_price_negotiable_helper' => 'يسمح للكاشير بتغيير سعر الجملة ضمن الحد الأدنى المحدد.',
+    'min_wholesale_price' => 'الحد الأدنى لسعر الجملة',
+    'min_wholesale_price_helper' => 'أدنى سعر جملة مسموح به عند تفعيل التفاوض.',
+    'wholesale_qty_threshold' => 'حد كمية الجملة',
+    'wholesale_qty_threshold_helper' => 'الحد الأدنى للكمية لتطبيق سعر الجملة. اضبط على 0 ليقرر الكاشير سعر الجملة.',
 
     'inventory' => 'المخزون',
     'quantity' => 'الكمية',
@@ -43,8 +63,7 @@ return [
     'name_ar_helper' => 'اسم المنتج باللغة العربية كما سيظهر في الإيصالات والمتجر.',
     'description_en_helper' => 'معلومات مفصلة عن المنتج باللغة الإنجليزية.',
     'description_ar_helper' => 'معلومات مفصلة عن المنتج باللغة العربية.',
-    'price_helper' => 'سعر البيع القياسي للوحدة الواحدة.',
-    'minimum_price_helper' => 'أدنى سعر مسموح به في حالة تفعيل التفاوض.',
+    'retail_price_helper' => 'سعر البيع القياسي للتجزئة للوحدة الواحدة.',
     'quantity_helper' => 'إجمالي عدد الوحدات المتوفرة حالياً في المخزون.',
     'is_active_helper' => 'في حالة التعطيل، لن يظهر هذا المنتج في نظام نقاط البيع.',
     'barcode_input_helper' => 'امسح باركود المنتج أو اكتبه يدوياً.',

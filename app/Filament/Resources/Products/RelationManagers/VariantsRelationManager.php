@@ -65,6 +65,7 @@ class VariantsRelationManager extends RelationManager
         return $schema
             ->components([
                 Section::make(__('product.variant_details'))
+                    ->compact()
                     ->schema([
                         TextInput::make('name_en')
                             ->label(__('product.variant_name_en'))
@@ -88,34 +89,8 @@ class VariantsRelationManager extends RelationManager
 
                     ])->columns(2),
 
-                Section::make(__('product.pricing'))
-                    ->schema([
-                        TextInput::make('price')
-                            ->label(__('product.price'))
-                            ->helperText(__('product.price_helper'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required()
-                            ->prefix(fn () => $user->company->currency_symbol),
-
-                        Toggle::make('price_is_negotiable')
-                            ->label(__('product.price_is_negotiable'))
-                            ->helperText(__('product.price_is_negotiable_helper'))
-                            ->live()
-                            ->default(false),
-
-                        TextInput::make('minimum_price')
-                            ->label(__('product.minimum_price'))
-                            ->helperText(__('product.minimum_price_helper'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required(fn (Get $get) => (bool) $get('price_is_negotiable'))
-                            ->prefix(fn () => $user->company->currency_symbol)
-                            ->visible(fn (Get $get) => (bool) $get('price_is_negotiable')),
-                    ])
-                    ->columns(),
-
                 Section::make(__('product.inventory'))
+                    ->compact()
                     ->schema([
                         TextInput::make('quantity')
                             ->label(__('product.quantity'))
@@ -139,6 +114,85 @@ class VariantsRelationManager extends RelationManager
                     ])
                     ->columns(3),
 
+                Section::make(__('product.pricing'))
+                    ->compact()
+                    ->schema([
+                        // --- Purchase / Cost ---
+                        TextInput::make('purchase_price')
+                            ->label(__('product.purchase_price'))
+                            ->helperText(__('product.purchase_price_helper'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->required()
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->columnSpanFull(),
+
+                        // --- Retail ---
+                        TextInput::make('retail_price')
+                            ->label(__('product.retail_price'))
+                            ->helperText(__('product.retail_price_helper'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->required()
+                            ->prefix(fn () => $user->company->currency_symbol),
+
+                        Toggle::make('retail_is_price_negotiable')
+                            ->label(__('product.retail_is_price_negotiable'))
+                            ->helperText(__('product.retail_is_price_negotiable_helper'))
+                            ->live()
+                            ->default(false),
+
+                        TextInput::make('min_retail_price')
+                            ->label(__('product.min_retail_price'))
+                            ->helperText(__('product.min_retail_price_helper'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(fn (Get $get) => (bool) $get('retail_is_price_negotiable'))
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->visible(fn (Get $get) => (bool) $get('retail_is_price_negotiable')),
+
+                        // --- Wholesale ---
+                        Toggle::make('wholesale_enabled')
+                            ->label(__('product.wholesale_enabled'))
+                            ->helperText(__('product.wholesale_enabled_helper'))
+                            ->live()
+                            ->default(false),
+
+                        TextInput::make('wholesale_price')
+                            ->label(__('product.wholesale_price'))
+                            ->helperText(__('product.wholesale_price_helper'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(fn (Get $get) => (bool) $get('wholesale_enabled'))
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled')),
+
+                        TextInput::make('wholesale_qty_threshold')
+                            ->label(__('product.wholesale_qty_threshold'))
+                            ->helperText(__('product.wholesale_qty_threshold_helper'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled')),
+
+                        Toggle::make('wholesale_is_price_negotiable')
+                            ->label(__('product.wholesale_is_price_negotiable'))
+                            ->helperText(__('product.wholesale_is_price_negotiable_helper'))
+                            ->live()
+                            ->default(false)
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled')),
+
+                        TextInput::make('min_wholesale_price')
+                            ->label(__('product.min_wholesale_price'))
+                            ->helperText(__('product.min_wholesale_price_helper'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->required(fn (Get $get) => (bool) $get('wholesale_enabled') && (bool) $get('wholesale_is_price_negotiable'))
+                            ->prefix(fn () => $user->company->currency_symbol)
+                            ->visible(fn (Get $get) => (bool) $get('wholesale_enabled') && (bool) $get('wholesale_is_price_negotiable')),
+                    ])
+                    ->columns(2),
+
                 Section::make(__('product.barcodes').': '.__('product.barcode_input_helper'))
                     ->schema([
                         Repeater::make('barcodes')
@@ -152,19 +206,20 @@ class VariantsRelationManager extends RelationManager
                                     ->maxLength(255)
                                     ->unique('product_barcodes', 'barcode', ignoreRecord: true),
                             ])
-                            ->grid(3)
+                            ->grid(1)
                             ->addActionLabel(__('product.add_barcode'))
                             ->reorderable(false)
-                            ->columnSpanFull(),
-                    ])
+                            ,
+                    ])->columnSpan(1)
                     ->compact(),
 
-                Section::make()
+                Section::make(__('attribute.attributes') . ': '. __('product.attribute_values_helper'))
+                    ->compact()
                     ->schema([
                         Repeater::make('variant_attributes')
                             ->reorderable(false)
                             ->grid(2)
-                            ->label(__('attribute.attributes'))
+                            ->hiddenLabel()
                             ->schema([
                                 Select::make('attribute_id')
                                     ->label(__('attribute.attribute'))
@@ -224,8 +279,7 @@ class VariantsRelationManager extends RelationManager
                             ])
                             ->columns(2)
                             ->columnSpanFull()
-                            ->addActionLabel(__('attribute.add_attribute'))
-                            ->helperText(__('product.attribute_values_helper')),
+                            ->addActionLabel(__('attribute.add_attribute')),
                     ])->columnSpanFull(),
 
             ]);
@@ -252,15 +306,31 @@ class VariantsRelationManager extends RelationManager
                     ->color('primary')
                     ->listWithLineBreaks(),
 
-                TextColumn::make('price')
-                    ->label(__('product.price'))
+                TextColumn::make('retail_price')
+                    ->label(__('product.retail_price'))
                     ->formatStateUsing(fn (?string $state) => $state.' '.$user->company->currency_symbol)
                     ->badge()
                     ->color('success')
                     ->sortable(),
 
-                TextColumn::make('minimum_price')
-                    ->label(__('product.minimum_price'))
+                TextColumn::make('purchase_price')
+                    ->label(__('product.purchase_price'))
+                    ->formatStateUsing(fn (?string $state) => $state.' '.$user->company->currency_symbol)
+                    ->badge()
+                    ->color('gray')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('wholesale_price')
+                    ->label(__('product.wholesale_price'))
+                    ->formatStateUsing(fn (?string $state) => $state ? $state.' '.$user->company->currency_symbol : '—')
+                    ->badge()
+                    ->color('warning')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('min_retail_price')
+                    ->label(__('product.min_retail_price'))
                     ->formatStateUsing(fn (?string $state) => $state ? $state.' '.$user->company->currency_symbol : null)
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -276,11 +346,18 @@ class VariantsRelationManager extends RelationManager
                     ->badge()
                     ->color('gray'),
 
-                IconColumn::make('price_is_negotiable')
+                IconColumn::make('retail_is_price_negotiable')
                     ->label(__('product.negotiable'))
                     ->boolean()
                     ->trueIcon(Heroicon::CheckBadge)
                     ->falseIcon(Heroicon::XMark),
+
+                IconColumn::make('wholesale_enabled')
+                    ->label(__('product.wholesale_enabled'))
+                    ->boolean()
+                    ->trueIcon(Heroicon::CheckBadge)
+                    ->falseIcon(Heroicon::XMark)
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 ToggleColumn::make('is_active')
                     ->label(__('app.active')),
@@ -289,8 +366,11 @@ class VariantsRelationManager extends RelationManager
                 TernaryFilter::make('is_active')
                     ->label(__('app.active')),
 
-                TernaryFilter::make('price_is_negotiable')
+                TernaryFilter::make('retail_is_price_negotiable')
                     ->label(__('product.negotiable')),
+
+                TernaryFilter::make('wholesale_enabled')
+                    ->label(__('product.wholesale_enabled')),
 
                 SelectFilter::make('uom_id')
                     ->label(__('unit_of_measure.unit_of_measure'))
