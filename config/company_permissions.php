@@ -109,6 +109,14 @@ return [
             'delete_unit_of_measure',
             'delete_any_unit_of_measure',
         ],
+        'Brands' => [
+            'view_any_brand',
+            'view_brand',
+            'create_brand',
+            'update_brand',
+            'delete_brand',
+            'delete_any_brand',
+        ],
 
     ],
 ];

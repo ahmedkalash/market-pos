@@ -16,6 +16,7 @@ class Product extends Model
         'store_id',
         'category_id',
         'tax_class_id',
+        'brand_id',
         'name_en',
         'name_ar',
         'description_en',
@@ -55,5 +56,13 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * @return BelongsTo<Brand, $this>
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
     }
 }

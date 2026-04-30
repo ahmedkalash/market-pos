@@ -8,15 +8,58 @@ use App\Filament\Resources\ProductCategories\Pages\ListProductCategories;
 use App\Filament\Resources\ProductCategories\Schemas\ProductCategoryForm;
 use App\Filament\Resources\ProductCategories\Tables\ProductCategoriesTable;
 use App\Models\ProductCategory;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class ProductCategoryResource extends Resource
 {
     protected static ?string $model = ProductCategory::class;
+
+    public static function canViewAny(): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('view_any_product_category');
+    }
+
+    public static function canCreate(): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('create_product_category');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('update_product_category');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('delete_product_category');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('delete_any_product_category');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -46,7 +89,6 @@ class ProductCategoryResource extends Resource
     {
         return ProductCategoriesTable::configure($table);
     }
-
 
     public static function getRelations(): array
     {

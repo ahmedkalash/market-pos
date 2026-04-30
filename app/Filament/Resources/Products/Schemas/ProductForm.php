@@ -79,6 +79,13 @@ class ProductForm
                             ->searchable()
                             ->preload(),
 
+                        Select::make('brand_id')
+                            ->label(__('brand.brand'))
+                            ->relationship('brand', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
+                            ->searchable()
+                            ->preload()
+                            ->nullable(),
+
                     ])
                     ->columns(2),
 

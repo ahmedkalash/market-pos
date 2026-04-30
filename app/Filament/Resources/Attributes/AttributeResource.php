@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Attributes;
 use App\Filament\Resources\Attributes\Pages\ListAttributes;
 use App\Models\Attribute;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -20,10 +19,52 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class AttributeResource extends Resource
 {
     protected static ?string $model = Attribute::class;
+
+    public static function canViewAny(): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('view_any_attribute');
+    }
+
+    public static function canCreate(): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('create_attribute');
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('update_attribute');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('delete_attribute');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('delete_any_attribute');
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
@@ -44,11 +85,11 @@ class AttributeResource extends Resource
         return __('attribute.attributes');
     }
 
-
     public static function form(Schema $schema): Schema
     {
         /** @var User $user */
         $user = Auth::user();
+
         return $schema
             ->components([
                 Select::make('store_id')
@@ -76,6 +117,7 @@ class AttributeResource extends Resource
     {
         /** @var User $user */
         $user = Auth::user();
+
         return $table
             ->columns([
                 TextColumn::make('store.name_'.app()->getLocale())

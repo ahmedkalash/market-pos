@@ -63,6 +63,13 @@ return [
     'delete_unit_of_measure' => 'حذف وحدة قياس',
     'delete_any_unit_of_measure' => 'حذف عدة وحدات قياس',
 
+    'view_any_brand' => 'عرض كل العلامات التجارية',
+    'view_brand' => 'عرض العلامة التجارية',
+    'create_brand' => 'إضافة علامة تجارية',
+    'update_brand' => 'تعديل علامة تجارية',
+    'delete_brand' => 'حذف علامة تجارية',
+    'delete_any_brand' => 'حذف عدة علامات تجارية',
+
     'manage_store_settings' => 'تعديل إعدادات المتجر',
 
     // Module Headers
@@ -77,4 +84,5 @@ return [
     'products' => 'المنتجات',
     'attributes' => 'الخصائص',
     'unit of measures' => 'وحدات القياس',
+    'brands' => 'العلامات التجارية',
 ];

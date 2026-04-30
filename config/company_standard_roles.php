@@ -51,6 +51,13 @@ return [
                 'update_unit_of_measure',
                 'delete_unit_of_measure',
                 'delete_any_unit_of_measure',
+                // brands
+                'view_any_brand',
+                'view_brand',
+                'create_brand',
+                'update_brand',
+                'delete_brand',
+                'delete_any_brand',
             ],
         ],
         Roles::CASHIER->value => [
@@ -59,7 +66,7 @@ return [
                 // products
                 'view_any_product',
                 'view_product',
-                 // product categories
+                // product categories
                 'view_any_product_category',
                 'view_product_category',
                 // attributes
@@ -68,6 +75,9 @@ return [
                 // unit of measures
                 'view_any_unit_of_measure',
                 'view_unit_of_measure',
+                // brands
+                'view_any_brand',
+                'view_brand',
             ],
         ],
         Roles::STOCK_CLERK->value => [
@@ -94,6 +104,11 @@ return [
                 'view_unit_of_measure',
                 'create_unit_of_measure',
                 'update_unit_of_measure',
+                // brands
+                'view_any_brand',
+                'view_brand',
+                'create_brand',
+                'update_brand',
             ],
         ],
         Roles::ACCOUNTANT->value => [

@@ -58,14 +58,12 @@ class ProductCategory extends Model implements HasMedia
     #[Scope]
     public function active(Builder $query): Builder
     {
-        return $query ->where('is_active', true);
+        return $query->where('is_active', true);
     }
 
     #[Scope]
     public function notActive(Builder $query): Builder
     {
-        return $query ->where('is_active', false);
+        return $query->where('is_active', false);
     }
-
-
 }

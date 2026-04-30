@@ -53,6 +53,12 @@ class ProductsTable
                     ->sortable()
                     ->placeholder('-'),
 
+                TextColumn::make('brand.name_'.app()->getLocale())
+                    ->label(__('brand.brand'))
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('-'),
+
                 TextColumn::make('taxClass.name_'.app()->getLocale())
                     ->label(__('tax_class.tax_class'))
                     ->badge()
@@ -80,6 +86,12 @@ class ProductsTable
                 SelectFilter::make('category_id')
                     ->label(__('product_category.category'))
                     ->relationship('category', 'name_'.app()->getLocale())
+                    ->searchable()
+                    ->preload(),
+
+                SelectFilter::make('brand_id')
+                    ->label(__('brand.brand'))
+                    ->relationship('brand', 'name_'.app()->getLocale())
                     ->searchable()
                     ->preload(),
 

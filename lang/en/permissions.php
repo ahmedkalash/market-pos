@@ -63,6 +63,13 @@ return [
     'delete_unit_of_measure' => 'Delete Unit of Measure',
     'delete_any_unit_of_measure' => 'Delete Multiple Units of Measure',
 
+    'view_any_brand' => 'View All Brands',
+    'view_brand' => 'View Brand',
+    'create_brand' => 'Create Brand',
+    'update_brand' => 'Update Brand',
+    'delete_brand' => 'Delete Brand',
+    'delete_any_brand' => 'Delete Multiple Brands',
+
     'manage_store_settings' => 'Manage Store Settings',
 
     // Module Headers
@@ -77,4 +84,5 @@ return [
     'products' => 'Products',
     'attributes' => 'Attributes',
     'unit of measures' => 'Unit of Measures',
+    'brands' => 'Brands',
 ];
