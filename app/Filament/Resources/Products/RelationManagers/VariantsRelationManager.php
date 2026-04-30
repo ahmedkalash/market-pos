@@ -388,26 +388,19 @@ class VariantsRelationManager extends RelationManager
 
                 Filter::make('retail_price_range')
                     ->label(__('product.retail_price_range'))
-                    //                    ->columnSpan(2)
+                    ->columnSpan(2)
                     ->columns(2)
                     ->schema([
-                        Section::make()
-                            ->columnSpan('full')
-                            //                            ->compact()
-                            ->columns()
-                            ->schema([
-                                TextInput::make('retail_price_from')
-                                    ->label(__('product.price_from'))
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->prefix(fn() => $user->company->currency_symbol),
-                                TextInput::make('retail_price_to')
-                                    ->label(__('product.price_to'))
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->prefix(fn() => $user->company->currency_symbol),
-                            ])
-
+                        TextInput::make('retail_price_from')
+                            ->label(__('product.retail_price_from'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn() => $user->company->currency_symbol),
+                        TextInput::make('retail_price_to')
+                            ->label(__('product.retail_price_to'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix(fn() => $user->company->currency_symbol),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

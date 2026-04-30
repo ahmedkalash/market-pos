@@ -75,4 +75,6 @@ return [
     'retail_price_range' => 'Retail Price Range',
     'price_from' => 'Price From',
     'price_to' => 'Price To',
+    'retail_price_from' => 'Retail Price From',
+    'retail_price_to' => 'Retail Price To',
 ];

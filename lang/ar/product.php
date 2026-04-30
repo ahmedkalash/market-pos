@@ -75,4 +75,6 @@ return [
     'retail_price_range' => 'نطاق سعر التجزئة',
     'price_from' => 'السعر من',
     'price_to' => 'السعر إلى',
+    'retail_price_from' => 'سعر التجزئة من',
+    'retail_price_to' => 'سعر التجزئة إلى',
 ];
