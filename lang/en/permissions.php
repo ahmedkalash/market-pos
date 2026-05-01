@@ -72,6 +72,9 @@ return [
 
     'manage_store_settings' => 'Manage Store Settings',
 
+    'adjust_stock' => 'Adjust Stock',
+    'view_inventory_movement' => 'View Inventory Movements',
+
     // Module Headers
     'users' => 'Users',
     'roles' => 'Roles',
@@ -85,4 +88,5 @@ return [
     'attributes' => 'Attributes',
     'unit of measures' => 'Unit of Measures',
     'brands' => 'Brands',
+    'inventory' => 'Inventory',
 ];

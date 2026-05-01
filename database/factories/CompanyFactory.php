@@ -30,7 +30,6 @@ class CompanyFactory extends Factory
             'phone' => fake()->phoneNumber(),
             'address' => fake()->address(),
             'vat_number' => fake()->numerify('###-###-###'),
-            'vat_rate' => 14.00,
             'currency' => 'EGP',
             'locale' => 'ar',
             'receipt_header' => null,

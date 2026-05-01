@@ -72,6 +72,9 @@ return [
 
     'manage_store_settings' => 'تعديل إعدادات المتجر',
 
+    'adjust_stock' => 'تعديل المخزون',
+    'view_inventory_movement' => 'عرض حركات المخزون',
+
     // Module Headers
     'users' => 'المستخدمين',
     'roles' => 'الأدوار والصلاحيات',
@@ -85,4 +88,5 @@ return [
     'attributes' => 'الخصائص',
     'unit of measures' => 'وحدات القياس',
     'brands' => 'العلامات التجارية',
+    'inventory' => 'المخزون',
 ];

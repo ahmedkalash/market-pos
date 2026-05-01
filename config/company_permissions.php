@@ -117,6 +117,10 @@ return [
             'delete_brand',
             'delete_any_brand',
         ],
+        'Inventory' => [
+            'adjust_stock',
+            'view_inventory_movement',
+        ],
 
     ],
 ];

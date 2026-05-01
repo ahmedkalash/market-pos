@@ -2,11 +2,15 @@
 
 namespace App\Filament\Resources\Products\RelationManagers;
 
+use App\Enums\AdjustmentReason;
+use App\Exceptions\InsufficientStockException;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\InventoryService;
 use Auth;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -15,14 +19,17 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Enums\FiltersLayout;
@@ -38,6 +45,7 @@ class VariantsRelationManager extends RelationManager
     protected static string $relationship = 'variants';
 
     public array $tempVariantAttributes = [];
+    public float $tempOpeningStock = 0;
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
@@ -96,7 +104,9 @@ class VariantsRelationManager extends RelationManager
                             ->numeric()
                             ->minValue(0)
                             ->default(0)
-                            ->required(),
+                            ->required()
+                            ->disabled(fn (string $operation): bool => $operation === 'edit')
+                            ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
 
                         TextInput::make('low_stock_threshold')
                             ->label(__('product.low_stock_threshold'))
@@ -340,7 +350,6 @@ class VariantsRelationManager extends RelationManager
                     ->badge()
                     ->color('success')
                     ->sortable(),
-
 
                 TextColumn::make('wholesale_price')
                     ->label(__('product.wholesale_price'))
@@ -696,11 +705,22 @@ class VariantsRelationManager extends RelationManager
                         $this->tempVariantAttributes = $data['variant_attributes'] ?? [];
                         unset($data['variant_attributes']);
 
+                        $this->tempOpeningStock = (float) ($data['quantity'] ?? 0);
+                        $data['quantity'] = 0; // Set to 0 so the ledger is the only source of truth
+
                         return $data;
                     })
                     ->after(function (Model $record) {
                         $valueIds = collect($this->tempVariantAttributes)->pluck('attribute_value_id')->filter();
                         $record->attributeValues()->sync($valueIds);
+
+                        if ($this->tempOpeningStock > 0) {
+                            InventoryService::make()->setOpeningStock(
+                                variant: $record,
+                                quantity: $this->tempOpeningStock,
+                                notes: 'Initial stock during variant creation'
+                            );
+                        }
                     }),
             ])
             ->recordActions([
@@ -729,6 +749,72 @@ class VariantsRelationManager extends RelationManager
                             $record->attributeValues()->sync($valueIds);
                         }),
                     DeleteAction::make(),
+
+                    Action::make('adjustStock')
+                        ->label(__('inventory.adjust_stock'))
+                        ->icon(Heroicon::AdjustmentsHorizontal)
+                        ->color('warning')
+                        ->authorize('adjust_stock')
+                        ->modalWidth(Width::Large)
+                        ->schema([
+                            Select::make('direction')
+                                ->label(__('inventory.direction'))
+                                ->options([
+                                    'add' => __('inventory.add'),
+                                    'subtract' => __('inventory.subtract'),
+                                ])
+                                ->required()
+                                ->live(),
+
+                            TextInput::make('quantity')
+                                ->label(__('inventory.quantity'))
+                                ->numeric()
+                                ->required()
+                                ->minValue(0.001),
+
+                            Select::make('reason')
+                                ->label(__('inventory.reason'))
+                                ->options(collect(AdjustmentReason::cases())->mapWithKeys(
+                                    fn (AdjustmentReason $r) => [$r->value => __('inventory.'.$r->value)]
+                                ))
+                                ->required()
+                                ->live(),
+
+                            Textarea::make('notes')
+                                ->label(__('inventory.notes'))
+                                ->required(fn (Get $get): bool => $get('reason') === AdjustmentReason::Other->value)
+                                ->rows(3),
+                        ])
+                        ->action(function (array $data, ProductVariant $record) {
+                            $service = InventoryService::make();
+
+                            $quantity = (float) $data['quantity'];
+                            $reason = AdjustmentReason::from($data['reason']);
+
+                            if ($data['direction'] === 'subtract') {
+                                $quantity = -$quantity;
+                            }
+
+                            try {
+                                $service->adjustStock(
+                                    variant: $record,
+                                    quantity: $quantity,
+                                    reason: $reason,
+                                    notes: $data['notes'] ?? null,
+                                );
+
+                                Notification::make()
+                                    ->success()
+                                    ->title(__('inventory.stock_adjusted'))
+                                    ->send();
+                            } catch (InsufficientStockException) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title(__('inventory.insufficient_stock'))
+                                    ->send();
+                            }
+                        })
+                        ->requiresConfirmation(),
                 ]),
 
             ])

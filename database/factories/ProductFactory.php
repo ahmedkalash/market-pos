@@ -2,15 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\Company;
+use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Store;
+use App\Models\TaxClass;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<ProductCategory>
+ * @extends Factory<Product>
  */
-class ProductCategoryFactory extends Factory
+class ProductFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,14 +20,12 @@ class ProductCategoryFactory extends Factory
      */
     public function definition(): array
     {
-        $nameEn = fake()->unique()->words(2, true);
-        $nameAr = 'فئة '.fake()->unique()->word();
-
         return [
-            'company_id' => Company::factory(),
             'store_id' => Store::factory(),
-            'name_en' => ucfirst($nameEn),
-            'name_ar' => $nameAr,
+            'category_id' => ProductCategory::factory(),
+            'tax_class_id' => TaxClass::factory(),
+            'name_en' => fake()->unique()->words(3, true),
+            'name_ar' => 'منتج '.fake()->unique()->word(),
             'is_active' => true,
         ];
     }
