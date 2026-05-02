@@ -7,14 +7,12 @@ use App\Enums\MovementDirection;
 use App\Enums\MovementType;
 use App\Filament\Resources\InventoryMovements\Pages\ManageInventoryMovements;
 use App\Models\InventoryMovement;
-use App\Models\ProductVariant;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Enums\ColumnManagerLayout;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -78,7 +76,7 @@ class InventoryMovementResource extends Resource
             ->columns([
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->description(fn (InventoryMovement $record) => $record->created_at->format('h:i ') . ($record->created_at->format('a') === 'am' ? 'ص' : 'م'))
+                    ->description(fn (InventoryMovement $record) => $record->created_at->format('h:i ').($record->created_at->format('a') === 'am' ? 'ص' : 'م'))
                     ->dateTime('d-m-Y')
                     ->sortable(),
 
@@ -104,8 +102,8 @@ class InventoryMovementResource extends Resource
                 TextColumn::make('quantity')
                     ->label(__('inventory.quantity'))
                     ->numeric(2, locale: 'en')
-                    ->color(fn (InventoryMovement $record): string => $record->direction === \App\Enums\MovementDirection::In ? 'success' : 'danger')
-                    ->icon(fn (InventoryMovement $record): string => $record->direction === \App\Enums\MovementDirection::In ? 'heroicon-m-plus-circle' : 'heroicon-m-minus-circle')
+                    ->color(fn (InventoryMovement $record): string => $record->direction === MovementDirection::In ? 'success' : 'danger')
+                    ->icon(fn (InventoryMovement $record): string => $record->direction === MovementDirection::In ? 'heroicon-m-plus-circle' : 'heroicon-m-minus-circle')
                     ->sortable(),
 
                 TextColumn::make('unit_cost')
@@ -152,7 +150,7 @@ class InventoryMovementResource extends Resource
                 SelectFilter::make('store_id')
                     ->label(__('inventory.store'))
                     ->relationship('store', 'name_en')
-                    ->visible(fn () => $user->isCompanyLevel() || $user->isSuperAdmin()),
+                    ->visible(fn () => $user->isCompanyLevel()),
 
                 Filter::make('barcode')
                     ->label(__('inventory.barcode'))
@@ -250,10 +248,10 @@ class InventoryMovementResource extends Resource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['from'] ?? null) {
-                            $indicators[] = __('inventory.from').' '. Carbon::parse($data['from'])->format('d-m-Y');
+                            $indicators[] = __('inventory.from').' '.Carbon::parse($data['from'])->format('d-m-Y');
                         }
                         if ($data['until'] ?? null) {
-                            $indicators[] = __('inventory.to').' '. Carbon::parse($data['until'])->format('d-m-Y');
+                            $indicators[] = __('inventory.to').' '.Carbon::parse($data['until'])->format('d-m-Y');
                         }
 
                         return $indicators;

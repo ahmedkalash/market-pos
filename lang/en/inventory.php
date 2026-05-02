@@ -54,4 +54,9 @@ return [
     'max_quantity' => 'Max Quantity Affected',
     'min_qty_hint' => 'Filters movements of at least this volume',
     'max_qty_hint' => 'Filters movements up to this volume',
+    'low_stock_alert_title' => 'Low Stock Alert',
+    'low_stock_alert_body' => 'Variant :product has reached low stock level (:qty remaining). Threshold is :threshold.',
+    'view_product' => 'View Product',
+    'low_stock' => 'Low Stock',
+    'low_stock_threshold' => 'Low Stock Threshold',
 ];

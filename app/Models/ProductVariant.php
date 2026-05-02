@@ -29,6 +29,7 @@ class ProductVariant extends Model
         'wholesale_qty_threshold',
         'quantity',
         'low_stock_threshold',
+        'low_stock_alert_fired',
         'is_active',
     ];
 
@@ -49,6 +50,7 @@ class ProductVariant extends Model
             'wholesale_qty_threshold' => 'decimal:3',
             'quantity' => 'decimal:3',
             'low_stock_threshold' => 'decimal:3',
+            'low_stock_alert_fired' => 'boolean',
             'is_active' => 'boolean',
         ];
     }

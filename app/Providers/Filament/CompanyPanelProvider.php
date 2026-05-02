@@ -39,6 +39,8 @@ class CompanyPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth(Width::FitContent->value)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

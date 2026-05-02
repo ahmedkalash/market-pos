@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Http\Middleware\AppLocale;
 use App\Http\Middleware\ApplyTenantScopes;
+use App\Models\ProductVariant;
 use App\Models\User;
+use App\Observers\ProductVariantObserver;
 use App\Observers\UserObserver;
 use BezhanSalleh\LanguageSwitch\Enums\TriggerStyle;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         User::observe(UserObserver::class);
+        ProductVariant::observe(ProductVariantObserver::class);
 
         $this->implicitlyGrantSuperAdminAllPermissions();
 

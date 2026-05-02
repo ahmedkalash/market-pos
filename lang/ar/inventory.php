@@ -51,4 +51,9 @@ return [
     'reference_type_tooltip' => 'نوع المستند الذي تسبب في الحركة (مثل فاتورة مبيعات، أمر شراء)',
     'min_quantity' => 'أدنى كمية تمت اضفتها او خصمها',
     'max_quantity' => 'أقصى كمية تمت اضفتها او خصمها',
+    'low_stock_alert_title' => 'تنبيه انخفاض المخزون',
+    'low_stock_alert_body' => 'وصل المنتج :product إلى مستوى مخزون منخفض (المتبقي :qty). حد التنبيه هو :threshold.',
+    'view_product' => 'عرض المنتج',
+    'low_stock' => 'مخزون منخفض',
+    'low_stock_threshold' => 'حد انخفاض المخزون',
 ];
