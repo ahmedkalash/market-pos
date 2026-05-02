@@ -12,4 +12,28 @@ enum MovementType: string
     case TransferIn = 'transfer_in';
     case TransferOut = 'transfer_out';
     case OpeningStock = 'opening_stock';
+
+    public function getDirection(): MovementDirection
+    {
+        return match ($this) {
+            self::StockIn,
+            self::Return,
+            self::AdjustmentAdd,
+            self::TransferIn,
+            self::OpeningStock => MovementDirection::In,
+
+            self::Sale,
+            self::AdjustmentSub,
+            self::TransferOut => MovementDirection::Out,
+        };
+    }
+
+    public function getColor(): string
+    {
+        $direction = $this->getDirection();
+        return match ($direction) {
+            MovementDirection::In => 'success',
+            MovementDirection::Out => 'danger',
+        };
+    }
 }

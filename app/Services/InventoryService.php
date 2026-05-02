@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AdjustmentReason;
+use App\Enums\MovementDirection;
 use App\Enums\MovementType;
 use App\Exceptions\InsufficientStockException;
 use App\Models\InventoryMovement;
@@ -39,30 +40,37 @@ class InventoryService
     public function recordMovement(
         ProductVariant $variant,
         MovementType $type,
-        float $quantityIn = 0,
-        float $quantityOut = 0,
+        float $quantity,
         ?AdjustmentReason $reason = null,
         ?string $notes = null,
         ?Model $reference = null,
     ): InventoryMovement {
-        return DB::transaction(function () use ($variant, $type, $quantityIn, $quantityOut, $reason, $notes, $reference) {
+        return DB::transaction(function () use ($variant, $type, $quantity, $reason, $notes, $reference) {
             // Pessimistic lock: prevent concurrent reads of stale quantity
             /** @var ProductVariant $lockedVariant */
             $lockedVariant = ProductVariant::query()
                 ->lockForUpdate()
                 ->findOrFail($variant->id);
 
+            // Resolve direction from type
+            $direction = $type->getDirection();
+
             // Validate sufficient stock for outbound movements
-            if ($quantityOut > 0 && $lockedVariant->quantity < $quantityOut) {
+            if ($direction === MovementDirection::Out && $lockedVariant->quantity < abs($quantity)) {
                 throw new InsufficientStockException(
                     variant: $lockedVariant,
-                    requested: $quantityOut,
+                    requested: abs($quantity),
                     available: (float) $lockedVariant->quantity,
                 );
             }
 
-            // Resolve store_id from the variant's parent product
+            // Resolve store_id and cost basis from the variant
             $storeId = $lockedVariant->product->store_id;
+            $unitCost = (float) $lockedVariant->purchase_price;
+
+            // total_cost is signed (Positive for additions, Negative for subtractions).
+            $multiplier = ($direction === MovementDirection::In) ? 1 : -1;
+            $totalCost = abs($quantity) * $unitCost * $multiplier;
 
             // 1. Insert immutable movement record
             $movement = InventoryMovement::create([
@@ -70,8 +78,10 @@ class InventoryService
                 'store_id' => $storeId,
                 'user_id' => auth()->id(),
                 'type' => $type,
-                'quantity_in' => $quantityIn,
-                'quantity_out' => $quantityOut,
+                'quantity' => abs($quantity),
+                'direction' => $direction,
+                'unit_cost' => $unitCost,
+                'total_cost' => $totalCost,
                 'reason' => $reason,
                 'notes' => $notes,
                 'reference_type' => $reference?->getMorphClass(),
@@ -80,11 +90,10 @@ class InventoryService
             ]);
 
             // 2. Update cached quantity on the variant (atomic increment/decrement)
-            $netChange = $quantityIn - $quantityOut;
-            if ($netChange > 0) {
-                $lockedVariant->increment('quantity', $netChange);
-            } elseif ($netChange < 0) {
-                $lockedVariant->decrement('quantity', abs($netChange));
+            if ($direction === MovementDirection::In) {
+                $lockedVariant->increment('quantity', abs($quantity));
+            } else {
+                $lockedVariant->decrement('quantity', abs($quantity));
             }
 
             return $movement;
@@ -93,22 +102,22 @@ class InventoryService
 
     /**
      * Adjust stock (manual add or subtract).
-     *
-     * @param  float  $quantity  Positive to add, negative to subtract.
      */
     public function adjustStock(
         ProductVariant $variant,
         float $quantity,
+        MovementDirection $direction,
         AdjustmentReason $reason,
         ?string $notes = null,
     ): InventoryMovement {
-        $type = $quantity >= 0 ? MovementType::AdjustmentAdd : MovementType::AdjustmentSub;
+        $type = ($direction === MovementDirection::In)
+            ? MovementType::AdjustmentAdd
+            : MovementType::AdjustmentSub;
 
         return $this->recordMovement(
             variant: $variant,
             type: $type,
-            quantityIn: max(0, $quantity),
-            quantityOut: max(0, -$quantity),
+            quantity: abs($quantity),
             reason: $reason,
             notes: $notes,
         );
@@ -125,7 +134,7 @@ class InventoryService
         return $this->recordMovement(
             variant: $variant,
             type: MovementType::OpeningStock,
-            quantityIn: $quantity,
+            quantity: abs($quantity),
             reason: AdjustmentReason::OpeningStock,
             notes: $notes,
         );

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AdjustmentReason;
+use App\Enums\MovementDirection;
 use App\Enums\MovementType;
 use App\Models\Concerns\BelongsToStore;
 use Illuminate\Database\Eloquent\Model;
@@ -28,12 +29,14 @@ class InventoryMovement extends Model
         'store_id',
         'user_id',
         'type',
-        'quantity_in',
-        'quantity_out',
+        'quantity',
+        'direction',
         'reason',
         'notes',
         'reference_type',
         'reference_id',
+        'unit_cost',
+        'total_cost',
         'created_at',
     ];
 
@@ -44,9 +47,11 @@ class InventoryMovement extends Model
     {
         return [
             'type' => MovementType::class,
+            'direction' => MovementDirection::class,
             'reason' => AdjustmentReason::class,
-            'quantity_in' => 'decimal:3',
-            'quantity_out' => 'decimal:3',
+            'quantity' => 'decimal:4',
+            'unit_cost' => 'decimal:4',
+            'total_cost' => 'decimal:4',
             'created_at' => 'datetime',
         ];
     }
@@ -64,7 +69,7 @@ class InventoryMovement extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withoutGlobalScopes();
     }
 
     /**

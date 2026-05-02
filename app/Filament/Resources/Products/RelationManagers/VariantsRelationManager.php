@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Products\RelationManagers;
 
 use App\Enums\AdjustmentReason;
+use App\Enums\MovementDirection;
+use App\Enums\MovementType;
 use App\Exceptions\InsufficientStockException;
+use App\Filament\Resources\InventoryMovements\InventoryMovementResource;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\ProductVariant;
@@ -45,6 +48,7 @@ class VariantsRelationManager extends RelationManager
     protected static string $relationship = 'variants';
 
     public array $tempVariantAttributes = [];
+
     public float $tempOpeningStock = 0;
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
@@ -760,8 +764,8 @@ class VariantsRelationManager extends RelationManager
                             Select::make('direction')
                                 ->label(__('inventory.direction'))
                                 ->options([
-                                    'add' => __('inventory.add'),
-                                    'subtract' => __('inventory.subtract'),
+                                    MovementDirection::In->value => __('inventory.add'),
+                                    MovementDirection::Out->value => __('inventory.subtract'),
                                 ])
                                 ->required()
                                 ->live(),
@@ -789,16 +793,14 @@ class VariantsRelationManager extends RelationManager
                             $service = InventoryService::make();
 
                             $quantity = (float) $data['quantity'];
+                            $direction = MovementDirection::from($data['direction']);
                             $reason = AdjustmentReason::from($data['reason']);
-
-                            if ($data['direction'] === 'subtract') {
-                                $quantity = -$quantity;
-                            }
 
                             try {
                                 $service->adjustStock(
                                     variant: $record,
                                     quantity: $quantity,
+                                    direction: $direction,
                                     reason: $reason,
                                     notes: $data['notes'] ?? null,
                                 );
@@ -815,6 +817,19 @@ class VariantsRelationManager extends RelationManager
                             }
                         })
                         ->requiresConfirmation(),
+
+                    Action::make('viewHistory')
+                        ->label(__('inventory.movement_history'))
+                        ->icon('heroicon-o-clock')
+                        ->color('gray')
+                        ->visible(fn () => $user->can('view_inventory_movement'))
+                        ->url(fn (ProductVariant $record): string => InventoryMovementResource::getUrl('index', [
+                            'tableFilters' => [
+                                'variant_id' => [
+                                    'value' => $record->id,
+                                ],
+                            ],
+                        ])),
                 ]),
 
             ])
