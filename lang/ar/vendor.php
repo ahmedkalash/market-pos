@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'purchasing' => 'المشتريات',
+    'vendor' => 'مورد',
+    'vendors' => 'الموردون',
+    'vendor_information' => 'معلومات المورد',
+    'vendor_information_helper' => 'التعريف العام وتفاصيل الضرائب.',
+    'contact_details' => 'تفاصيل الاتصال',
+    'contact_details_helper' => 'معلومات الاتصال الأساسية للمشتريات.',
+    'settings' => 'الإعدادات',
+
+    'name' => 'الاسم',
+    'name_placeholder' => 'مثال: شركة التعاون',
+    'tax_number' => 'الرقم الضريبي',
+    'tax_number_placeholder' => 'مثال: 123-456-789',
+    'email' => 'البريد الإلكتروني',
+    'email_placeholder' => 'vendor@example.com',
+    'phone' => 'رقم الهاتف',
+    'phone_placeholder' => 'مثال 010123456789',
+    'address' => 'العنوان',
+    'address_placeholder' => 'عنوان العمل الكامل...',
+    'is_active' => 'نشط او غير نشط',
+    'is_active_helper' => 'حدد ما إذا كان هذا المورد متاحاً حالياً للمشتريات.',
+    'filter_active' => 'النشطون فقط',
+    'filter_inactive' => 'غير النشطون فقط',
+    'filter_all' => 'كل الموردين',
+    'filter_has_contact' => 'لديهم بيانات تواصل',
+    'filter_has_contact_yes' => 'لديهم بريد أو هاتف',
+    'filter_has_contact_no' => 'بدون بيانات تواصل',
+];

@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'purchasing' => 'Purchasing',
+    'vendor' => 'Vendor',
+    'vendors' => 'Vendors',
+    'vendor_information' => 'Vendor Information',
+    'vendor_information_helper' => 'General identification and tax details.',
+    'contact_details' => 'Contact Details',
+    'contact_details_helper' => 'Primary contact information for procurement.',
+    'settings' => 'Settings',
+
+    'name' => 'Name',
+    'name_placeholder' => 'e.g. Acme Corp',
+    'tax_number' => 'VAT / Tax ID',
+    'tax_number_placeholder' => 'e.g. 123-456-789',
+    'email' => 'Email Address',
+    'email_placeholder' => 'vendor@example.com',
+    'phone' => 'Phone Number',
+    'phone_placeholder' => '+1 234 567 890',
+    'address' => 'Address',
+    'address_placeholder' => 'Full business address...',
+    'is_active' => 'Active Status',
+    'is_active_helper' => 'Whether this vendor is currently available for procurement.',
+    'filter_active' => 'Active Only',
+    'filter_inactive' => 'Inactive Only',
+    'filter_all' => 'All Vendors',
+    'filter_has_contact' => 'Has Contact Info',
+    'filter_has_contact_yes' => 'Has Email or Phone',
+    'filter_has_contact_no' => 'No Contact Info',
+];

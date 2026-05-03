@@ -75,6 +75,13 @@ return [
     'adjust_stock' => 'تعديل المخزون',
     'view_inventory_movement' => 'عرض حركات المخزون',
 
+    'view_any_vendor' => 'عرض كل الموردين',
+    'view_vendor' => 'عرض المورد',
+    'create_vendor' => 'إضافة مورد',
+    'update_vendor' => 'تعديل مورد',
+    'delete_vendor' => 'حذف مورد',
+    'delete_any_vendor' => 'حذف عدة موردين',
+
     // Module Headers
     'users' => 'المستخدمين',
     'roles' => 'الأدوار والصلاحيات',
@@ -89,4 +96,5 @@ return [
     'unit of measures' => 'وحدات القياس',
     'brands' => 'العلامات التجارية',
     'inventory' => 'المخزون',
+    'vendors' => 'الموردين',
 ];

@@ -58,6 +58,16 @@ return [
                 'update_brand',
                 'delete_brand',
                 'delete_any_brand',
+                // inventory
+                'adjust_stock',
+                'view_inventory_movement',
+                // vendors
+                'view_any_vendor',
+                'view_vendor',
+                'create_vendor',
+                'update_vendor',
+                'delete_vendor',
+                'delete_any_vendor',
             ],
         ],
         Roles::CASHIER->value => [
@@ -109,6 +119,14 @@ return [
                 'view_brand',
                 'create_brand',
                 'update_brand',
+                // inventory
+                'adjust_stock',
+                'view_inventory_movement',
+                // vendors
+                'view_any_vendor',
+                'view_vendor',
+                'create_vendor',
+                'update_vendor',
             ],
         ],
         Roles::ACCOUNTANT->value => [

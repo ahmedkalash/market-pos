@@ -75,6 +75,13 @@ return [
     'adjust_stock' => 'Adjust Stock',
     'view_inventory_movement' => 'View Inventory Movements',
 
+    'view_any_vendor' => 'View All Vendors',
+    'view_vendor' => 'View Vendor',
+    'create_vendor' => 'Create Vendor',
+    'update_vendor' => 'Update Vendor',
+    'delete_vendor' => 'Delete Vendor',
+    'delete_any_vendor' => 'Delete Multiple Vendors',
+
     // Module Headers
     'users' => 'Users',
     'roles' => 'Roles',
@@ -89,4 +96,5 @@ return [
     'unit of measures' => 'Unit of Measures',
     'brands' => 'Brands',
     'inventory' => 'Inventory',
+    'vendors' => 'Vendors',
 ];

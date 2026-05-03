@@ -121,6 +121,14 @@ return [
             'adjust_stock',
             'view_inventory_movement',
         ],
+        'Vendors' => [
+            'view_any_vendor',
+            'view_vendor',
+            'create_vendor',
+            'update_vendor',
+            'delete_vendor',
+            'delete_any_vendor',
+        ],
 
     ],
 ];
