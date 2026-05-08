@@ -129,6 +129,15 @@ return [
             'delete_vendor',
             'delete_any_vendor',
         ],
+        'Purchase Invoices' => [
+            'view_any_purchase_invoice',
+            'view_purchase_invoice',
+            'create_purchase_invoice',
+            'update_purchase_invoice',   // edit draft invoices
+            'delete_purchase_invoice',   // delete draft invoices only
+            'delete_any_purchase_invoice',
+            'finalize_purchase_invoice', // lock invoice & update stock (senior staff only)
+        ],
 
     ],
 ];

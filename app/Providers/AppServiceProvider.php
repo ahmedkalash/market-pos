@@ -5,12 +5,14 @@ namespace App\Providers;
 use App\Http\Middleware\AppLocale;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\ProductVariant;
+use App\Models\PurchaseInvoice;
 use App\Models\User;
 use App\Observers\ProductVariantObserver;
 use App\Observers\UserObserver;
 use BezhanSalleh\LanguageSwitch\Enums\TriggerStyle;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         User::observe(UserObserver::class);
         ProductVariant::observe(ProductVariantObserver::class);
 
+        $this->registerMorphMap();
         $this->implicitlyGrantSuperAdminAllPermissions();
 
         $this->registerDynamicPermissionsGate();
@@ -63,6 +66,20 @@ class AppServiceProvider extends ServiceProvider
 
             return null;
         });
+    }
+
+    /**
+     * Register morph aliases for all polymorphic relationships.
+     *
+     * Storing aliases instead of full class names ensures historical
+     * data remains valid if namespaces are ever refactored.
+     */
+    private function registerMorphMap(): void
+    {
+        Relation::morphMap([
+            'purchase_invoice' => PurchaseInvoice::class,
+            // Phase 4.2: 'purchase_order' => \App\Models\PurchaseOrder::class,
+        ]);
     }
 
     private function registerDynamicPermissionsGate(): void
