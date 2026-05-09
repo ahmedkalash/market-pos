@@ -20,20 +20,19 @@ class EditPurchaseInvoice extends EditRecord
         return [
             Action::make('finalize')
                 ->label(__('purchase_invoice.finalize'))
-                ->modalHeading(__('purchase_invoice.finalize'))
+                ->modalHeading(__('purchase_invoice.finalize_confirm_title') ?? __('purchase_invoice.finalize'))
                 ->modalDescription(__('purchase_invoice.finalize_confirmation'))
-                ->color('primary')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
                 ->requiresConfirmation()
+                ->authorize('finalize_purchase_invoice')
                 ->action(function () {
                     $this->shouldFinalize = true;
                     $this->save();
                 }),
             $this->getSaveFormAction()
                 ->label(__('purchase_invoice.save_as_draft'))
-                ->action(function () {
-                    $this->shouldFinalize = false;
-                    $this->save();
-                }),
+                ->authorize('update_purchase_invoice'),
             $this->getCancelFormAction(),
         ];
     }
@@ -66,6 +65,7 @@ class EditPurchaseInvoice extends EditRecord
         PurchaseInvoiceService::make()->recalculateTotals($invoice);
 
         if ($this->shouldFinalize) {
+            $this->authorize('finalize_purchase_invoice');
             try {
                 PurchaseInvoiceService::make()->finalize($invoice);
             } catch (\Throwable $e) {

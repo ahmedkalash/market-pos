@@ -82,6 +82,14 @@ return [
     'delete_vendor' => 'حذف مورد',
     'delete_any_vendor' => 'حذف عدة موردين',
 
+    'view_any_purchase_invoice' => 'عرض كل فواتير الشراء',
+    'view_purchase_invoice' => 'عرض فاتورة الشراء',
+    'create_purchase_invoice' => 'إضافة فاتورة شراء',
+    'update_purchase_invoice' => 'تعديل فاتورة شراء',
+    'delete_purchase_invoice' => 'حذف فاتورة شراء',
+    'delete_any_purchase_invoice' => 'حذف عدة فواتير شراء',
+    'finalize_purchase_invoice' => 'اعتماد فاتورة الشراء',
+
     // Module Headers
     'users' => 'المستخدمين',
     'roles' => 'الأدوار والصلاحيات',
@@ -97,4 +105,5 @@ return [
     'brands' => 'العلامات التجارية',
     'inventory' => 'المخزون',
     'vendors' => 'الموردين',
+    'purchase invoices' => 'فواتير الشراء',
 ];

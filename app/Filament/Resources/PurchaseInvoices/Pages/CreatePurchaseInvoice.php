@@ -15,25 +15,24 @@ class CreatePurchaseInvoice extends CreateRecord
 {
     protected static string $resource = PurchaseInvoiceResource::class;
 
-    public bool $shouldFinalize = true;
+    public bool $shouldFinalize = false;
 
     protected function getFormActions(): array
     {
         return [
-            $this->getCreateFormAction()
+            Action::make('createAndFinalize')
                 ->label(__('purchase_invoice.create_and_finalize'))
+                ->authorize('finalize_purchase_invoice')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
                 ->action(function () {
                     $this->shouldFinalize = true;
                     $this->create();
                 }),
-            Action::make('saveAsDraft')
+            $this->getCreateFormAction()
                 ->label(__('purchase_invoice.save_as_draft'))
-                ->color('gray')
-                ->action(function () {
-                    $this->shouldFinalize = false;
-                    $this->create();
-                }),
-            $this->getCancelFormAction(),
+                ->authorize('create_purchase_invoice'),
+            $this->getCancelFormAction()
         ];
     }
 
@@ -68,6 +67,7 @@ class CreatePurchaseInvoice extends CreateRecord
         PurchaseInvoiceService::make()->recalculateTotals($invoice);
 
         if ($this->shouldFinalize) {
+            $this->authorize('finalize_purchase_invoice');
             try {
                 PurchaseInvoiceService::make()->finalize($invoice);
             } catch (\Throwable $e) {

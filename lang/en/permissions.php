@@ -82,6 +82,14 @@ return [
     'delete_vendor' => 'Delete Vendor',
     'delete_any_vendor' => 'Delete Multiple Vendors',
 
+    'view_any_purchase_invoice' => 'View All Purchase Invoices',
+    'view_purchase_invoice' => 'View Purchase Invoice',
+    'create_purchase_invoice' => 'Create Purchase Invoice',
+    'update_purchase_invoice' => 'Update Purchase Invoice',
+    'delete_purchase_invoice' => 'Delete Purchase Invoice',
+    'delete_any_purchase_invoice' => 'Delete Multiple Purchase Invoices',
+    'finalize_purchase_invoice' => 'Finalize Purchase Invoice',
+
     // Module Headers
     'users' => 'Users',
     'roles' => 'Roles',
@@ -97,4 +105,5 @@ return [
     'brands' => 'Brands',
     'inventory' => 'Inventory',
     'vendors' => 'Vendors',
+    'purchase invoices' => 'Purchase Invoices',
 ];

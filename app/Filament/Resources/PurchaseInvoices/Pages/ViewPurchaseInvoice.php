@@ -26,9 +26,8 @@ class ViewPurchaseInvoice extends ViewRecord
                 ->modalHeading(__('purchase_invoice.finalize_confirm_title'))
                 ->modalDescription(__('purchase_invoice.finalize_confirm_body'))
                 ->modalSubmitActionLabel(__('purchase_invoice.finalize'))
-                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft
-                    && auth()->user()?->can('finalize_purchase_invoice')
-                )
+                ->authorize('finalize_purchase_invoice')
+                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft)
                 ->action(function (PurchaseInvoice $record): void {
                     try {
                         PurchaseInvoiceService::make()->finalize($record);
@@ -59,16 +58,13 @@ class ViewPurchaseInvoice extends ViewRecord
             Action::make('edit')
                 ->label(__('filament-actions::edit.single.label'))
                 ->icon('heroicon-o-pencil-square')
-                ->url(fn (PurchaseInvoice $record): string => PurchaseInvoiceResource::getUrl('edit', ['record' => $record])
-                )
-                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft
-                    && auth()->user()?->can('update_purchase_invoice')
-                ),
+                ->url(fn (PurchaseInvoice $record): string => PurchaseInvoiceResource::getUrl('edit', ['record' => $record]))
+                ->authorize('update_purchase_invoice')
+                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft),
 
             DeleteAction::make()
-                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft
-                    && auth()->user()?->can('delete_purchase_invoice')
-                ),
+                ->authorize('delete_purchase_invoice')
+                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft),
         ];
     }
 }
