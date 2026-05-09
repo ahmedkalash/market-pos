@@ -33,8 +33,8 @@ return [
     'negotiable' => 'سعر التجزئة قابل للتفاوض',
 
     // Purchase / Cost
-    'purchase_price' => 'سعر الشراء',
-    'purchase_price_helper' => 'السعر المدفوع للمورد. يُستخدم لحسابات هامش الربح.',
+    'purchase_price' => 'آخر سعر شراء',
+    'purchase_price_helper' => 'أحدث سعر تم دفعه للمورد. يتم تحديث هذا السعر تلقائياً عند اعتماد فاتورة المشتريات.',
 
     // Wholesale Pricing
     'wholesale_enabled' => 'تفعيل أسعار الجملة',
@@ -80,9 +80,9 @@ return [
     'wholesale_price_range' => 'نطاق سعر الجملة',
     'wholesale_price_from' => 'سعر الجملة من',
     'wholesale_price_to' => 'سعر الجملة إلى',
-    'purchase_price_range' => 'نطاق سعر الشراء',
-    'purchase_price_from' => 'سعر الشراء من',
-    'purchase_price_to' => 'سعر الشراء إلى',
+    'purchase_price_range' => 'نطاق آخر سعر شراء',
+    'purchase_price_from' => 'آخر سعر شراء من',
+    'purchase_price_to' => 'آخر سعر شراء إلى',
     'retail_margin' => 'هامش ربح التجزئة',
     'wholesale_margin' => 'هامش ربح الجملة',
 ];

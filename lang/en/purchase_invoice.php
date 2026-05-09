@@ -16,6 +16,7 @@ return [
     'status_draft' => 'Draft',
     'status_finalized' => 'Finalized',
     'items' => 'Line Items',
+    'item' => 'Line Item',
     'product_variant' => 'Product / Variant',
     'quantity' => 'Quantity',
     'unit_cost' => 'Unit Cost (ex. Tax)',
@@ -37,4 +38,8 @@ return [
     'barcode' => 'Barcode',
     'product_name' => 'Product Details',
     'product_not_found' => 'Product Not Found',
+    'product_wrong_store' => 'This product does not belong to the selected store.',
+    'duplicate_barcode' => 'This product is already added to the invoice.',
+    'finalize_failed' => 'Finalization Failed',
+    'unit_cost_helper' => 'Updating this value will set the "Latest Purchase Cost" on the product variant upon finalization.',
 ];

@@ -34,6 +34,7 @@ class CompanyPanelProvider extends PanelProvider
             ->path('company')
             ->login(Login::class)
             ->spa()
+            ->databaseTransactions()
             ->unsavedChangesAlerts()
             ->registration(RegisterCompany::class)
             ->passwordReset(ForgotPassword::class)

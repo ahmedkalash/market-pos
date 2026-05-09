@@ -16,6 +16,7 @@ return [
     'status_draft' => 'مسودة',
     'status_finalized' => 'معتمدة',
     'items' => 'بنود الفاتورة',
+    'item' => 'بند فاتورة',
     'product_variant' => 'المنتج / النوع',
     'quantity' => 'الكمية',
     'unit_cost' => 'سعر الوحدة (بدون ضريبة)',
@@ -37,4 +38,8 @@ return [
     'barcode' => 'الباركود',
     'product_name' => 'اسم المنتج',
     'product_not_found' => 'المنتج غير موجود',
+    'product_wrong_store' => 'هذا المنتج لا ينتمي إلى الفرع المحدد.',
+    'duplicate_barcode' => 'هذا المنتج مضاف مسبقاً في الفاتورة.',
+    'finalize_failed' => 'فشل اعتماد الفاتورة',
+    'unit_cost_helper' => 'سيؤدي تغيير هذه القيمة إلى تحديث "آخر سعر شراء" للمنتج عند اعتماد الفاتورة.',
 ];

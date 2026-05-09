@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseInvoices;
 
+use App\Enums\PurchaseInvoiceStatus;
 use App\Filament\Resources\PurchaseInvoices\Pages\CreatePurchaseInvoice;
 use App\Filament\Resources\PurchaseInvoices\Pages\EditPurchaseInvoice;
 use App\Filament\Resources\PurchaseInvoices\Pages\ListPurchaseInvoices;
@@ -46,12 +47,32 @@ class PurchaseInvoiceResource extends Resource
         return __('purchase_invoice.purchase_invoices');
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('status', PurchaseInvoiceStatus::Draft)->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function canViewAny(): bool
     {
         /** @var User $user */
         $user = Auth::user();
 
         return $user && $user->can('view_any_purchase_invoice');
+    }
+
+    public static function canView(Model $record): bool
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user && $user->can('view_purchase_invoice');
     }
 
     public static function canCreate(): bool

@@ -33,8 +33,8 @@ return [
     'negotiable' => 'Negotiable',
 
     // Purchase / Cost
-    'purchase_price' => 'Purchase Price',
-    'purchase_price_helper' => 'The price paid to the supplier. Used for profit margin calculations.',
+    'purchase_price' => 'Latest Purchase Cost',
+    'purchase_price_helper' => 'The most recent price paid to the supplier. This is automatically updated when a purchase invoice is finalized.',
 
     // Wholesale Pricing
     'wholesale_enabled' => 'Enable Wholesale Pricing',
@@ -80,9 +80,9 @@ return [
     'wholesale_price_range' => 'Wholesale Price Range',
     'wholesale_price_from' => 'Wholesale Price From',
     'wholesale_price_to' => 'Wholesale Price To',
-    'purchase_price_range' => 'Purchase Price Range',
-    'purchase_price_from' => 'Purchase Price From',
-    'purchase_price_to' => 'Purchase Price To',
+    'purchase_price_range' => 'Latest Purchase Cost Range',
+    'purchase_price_from' => 'Latest Purchase Cost From',
+    'purchase_price_to' => 'Latest Purchase Cost To',
     'retail_margin' => 'Retail Margin',
     'wholesale_margin' => 'Wholesale Margin',
 ];

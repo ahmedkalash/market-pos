@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SequenceType;
 use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,4 +25,14 @@ class Sequence extends Model
         'type',
         'last_number',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'type' => SequenceType::class,
+        ];
+    }
 }
