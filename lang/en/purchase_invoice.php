@@ -27,7 +27,6 @@ return [
     'total_before_tax' => 'Total Before Tax',
     'total_tax_amount' => 'Total Tax',
     'total_amount' => 'Grand Total',
-    'finalize_action' => 'Finalize & Update Stock',
     'finalize_confirm_title' => 'Finalize Invoice?',
     'finalize_confirm_body' => 'This will update stock for all items and lock the invoice permanently. This cannot be undone.',
     'already_finalized' => 'This invoice has already been finalized.',
@@ -42,4 +41,9 @@ return [
     'duplicate_barcode' => 'This product is already added to the invoice.',
     'finalize_failed' => 'Finalization Failed',
     'unit_cost_helper' => 'Updating this value will set the "Latest Purchase Cost" on the product variant upon finalization.',
+    'create_and_finalize' => 'Create & Finalize',
+    'save_as_draft' => 'Save as Draft',
+    'finalize' => 'Finalize',
+    'finalize_confirmation' => 'Are you sure? Once finalized, stock will be updated and this cannot be undone.',
+    'finalized_success' => 'Invoice finalized successfully.',
 ];

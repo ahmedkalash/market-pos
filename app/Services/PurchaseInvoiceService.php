@@ -88,6 +88,10 @@ class PurchaseInvoiceService
      */
     public function finalize(PurchaseInvoice $invoice): void
     {
+        if ($invoice->items()->count() === 0) {
+            throw new \RuntimeException(__('purchase_invoice.no_items'));
+        }
+
         DB::transaction(function () use ($invoice) {
             $invoice->load('items.variant.product.taxClass');
 
@@ -96,7 +100,7 @@ class PurchaseInvoiceService
                 $variant = $item->variant;
 
                 // Guard: variant must belong to the invoice's store
-                if ($variant->product->store_id !== $invoice->store_id) {
+                if ((int)$variant->product->store_id !== (int)$invoice->store_id) {
                     throw new \RuntimeException(
                         "Variant [{$variant->id}] does not belong to store [{$invoice->store_id}]."
                     );

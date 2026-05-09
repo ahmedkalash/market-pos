@@ -7,11 +7,35 @@ use App\Filament\Resources\PurchaseInvoices\PurchaseInvoiceResource;
 use App\Models\PurchaseInvoice;
 use App\Services\PurchaseInvoiceService;
 use App\Services\SequenceService;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePurchaseInvoice extends CreateRecord
 {
     protected static string $resource = PurchaseInvoiceResource::class;
+
+    public bool $shouldFinalize = true;
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()
+                ->label(__('purchase_invoice.create_and_finalize'))
+                ->action(function () {
+                    $this->shouldFinalize = true;
+                    $this->create();
+                }),
+            Action::make('saveAsDraft')
+                ->label(__('purchase_invoice.save_as_draft'))
+                ->color('gray')
+                ->action(function () {
+                    $this->shouldFinalize = false;
+                    $this->create();
+                }),
+            $this->getCancelFormAction(),
+        ];
+    }
 
     protected function getRedirectUrl(): string
     {
@@ -42,5 +66,17 @@ class CreatePurchaseInvoice extends CreateRecord
         $invoice = $this->record;
 
         PurchaseInvoiceService::make()->recalculateTotals($invoice);
+
+        if ($this->shouldFinalize) {
+            try {
+                PurchaseInvoiceService::make()->finalize($invoice);
+            } catch (\Throwable $e) {
+                Notification::make()
+                    ->title(__('purchase_invoice.finalize_failed'))
+                    ->body($e->getMessage())
+                    ->danger()
+                    ->send();
+            }
+        }
     }
 }
