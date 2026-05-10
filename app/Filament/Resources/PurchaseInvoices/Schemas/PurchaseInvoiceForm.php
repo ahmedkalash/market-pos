@@ -207,7 +207,6 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->suffix('%')
                                 ->hidden() // TAX FEATURE POSTPONED
-                                ->dehydrated() // Fix: Save to DB even when hidden
                                 ->columnSpan(1),
 
                             TextInput::make('subtotal')
@@ -216,7 +215,6 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->hidden() // TAX FEATURE POSTPONED
-                                ->dehydrated() // Fix: Save to DB even when hidden
                                 ->columnSpan(2),
 
                             TextInput::make('tax_amount')
@@ -224,7 +222,6 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->hidden() // TAX FEATURE POSTPONED
-                                ->dehydrated() // Fix: Save to DB even when hidden
                                 ->columnSpan(2),
 
                             TextInput::make('line_total')
