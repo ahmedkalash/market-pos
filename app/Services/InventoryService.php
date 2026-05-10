@@ -33,6 +33,7 @@ class InventoryService
      *
      * Uses SELECT ... FOR UPDATE on the variant row to prevent concurrent
      * modifications from causing quantity drift.
+     *
      * @throws \Throwable
      */
     public function recordMovement(

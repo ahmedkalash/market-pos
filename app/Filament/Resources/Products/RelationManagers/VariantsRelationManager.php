@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Products\RelationManagers;
 
 use App\Enums\AdjustmentReason;
 use App\Enums\MovementDirection;
-use App\Enums\MovementType;
 use App\Exceptions\InsufficientStockException;
 use App\Filament\Resources\InventoryMovements\InventoryMovementResource;
 use App\Models\Attribute;

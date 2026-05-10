@@ -32,7 +32,7 @@ class CreatePurchaseInvoice extends CreateRecord
             $this->getCreateFormAction()
                 ->label(__('purchase_invoice.save_as_draft'))
                 ->authorize('create_purchase_invoice'),
-            $this->getCancelFormAction()
+            $this->getCancelFormAction(),
         ];
     }
 

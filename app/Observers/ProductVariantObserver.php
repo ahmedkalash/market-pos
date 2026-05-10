@@ -15,7 +15,7 @@ class ProductVariantObserver
      */
     public function updated(ProductVariant $productVariant): void
     {
-        $this->observeLowStock( $productVariant);
+        $this->observeLowStock($productVariant);
     }
 
     /**

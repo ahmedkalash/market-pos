@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('inventory_movements', function (Blueprint $table) {
             $table->decimal('quantity', 15, 4)->after('type');
             $table->string('direction')->after('quantity'); // 'in' or 'out'
-            
+
             $table->dropColumn(['quantity_in', 'quantity_out']);
         });
     }
@@ -26,7 +26,7 @@ return new class extends Migration
     {
         Schema::table('inventory_movements', function (Blueprint $table) {
             $table->dropColumn(['quantity', 'direction']);
-            
+
             $table->decimal('quantity_in', 15, 4)->default(0)->after('type');
             $table->decimal('quantity_out', 15, 4)->default(0)->after('quantity_in');
         });

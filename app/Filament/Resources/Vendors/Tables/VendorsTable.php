@@ -94,8 +94,8 @@ class VendorsTable
             ])
             ->recordActions([
                 EditAction::make()
-                ->modalWidth(Width::FiveExtraLarge),
-                DeleteAction::make()
+                    ->modalWidth(Width::FiveExtraLarge),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

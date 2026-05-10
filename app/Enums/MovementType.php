@@ -31,6 +31,7 @@ enum MovementType: string
     public function getColor(): string
     {
         $direction = $this->getDirection();
+
         return match ($direction) {
             MovementDirection::In => 'success',
             MovementDirection::Out => 'danger',
