@@ -19,7 +19,7 @@ return [
     'item' => 'Line Item',
     'product_variant' => 'Product / Variant',
     'quantity' => 'Quantity',
-    'unit_cost' => 'Unit Cost (ex. Tax)',
+    'unit_cost' => 'Unit Cost',
     'subtotal' => 'Subtotal',
     'tax_rate' => 'Tax %',
     'tax_amount' => 'Tax Amount',
