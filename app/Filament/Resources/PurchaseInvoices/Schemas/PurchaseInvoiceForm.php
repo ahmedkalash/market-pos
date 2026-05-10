@@ -202,29 +202,29 @@ class PurchaseInvoiceForm
                                 ->columnSpan(2),
 
                             // TAX FEATURE POSTPONED
-//                            TextInput::make('tax_rate')
-//                                ->label(__('purchase_invoice.tax_rate'))
-//                                ->readOnly()
-//                                ->suffix('%')
-//                                ->hidden() // TAX FEATURE POSTPONED
-//                                ->columnSpan(1),
+                            //                            TextInput::make('tax_rate')
+                            //                                ->label(__('purchase_invoice.tax_rate'))
+                            //                                ->readOnly()
+                            //                                ->suffix('%')
+                            //                                ->hidden() // TAX FEATURE POSTPONED
+                            //                                ->columnSpan(1),
 
                             // TAX FEATURE POSTPONED
-//                            TextInput::make('subtotal')
-//                                ->label(__('purchase_invoice.subtotal'))
-//                                ->numeric()
-//                                ->readOnly()
-//                                ->prefix($user->company->currency_symbol ?? 'ج.م')
-//                                ->hidden() // TAX FEATURE POSTPONED
-//                                ->columnSpan(2),
+                            //                            TextInput::make('subtotal')
+                            //                                ->label(__('purchase_invoice.subtotal'))
+                            //                                ->numeric()
+                            //                                ->readOnly()
+                            //                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                            //                                ->hidden() // TAX FEATURE POSTPONED
+                            //                                ->columnSpan(2),
 
                             // TAX FEATURE POSTPONED
-//                            TextInput::make('tax_amount')
-//                                ->label(__('purchase_invoice.tax_amount'))
-//                                ->readOnly()
-//                                ->prefix($user->company->currency_symbol ?? 'ج.م')
-//                                ->hidden() // TAX FEATURE POSTPONED
-//                                ->columnSpan(2),
+                            //                            TextInput::make('tax_amount')
+                            //                                ->label(__('purchase_invoice.tax_amount'))
+                            //                                ->readOnly()
+                            //                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                            //                                ->hidden() // TAX FEATURE POSTPONED
+                            //                                ->columnSpan(2),
 
                             TextInput::make('line_total')
                                 ->label(__('purchase_invoice.line_total'))
@@ -254,15 +254,15 @@ class PurchaseInvoiceForm
     {
         $quantity = (float) ($get('quantity') ?? 0);
         $unitCost = (float) ($get('unit_cost') ?? 0);
-//        $taxRate = (float) ($get('tax_rate') ?? 0); // TAX FEATURE POSTPONED
+        //        $taxRate = (float) ($get('tax_rate') ?? 0); // TAX FEATURE POSTPONED
 
         $subtotal = round($quantity * $unitCost, 2);
-//        $taxAmount = round($subtotal * $taxRate / 100, 2); // TAX FEATURE POSTPONED
+        //        $taxAmount = round($subtotal * $taxRate / 100, 2); // TAX FEATURE POSTPONED
         $taxAmount = 0.0; // TAX FEATURE POSTPONED
         $lineTotal = round($subtotal + $taxAmount, 2);
 
-//        $set('subtotal', $subtotal);
-//        $set('tax_amount', $taxAmount); // TAX FEATURE POSTPONED
+        //        $set('subtotal', $subtotal);
+        //        $set('tax_amount', $taxAmount); // TAX FEATURE POSTPONED
         $set('line_total', $lineTotal);
     }
 }
