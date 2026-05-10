@@ -93,6 +93,14 @@ class PurchaseInvoiceService
         }
 
         DB::transaction(function () use ($invoice) {
+            /** @var PurchaseInvoice $invoice */
+            $invoice = PurchaseInvoice::where('id', $invoice->id)->lockForUpdate()->firstOrFail();
+
+            // Guard: re-check status inside the lock to prevent double-finalization
+            if ($invoice->isFinalized()) {
+                return;
+            }
+
             $invoice->load('items.variant.product.taxClass');
 
             foreach ($invoice->items as $item) {
@@ -100,7 +108,7 @@ class PurchaseInvoiceService
                 $variant = $item->variant;
 
                 // Guard: variant must belong to the invoice's store
-                if ((int)$variant->product->store_id !== (int)$invoice->store_id) {
+                if ((int) $variant->product->store_id != (int) $invoice->store_id) {
                     throw new \RuntimeException(
                         "Variant [{$variant->id}] does not belong to store [{$invoice->store_id}]."
                     );

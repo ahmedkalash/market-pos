@@ -56,7 +56,7 @@ class SequenceService
     private function format(SequenceType $type, int $number): string
     {
         $year = now()->year;
-        $padded = str_pad((string) $number, 5, '0', STR_PAD_LEFT);
+        $padded = str_pad((string) $number, 6, '0', STR_PAD_LEFT);
         $prefix = $type->getPrefix();
 
         return "{$prefix}-{$year}-{$padded}";

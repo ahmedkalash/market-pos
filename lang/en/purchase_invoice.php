@@ -46,4 +46,21 @@ return [
     'finalize' => 'Finalize',
     'finalize_confirmation' => 'Are you sure? Once finalized, stock will be updated and this cannot be undone.',
     'finalized_success' => 'Invoice finalized successfully.',
+    
+    // Filters
+    'amount_min' => 'Min Amount',
+    'amount_max' => 'Max Amount',
+    'received_from' => 'Received From',
+    'received_until' => 'Received Until',
+    'created_from' => 'Created From',
+    'created_until' => 'Created Until',
+    'finalized_from' => 'Finalized From',
+    'finalized_until' => 'Finalized Until',
+    'product_barcode' => 'Product Barcode',
+    'has_notes' => 'Has Notes',
+    'with_notes' => 'With Notes',
+    'without_notes' => 'Without Notes',
+    'has_tax' => 'Tax Applied',
+    'taxable' => 'Taxable',
+    'tax_exempt' => 'Tax Exempt',
 ];
