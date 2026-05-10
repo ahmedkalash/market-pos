@@ -189,6 +189,7 @@ class PurchaseInvoiceForm
                                 ->afterStateUpdated(fn (Get $get, Set $set) => self::recalculateLine($get, $set))
                                 ->columnSpan(1),
 
+                            //  (ex. Tax)
                             TextInput::make('unit_cost')
                                 ->label(__('purchase_invoice.unit_cost'))
                                 ->numeric()
@@ -206,6 +207,7 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->suffix('%')
                                 ->hidden() // TAX FEATURE POSTPONED
+                                ->dehydrated() // Fix: Save to DB even when hidden
                                 ->columnSpan(1),
 
                             TextInput::make('subtotal')
@@ -214,6 +216,7 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->hidden() // TAX FEATURE POSTPONED
+                                ->dehydrated() // Fix: Save to DB even when hidden
                                 ->columnSpan(2),
 
                             TextInput::make('tax_amount')
@@ -221,6 +224,7 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->hidden() // TAX FEATURE POSTPONED
+                                ->dehydrated() // Fix: Save to DB even when hidden
                                 ->columnSpan(2),
 
                             TextInput::make('line_total')
