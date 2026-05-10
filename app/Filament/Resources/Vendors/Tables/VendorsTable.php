@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Vendors\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Support\Enums\Width;
@@ -94,6 +95,7 @@ class VendorsTable
             ->recordActions([
                 EditAction::make()
                 ->modalWidth(Width::FiveExtraLarge),
+                DeleteAction::make()
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
