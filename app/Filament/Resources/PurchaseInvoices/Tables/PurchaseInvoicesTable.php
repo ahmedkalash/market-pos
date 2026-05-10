@@ -187,16 +187,17 @@ class PurchaseInvoicesTable
                         blank: fn (Builder $query) => $query,
                     ),
 
-                TernaryFilter::make('has_tax')
-                    ->label(__('purchase_invoice.has_tax'))
-                    ->placeholder(__('app.all'))
-                    ->trueLabel(__('purchase_invoice.taxable'))
-                    ->falseLabel(__('purchase_invoice.tax_exempt'))
-                    ->queries(
-                        true: fn (Builder $query) => $query->where('total_tax_amount', '>', 0),
-                        false: fn (Builder $query) => $query->where('total_tax_amount', '<=', 0),
-                        blank: fn (Builder $query) => $query,
-                    ),
+                // TAX FEATURE POSTPONED
+                // TernaryFilter::make('has_tax')
+                //     ->label(__('purchase_invoice.has_tax'))
+                //     ->placeholder(__('app.all'))
+                //     ->trueLabel(__('purchase_invoice.taxable'))
+                //     ->falseLabel(__('purchase_invoice.tax_exempt'))
+                //     ->queries(
+                //         true: fn (Builder $query) => $query->where('total_tax_amount', '>', 0),
+                //         false: fn (Builder $query) => $query->where('total_tax_amount', '<=', 0),
+                //         blank: fn (Builder $query) => $query,
+                //     ),
 
                 SelectFilter::make('status')
                     ->label(__('purchase_invoice.status'))

@@ -59,7 +59,9 @@ class PurchaseInvoiceService
 
             $quantity = (float) $item->quantity;
             $unitCost = (float) $item->unit_cost;
-            $taxRate = (float) ($variant->product->taxClass?->rate ?? 0);
+            // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
+            // $taxRate = (float) ($variant->product->taxClass?->rate ?? 0);
+            $taxRate = 0.0;
 
             $subtotal = round($quantity * $unitCost, 2);
             $taxAmount = round($subtotal * $taxRate / 100, 2);

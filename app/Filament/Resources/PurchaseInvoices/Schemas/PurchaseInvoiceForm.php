@@ -144,7 +144,11 @@ class PurchaseInvoiceForm
                                     $set('product_variant_id', $variant->id);
                                     $set('product_name', "{$variant->product->name_ar} | {$variant->product->name_en}");
                                     $set('unit_cost', (float) $variant->purchase_price);
-                                    $set('tax_rate', (float) ($variant->product->taxClass?->rate ?? 0));
+
+                                    // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
+                                    // $set('tax_rate', (float) ($variant->product->taxClass?->rate ?? 0));
+                                    $set('tax_rate', 0.0);
+
                                     self::recalculateLine($get, $set);
                                 })
                                 ->afterStateHydrated(function ($state, Set $set, Get $get): void {
@@ -201,6 +205,7 @@ class PurchaseInvoiceForm
                                 ->label(__('purchase_invoice.tax_rate'))
                                 ->readOnly()
                                 ->suffix('%')
+                                ->hidden() // TAX FEATURE POSTPONED
                                 ->columnSpan(1),
 
                             TextInput::make('subtotal')
@@ -208,12 +213,14 @@ class PurchaseInvoiceForm
                                 ->numeric()
                                 ->readOnly()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                ->hidden() // TAX FEATURE POSTPONED
                                 ->columnSpan(2),
 
                             TextInput::make('tax_amount')
                                 ->label(__('purchase_invoice.tax_amount'))
                                 ->readOnly()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                ->hidden() // TAX FEATURE POSTPONED
                                 ->columnSpan(2),
 
                             TextInput::make('line_total')
