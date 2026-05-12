@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InvoiceReturnStatus;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
@@ -25,6 +26,7 @@ class PurchaseInvoice extends Model
         'total_tax_amount',
         'total_amount',
         'status',
+        'return_status',
         'notes',
         'received_at',
         'finalized_at',
@@ -39,6 +41,7 @@ class PurchaseInvoice extends Model
     {
         return [
             'status' => PurchaseInvoiceStatus::class,
+            'return_status' => InvoiceReturnStatus::class,
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
@@ -50,6 +53,16 @@ class PurchaseInvoice extends Model
     public function isFinalized(): bool
     {
         return $this->status === PurchaseInvoiceStatus::Finalized;
+    }
+
+    public function isFullyReturned(): bool
+    {
+        return $this->return_status === InvoiceReturnStatus::FullyReturned;
+    }
+
+    public function isPartiallyReturned(): bool
+    {
+        return $this->return_status === InvoiceReturnStatus::PartiallyReturned;
     }
 
     /**
@@ -74,6 +87,14 @@ class PurchaseInvoice extends Model
     public function finalizedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'finalized_by')->withoutGlobalScopes();
+    }
+
+    /**
+     * @return HasMany<PurchaseReturn, $this>
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class, 'original_invoice_id');
     }
 
     /**

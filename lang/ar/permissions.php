@@ -89,6 +89,15 @@ return [
     'delete_purchase_invoice' => 'حذف فاتورة شراء',
     'delete_any_purchase_invoice' => 'حذف عدة فواتير شراء',
     'finalize_purchase_invoice' => 'اعتماد فاتورة الشراء',
+    'cancel_purchase_invoice' => 'إلغاء فاتورة الشراء',
+    'correct_purchase_invoice' => 'تصحيح فاتورة الشراء',
+
+    'view_any_purchase_return' => 'عرض كل مرتجعات الشراء',
+    'view_purchase_return' => 'عرض مرتجع الشراء',
+    'create_purchase_return' => 'إضافة مرتجع شراء',
+    'update_purchase_return' => 'تعديل مرتجع شراء',
+    'delete_purchase_return' => 'حذف مرتجع شراء',
+    'finalize_purchase_return' => 'اعتماد مرتجع الشراء',
 
     // Module Headers
     'users' => 'المستخدمين',
@@ -106,4 +115,5 @@ return [
     'inventory' => 'المخزون',
     'vendors' => 'الموردين',
     'purchase invoices' => 'فواتير الشراء',
+    'purchase returns' => 'مرتجعات الشراء',
 ];

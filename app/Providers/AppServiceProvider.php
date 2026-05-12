@@ -6,6 +6,7 @@ use App\Http\Middleware\AppLocale;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Models\ProductVariant;
 use App\Models\PurchaseInvoice;
+use App\Models\PurchaseReturn;
 use App\Models\User;
 use App\Observers\ProductVariantObserver;
 use App\Observers\UserObserver;
@@ -78,7 +79,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Relation::morphMap([
             'purchase_invoice' => PurchaseInvoice::class,
-            // Phase 4.2: 'purchase_order' => \App\Models\PurchaseOrder::class,
+            'purchase_return' => PurchaseReturn::class,
         ]);
     }
 

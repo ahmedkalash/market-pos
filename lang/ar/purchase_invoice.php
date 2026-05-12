@@ -13,6 +13,7 @@ return [
     'created_by' => 'أنشئ بواسطة',
     'notes' => 'ملاحظات',
     'status' => 'الحالة',
+    'return_status' => 'حالة الإرجاع',
     'status_draft' => 'مسودة',
     'status_finalized' => 'معتمدة',
     'items' => 'بنود الفاتورة',
@@ -46,6 +47,24 @@ return [
     'finalize' => 'اعتماد',
     'finalize_confirmation' => 'هل أنت متأكد؟ بمجرد الاعتماد، سيتم تحديث المخزون ولا يمكن التراجع عن ذلك.',
     'finalized_success' => 'تم اعتماد الفاتورة بنجاح.',
+
+    // Return management actions
+    'return_actions' => 'إجراءات الإرجاع',
+    'partial_return' => 'إرجاع جزئي',
+    'cancel_invoice' => 'إلغاء الفاتورة',
+    'correct_invoice' => 'تصحيح الفاتورة',
+    'cancel_invoice_confirm_title' => 'تأكيد إلغاء الفاتورة؟',
+    'cancel_invoice_confirm_body' => 'سيتم إنشاء مرتجع كامل للفاتورة وعكس جميع حركات المخزون فوراً. لا يمكن التراجع عن هذا الإجراء.',
+    'correct_invoice_confirm_title' => 'تأكيد تصحيح الفاتورة؟',
+    'correct_invoice_confirm_body' => 'سيتم إلغاء الفاتورة الأصلية (مع عكس حركات المخزون) وإنشاء مسودة فاتورة جديدة مملوءة بالبيانات الأصلية لإعادة الإدخال.',
+    'cancel_reason' => 'سبب الإلغاء',
+    'correct_reason' => 'سبب التصحيح',
+    'cancel_failed' => 'فشل إلغاء الفاتورة',
+    'correct_failed' => 'فشل تصحيح الفاتورة',
+    'cancelled_successfully' => 'تم إلغاء الفاتورة وعكس المخزون بنجاح.',
+    'correction_draft_created' => 'تم إنشاء مسودة التصحيح. يرجى المراجعة والاعتماد.',
+    'return_draft_created' => 'تم إنشاء مسودة المرتجع. يرجى ضبط الكميات والاعتماد.',
+    'return_create_failed' => 'فشل إنشاء مسودة المرتجع.',
 
     // Filters
     'amount_min' => 'الحد الأدنى للمبلغ الاجمالي',

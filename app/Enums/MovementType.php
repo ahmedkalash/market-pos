@@ -6,7 +6,10 @@ enum MovementType: string
 {
     case StockIn = 'stock_in';
     case Sale = 'sale';
-    case Return = 'return';
+    /** Customer returns a sold item — goods come back into the store (POS) */
+    case SaleReturn = 'sale_return';
+    /** Store returns goods to vendor — goods physically leave the store */
+    case PurchaseReturn = 'purchase_return';
     case AdjustmentAdd = 'adjustment_add';
     case AdjustmentSub = 'adjustment_sub';
     case TransferIn = 'transfer_in';
@@ -17,11 +20,12 @@ enum MovementType: string
     {
         return match ($this) {
             self::StockIn,
-            self::Return,
+            self::SaleReturn,
             self::AdjustmentAdd,
             self::TransferIn,
             self::OpeningStock => MovementDirection::In,
 
+            self::PurchaseReturn,
             self::Sale,
             self::AdjustmentSub,
             self::TransferOut => MovementDirection::Out,

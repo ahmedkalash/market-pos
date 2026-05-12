@@ -1,0 +1,51 @@
+<?php
+
+return [
+    'purchase_return' => 'مرتجع شراء',
+    'purchase_returns' => 'مرتجعات الشراء',
+    'return_number' => 'رقم المرتجع',
+    'vendor_credit_ref' => 'رقم إشعار الدائن',
+    'vendor' => 'المورد',
+    'store' => 'الفرع',
+    'returned_at' => 'تاريخ الإرجاع',
+    'finalized_at' => 'تاريخ الاعتماد',
+    'finalized_by' => 'اعتمد بواسطة',
+    'created_by' => 'أنشئ بواسطة',
+    'notes' => 'ملاحظات',
+    'return_reason' => 'سبب الإرجاع',
+    'status' => 'الحالة',
+    'status_draft' => 'مسودة',
+    'status_finalized' => 'معتمد',
+    'original_invoice' => 'الفاتورة الأصلية',
+    'items' => 'بنود المرتجع',
+    'item' => 'بند مرتجع',
+    'quantity' => 'الكمية',
+    'unit_cost' => 'سعر الوحدة',
+    'line_total' => 'إجمالي البند',
+    'total_before_tax' => 'الإجمالي قبل الضريبة',
+    'total_tax_amount' => 'إجمالي الضريبة',
+    'total_amount' => 'إجمالي المرتجع',
+    'item_notes' => 'ملاحظات البند',
+    'barcode' => 'الباركود',
+    'product_name' => 'اسم المنتج',
+    'product_not_found' => 'المنتج غير موجود',
+    'product_wrong_store' => 'هذا المنتج لا ينتمي إلى الفرع المحدد.',
+    'duplicate_barcode' => 'هذا المنتج مضاف مسبقاً في المرتجع.',
+
+    // Finalization
+    'finalize' => 'اعتماد المرتجع',
+    'finalize_confirm_title' => 'تأكيد اعتماد المرتجع؟',
+    'finalize_confirm_body' => 'سيتم عكس حركة المخزون لجميع البنود وقفل المرتجع بشكل دائم. لا يمكن التراجع عن هذا الإجراء.',
+    'finalize_failed' => 'فشل اعتماد المرتجع',
+    'finalize_success' => 'تم اعتماد المرتجع بنجاح.',
+    'create_and_finalize' => 'إنشاء واعتماد',
+    'save_as_draft' => 'حفظ كمسودة',
+
+    'no_items' => 'يرجى إضافة بند واحد على الأقل قبل الاعتماد.',
+    'exceeds_returnable_quantity' => 'لا يمكن إرجاع كمية أكبر من الكمية المتاحة للإرجاع (:max وحدة).',
+
+    // Return status (on invoice)
+    'return_status_none' => 'لا يوجد إرجاع',
+    'return_status_partially_returned' => 'إرجاع جزئي',
+    'return_status_fully_returned' => 'إرجاع كامل',
+];

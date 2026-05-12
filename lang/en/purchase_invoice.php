@@ -13,6 +13,7 @@ return [
     'created_by' => 'Created By',
     'notes' => 'Notes',
     'status' => 'Status',
+    'return_status' => 'Return Status',
     'status_draft' => 'Draft',
     'status_finalized' => 'Finalized',
     'items' => 'Line Items',
@@ -46,6 +47,24 @@ return [
     'finalize' => 'Finalize',
     'finalize_confirmation' => 'Are you sure? Once finalized, stock will be updated and this cannot be undone.',
     'finalized_success' => 'Invoice finalized successfully.',
+
+    // Return management actions
+    'return_actions' => 'Return Actions',
+    'partial_return' => 'Partial Return',
+    'cancel_invoice' => 'Cancel Invoice',
+    'correct_invoice' => 'Correct Invoice',
+    'cancel_invoice_confirm_title' => 'Cancel Invoice?',
+    'cancel_invoice_confirm_body' => 'This will create a full return for the entire invoice and immediately reverse all stock movements. This cannot be undone.',
+    'correct_invoice_confirm_title' => 'Correct Invoice?',
+    'correct_invoice_confirm_body' => 'This will cancel the original invoice (reversing all stock movements) and create a new Draft invoice pre-filled from the original for re-entry.',
+    'cancel_reason' => 'Reason for Cancellation',
+    'correct_reason' => 'Reason for Correction',
+    'cancel_failed' => 'Invoice Cancellation Failed',
+    'correct_failed' => 'Invoice Correction Failed',
+    'cancelled_successfully' => 'Invoice cancelled and stock reversed successfully.',
+    'correction_draft_created' => 'Correction draft created. Please review and finalize.',
+    'return_draft_created' => 'Return draft created. Please set quantities and finalize.',
+    'return_create_failed' => 'Failed to create return draft.',
 
     // Filters
     'amount_min' => 'Min Amount',
