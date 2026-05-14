@@ -16,12 +16,14 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class CompanyPanelProvider extends PanelProvider
@@ -69,6 +71,22 @@ class CompanyPanelProvider extends PanelProvider
             ->authMiddleware([
                 ApplyTenantScopes::class,
                 Authenticate::class,
-            ]);
+            ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => new HtmlString('
+                    <script>
+                        document.addEventListener("keydown", function(event) {
+                            if (event.key === "Enter") {
+                                let target = event.target;
+                                if (target.tagName !== "TEXTAREA" && target.closest("form")) {
+                                    event.preventDefault();
+                                    target.blur();
+                                }
+                            }
+                        });
+                    </script>
+                ')
+            );
     }
 }

@@ -6,14 +6,15 @@ use App\Enums\InvoiceReturnStatus;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseInvoice extends Model
 {
-    use BelongsToCompany;
-    use BelongsToStore;
+    use BelongsToCompany, BelongsToStore;
 
     /** @var list<string> */
     protected $fillable = [
@@ -103,5 +104,42 @@ class PurchaseInvoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseInvoiceItem::class);
+    }
+
+    #[Scope]
+    public function finalized(Builder $query): Builder
+    {
+        return $query->where('status', PurchaseInvoiceStatus::Finalized);
+    }
+
+    #[Scope]
+    public function draft(Builder $query): Builder
+    {
+        return $query->where('status', PurchaseInvoiceStatus::Draft);
+    }
+
+    #[Scope]
+    public function returnable(Builder $query): Builder
+    {
+        return $query->finalized()
+            ->where('return_status', '!=', InvoiceReturnStatus::FullyReturned);
+    }
+
+    #[Scope]
+    public function fullyReturned(Builder $query): Builder
+    {
+        return $query->where('return_status', InvoiceReturnStatus::FullyReturned);
+    }
+
+    #[Scope]
+    public function partiallyReturned(Builder $query): Builder
+    {
+        return $query->where('return_status', InvoiceReturnStatus::PartiallyReturned);
+    }
+
+    #[Scope]
+    public function forVendor(Builder $query, int $vendorId): Builder
+    {
+        return $query->where('vendor_id', $vendorId);
     }
 }

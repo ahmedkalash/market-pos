@@ -62,9 +62,9 @@ trait BelongsToStore
     }
 
     #[Scope]
-    public function filterByStore(Builder $query, int $companyId): Builder
+    public function filterByStore(Builder $query, int $storeId): Builder
     {
-        return $query->where('store_id', $companyId);
+        return $query->where('store_id', $storeId);
 
     }
 }

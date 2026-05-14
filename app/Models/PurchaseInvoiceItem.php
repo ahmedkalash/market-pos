@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseInvoiceItem extends Model
 {
@@ -49,5 +50,22 @@ class PurchaseInvoiceItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    /**
+     * @return HasMany<PurchaseReturnItem, $this>
+     */
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(PurchaseReturnItem::class, 'original_item_id');
+    }
+
+    public function getRemainingReturnableQuantityAttribute(): float
+    {
+        // Calculate total returned quantity for this item (ignoring draft/cancelled returns if any,
+        // but right now returns are saved directly, so we just sum all associated return items).
+        $returned = $this->returnItems()->sum('quantity');
+
+        return max(0.0, (float) $this->quantity - (float) $returned);
     }
 }

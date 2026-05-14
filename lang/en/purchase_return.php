@@ -32,6 +32,24 @@ return [
     'product_wrong_store' => 'This product does not belong to the selected store.',
     'duplicate_barcode' => 'This product is already added to the return.',
 
+    // New keys for Form
+    'barcode_scanner' => 'Barcode Scanner',
+    'original_invoice_id' => 'Original Invoice',
+    'return_all_items' => 'Return All Remaining Items',
+    'scan_barcode' => 'Scan item barcode...',
+    'select_original_invoice_first' => 'Select Original Invoice first.',
+    'barcode_not_found' => 'Barcode not found in catalog.',
+    'product_not_in_invoice' => 'This product does not exist in the selected invoice.',
+    'no_remaining_quantity' => 'No remaining quantity to return for this item.',
+    'max_returnable_reached' => 'Max returnable quantity reached for this item.',
+    'quantity_adjusted' => 'Quantity adjusted to maximum returnable allowed.',
+    'no_items_to_return' => 'Cannot create return without items.',
+    'invoice_not_found' => 'Invoice not found or it is already fully returned.',
+    'invoice_found_success' => 'Invoice found successfully. You may now scan items.',
+    'invoice_search_helper' => 'Type the exact invoice number and click the search button or any empty space.',
+    'search' => 'Search',
+    'max_suffix' => 'Max:',
+
     // Finalization
     'finalize' => 'Finalize Return',
     'finalize_confirm_title' => 'Finalize Return?',
@@ -47,4 +65,14 @@ return [
     'return_status_none' => 'Not Returned',
     'return_status_partially_returned' => 'Partially Returned',
     'return_status_fully_returned' => 'Fully Returned',
+    'item_already_added' => 'Item has already been added to the return',
+
+    // Tooltips & Helpers
+    'store_helper' => 'Select the store where the returned items will be restocked.',
+    'barcode_scanner_helper' => 'Scan a product barcode to quickly add it to the return list.',
+    'quantity_tooltip' => 'Cannot exceed the remaining returnable quantity.',
+    'unit_cost_tooltip' => 'The original unit cost from the invoice.',
+    'line_total_tooltip' => 'Calculated automatically based on quantity.',
+    'notes_tooltip' => 'Optional: Reason for return or item condition.',
+    'grand_total' => 'Grand Total',
 ];

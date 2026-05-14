@@ -32,6 +32,24 @@ return [
     'product_wrong_store' => 'هذا المنتج لا ينتمي إلى الفرع المحدد.',
     'duplicate_barcode' => 'هذا المنتج مضاف مسبقاً في المرتجع.',
 
+    // New keys for Form
+    'barcode_scanner' => 'قارئ الباركود',
+    'original_invoice_id' => 'الفاتورة الأصلية',
+    'return_all_items' => 'إرجاع كل البنود المتبقية في الفاتورة',
+    'scan_barcode' => 'امسح باركود المنتج...',
+    'select_original_invoice_first' => 'يرجى اختيار الفاتورة الأصلية أولاً.',
+    'barcode_not_found' => 'الباركود غير موجود في الكتالوج.',
+    'product_not_in_invoice' => 'هذا المنتج غير موجود في الفاتورة المحددة.',
+    'no_remaining_quantity' => 'لا توجد كمية متبقية لإرجاعها من هذا البند.',
+    'max_returnable_reached' => 'تم الوصول للحد الأقصى للكمية المرتجعة لهذا البند.',
+    'quantity_adjusted' => 'تم تعديل الكمية للحد الأقصى المسموح بإرجاعه.',
+    'no_items_to_return' => 'لا يمكن إنشاء مرتجع بدون بنود.',
+    'invoice_not_found' => 'الفاتورة غير موجودة أو تم إرجاع جميع بنودها بالفعل.',
+    'invoice_found_success' => 'تم العثور على الفاتورة. يمكنك الآن اضافة البنود المرتجعة.',
+    'invoice_search_helper' => 'أدخل رقم الفاتورة واضغط على زر البحث او اي مكان فارغ.',
+    'search' => 'بحث',
+    'max_suffix' => 'الحد الأقصى:',
+
     // Finalization
     'finalize' => 'اعتماد المرتجع',
     'finalize_confirm_title' => 'تأكيد اعتماد المرتجع؟',
@@ -48,4 +66,14 @@ return [
     'return_status_none' => 'لا يوجد إرجاع',
     'return_status_partially_returned' => 'إرجاع جزئي',
     'return_status_fully_returned' => 'إرجاع كامل',
+    'item_already_added' => 'تمت اضافه البند من قبل لفاتورة المرتجع',
+
+    // Tooltips & Helpers
+    'store_helper' => 'اختر المستودع الذي سيتم إرجاع المنتجات إليه.',
+    'barcode_scanner_helper' => 'قم بمسح باركود المنتج واضغط على زر البحث او اي مكان فارغ لإضافته إلى قائمة الإرجاع.',
+    'quantity_tooltip' => 'لا يمكن أن يتجاوز الكمية المتبقية القابلة للإرجاع من الفاتورة الاصلية او الكمية المتبقية في المخزون.',
+    'unit_cost_tooltip' => 'تكلفة الوحدة الأصلية من الفاتورة.',
+    'line_total_tooltip' => 'يتم حسابه تلقائياً بناءً على الكمية والتكلفة.',
+    'notes_tooltip' => 'اختياري: سبب الإرجاع أو حالة المنتج.',
+    'grand_total' => 'الإجمالي الكلي',
 ];
