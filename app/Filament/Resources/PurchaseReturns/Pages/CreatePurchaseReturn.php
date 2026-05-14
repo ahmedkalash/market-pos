@@ -10,6 +10,7 @@ use App\Services\SequenceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 
 /** @property PurchaseReturn|null $record */
 class CreatePurchaseReturn extends CreateRecord
@@ -23,7 +24,7 @@ class CreatePurchaseReturn extends CreateRecord
         return [
             Action::make('createAndFinalize')
                 ->label(__('purchase_return.create_and_finalize'))
-                ->authorize('finalize_purchase_return')
+                ->authorize(['create_purchase_return', 'finalize_purchase_return'])
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
                 ->action(function () {
@@ -42,9 +43,6 @@ class CreatePurchaseReturn extends CreateRecord
         return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['created_by'] = auth()->id();
@@ -56,6 +54,29 @@ class CreatePurchaseReturn extends CreateRecord
         );
 
         return $data;
+    }
+
+    /**
+     * @throws Halt
+     */
+    protected function afterValidate(): void
+    {
+        // Filter out repeater rows with 0 quantity
+        if (isset($this->data['items']) && is_array($this->data['items'])) {
+            $this->data['items'] = array_filter(
+                $this->data['items'],
+                fn ($item) => (float) ($item['quantity'] ?? 0) > 0
+            );
+
+            if (empty($this->data['items'])) {
+                Notification::make()
+                    ->title(__('purchase_return.no_items_to_return'))
+                    ->danger()
+                    ->send();
+
+                $this->halt();
+            }
+        }
     }
 
     protected function afterCreate(): void
