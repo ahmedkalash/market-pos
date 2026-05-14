@@ -40,7 +40,7 @@ class PurchaseReturnForm
                         ->live(onBlur: true)
                         ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
                             $set('items', []); // clear items
-                            static::calcGrandTotal($get, $set);
+                            static::calcTotalAmount($get, $set);
                             $set('original_invoice_id', null);
                             $set('vendor_id', null);
                             $set('store_id', null);
@@ -169,7 +169,7 @@ class PurchaseReturnForm
 
                             $set('items', $items);
 
-                            static::calcGrandTotal($get, $set);
+                            static::calcTotalAmount($get, $set);
                         })
                         ->visible(fn (Get $get) => filled($get('original_invoice_id'))),
                 ])
@@ -265,7 +265,7 @@ class PurchaseReturnForm
                             ];
 
                             $set('items', $items);
-                            static::calcGrandTotal($get, $set);
+                            static::calcTotalAmount($get, $set);
                             $livewire->dispatch('play-sound-success');
                             $livewire->dispatch('focus-barcode');
                         })
@@ -276,7 +276,7 @@ class PurchaseReturnForm
                         ->compact()
                         ->deleteAction(
                             fn (Action $action) => $action->after(function (Get $get, Set $set) {
-                                static::calcGrandTotal($get, $set);
+                                static::calcTotalAmount($get, $set);
                             })
                         )
                         ->itemLabel(function (array $state): ?HtmlString {
@@ -319,9 +319,7 @@ class PurchaseReturnForm
                                     }
                                     self::recalculateLine($get, $set);
 
-                                    $items = $get('../../items') ?? [];
-                                    $total = collect($items)->sum('line_total');
-                                    $set('../../grand_total', $total);
+                                    static::calcTotalAmount($get, $set, '../../');
                                 })
                                 ->suffix(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
                                 ->columnSpan(3),
@@ -356,14 +354,14 @@ class PurchaseReturnForm
                         ->cloneable(false)
                         ->defaultItems(0),
 
-                    TextInput::make('grand_total')
+                    TextInput::make('total_amount')
                         ->label(__('purchase_return.grand_total'))
                         ->disabled()
                         ->dehydrated(false)
                         ->extraInputAttributes(['class' => 'text-xl font-bold'])
                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                         ->afterStateHydrated(function (Get $get, Set $set) {
-                            static::calcGrandTotal($get, $set);
+                            static::calcTotalAmount($get, $set);
                         })
                         ->columnSpanFull(),
 
@@ -420,10 +418,10 @@ class PurchaseReturnForm
         $set('line_total', $lineTotal);
     }
 
-    private static function calcGrandTotal(Get $get, Set $set): void
+    private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
-        $items = $get('items') ?? [];
+        $items = $get($prefix.'items') ?? [];
         $total = collect($items)->sum('line_total');
-        $set('grand_total', $total);
+        $set($prefix.'total_amount', $total);
     }
 }
