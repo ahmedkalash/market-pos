@@ -60,11 +60,15 @@ class PurchaseInvoiceItem extends Model
         return $this->hasMany(PurchaseReturnItem::class, 'original_item_id');
     }
 
+    /**
+     * Remaining quantity that can still be returned against this invoice line.
+     * Only counts returns that have been finalized (drafts don't reduce the quota).
+     */
     public function getRemainingReturnableQuantityAttribute(): float
     {
-        // Calculate total returned quantity for this item (ignoring draft/cancelled returns if any,
-        // but right now returns are saved directly, so we just sum all associated return items).
-        $returned = $this->returnItems()->sum('quantity');
+        $returned = $this->returnItems()
+            ->whereHas('purchaseReturn', fn ($q) => $q->finalized())
+            ->sum('quantity');
 
         return max(0.0, (float) $this->quantity - (float) $returned);
     }

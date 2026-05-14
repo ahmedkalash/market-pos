@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PurchaseReturns\Schemas;
 
 use App\Models\ProductBarcode;
+use App\Models\ProductVariant;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\User;
@@ -16,6 +17,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -171,7 +173,9 @@ class PurchaseReturnForm
 
                             static::calcTotalAmount($get, $set);
                         })
-                        ->visible(fn (Get $get) => filled($get('original_invoice_id'))),
+                        ->visible(fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                            ! ($livewire instanceof ViewRecord)
+                        ),
                 ])
                 ->schema([
                     TextInput::make('barcode_scanner')
@@ -269,9 +273,30 @@ class PurchaseReturnForm
                             $livewire->dispatch('play-sound-success');
                             $livewire->dispatch('focus-barcode');
                         })
-                        ->visible(fn (Get $get) => filled($get('original_invoice_id'))),
+                        ->visible(fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                            ! ($livewire instanceof ViewRecord)
+                        ),
 
                     Repeater::make('items')
+                        ->relationship('items')
+                        ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
+                            $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
+                            $locale = app()->getLocale();
+
+                            if ($variant) {
+                                $productName = $variant->product?->{"name_{$locale}"} ?? '';
+                                $variantName = $variant->{"name_{$locale}"} ?? '';
+                                $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
+                                $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
+                            }
+
+                            $originalItem = PurchaseInvoiceItem::find($data['original_item_id']);
+                            if ($originalItem) {
+                                $data['max_returnable'] = $originalItem->remaining_returnable_quantity;
+                            }
+
+                            return $data;
+                        })
                         ->hiddenLabel()
                         ->compact()
                         ->deleteAction(

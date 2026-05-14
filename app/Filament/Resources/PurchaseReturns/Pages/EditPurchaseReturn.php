@@ -23,9 +23,9 @@ class EditPurchaseReturn extends EditRecord
                 ->modalHeading(__('purchase_return.finalize_confirm_title'))
                 ->modalDescription(__('purchase_return.finalize_confirm_body'))
                 ->icon('heroicon-o-check-badge')
-                ->color('warning')
+                ->color('success')
                 ->requiresConfirmation()
-                ->authorize('finalize_purchase_return')
+                ->authorize(['update_purchase_return', 'finalize_purchase_return'])
                 ->action(function () {
                     $this->shouldFinalize = true;
                     $this->save();

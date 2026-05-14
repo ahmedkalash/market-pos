@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\PurchaseReturnStatus;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -92,5 +94,17 @@ class PurchaseReturn extends Model
     public function finalizedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'finalized_by')->withoutGlobalScopes();
+    }
+
+    #[Scope]
+    public function finalized(Builder $query): Builder
+    {
+        return $query->where('status', PurchaseReturnStatus::Finalized);
+    }
+
+    #[Scope]
+    public function draft(Builder $query): Builder
+    {
+        return $query->where('status', PurchaseReturnStatus::Draft);
     }
 }
