@@ -8,6 +8,7 @@ use App\Services\PurchaseInvoiceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 
 class EditPurchaseReturn extends EditRecord
 {
@@ -54,6 +55,29 @@ class EditPurchaseReturn extends EditRecord
 
         if ($return->isFinalized()) {
             $this->redirect($this->getResource()::getUrl('view', ['record' => $return]));
+        }
+    }
+
+    /**
+     * @throws Halt
+     */
+    protected function afterValidate(): void
+    {
+        // Filter out repeater rows with 0 quantity
+        if (isset($this->data['items']) && is_array($this->data['items'])) {
+            $this->data['items'] = array_filter(
+                $this->data['items'],
+                fn ($item) => (float) ($item['quantity'] ?? 0) > 0
+            );
+
+            if (empty($this->data['items'])) {
+                Notification::make()
+                    ->title(__('purchase_return.no_items_to_return'))
+                    ->danger()
+                    ->send();
+
+                $this->halt();
+            }
         }
     }
 
