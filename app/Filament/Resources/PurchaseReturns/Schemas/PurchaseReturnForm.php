@@ -10,7 +10,6 @@ use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -40,6 +39,10 @@ class PurchaseReturnForm
                     TextInput::make('invoice_number_input')
                         ->label(__('purchase_return.original_invoice_id'))
                         ->required()
+                        ->default(function () {
+                            $invoiceId = request()->query('original_invoice_id');
+                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->invoice_number : null;
+                        })
                         ->live(onBlur: true)
                         ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
                             $set('items', []); // clear items
@@ -66,7 +69,7 @@ class PurchaseReturnForm
                                 }
                             }
                         })
-                        ->formatStateUsing(fn ($record) => $record?->originalInvoice?->invoice_number)
+                        ->formatStateUsing(fn ($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
                         ->dehydrated(false)
                         ->helperText(__('purchase_return.invoice_search_helper'))
                         ->prefixAction(
@@ -77,11 +80,16 @@ class PurchaseReturnForm
                         ->columnSpanFull(),
 
                     Hidden::make('original_invoice_id')
+                        ->default(request()->query('original_invoice_id'))
                         ->required(),
 
                     Select::make('vendor_id')
                         ->label(__('purchase_return.vendor'))
                         ->relationship('vendor', 'name')
+                        ->default(function () {
+                            $invoiceId = request()->query('original_invoice_id');
+                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->vendor_id : null;
+                        })
                         ->disabled()
                         ->dehydrated()
                         ->required(),
@@ -89,6 +97,10 @@ class PurchaseReturnForm
                     Select::make('store_id')
                         ->label(__('purchase_return.store'))
                         ->relationship('store', 'name_'.app()->getLocale())
+                        ->default(function () {
+                            $invoiceId = request()->query('original_invoice_id');
+                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->store_id : null;
+                        })
                         ->disabled()
                         ->dehydrated()
                         ->required()
@@ -96,6 +108,10 @@ class PurchaseReturnForm
                         ->visible(fn () => $user->isCompanyLevel()),
 
                     Hidden::make('store_id')
+                        ->default(function () {
+                            $invoiceId = request()->query('original_invoice_id');
+                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->store_id : null;
+                        })
                         ->disabled()
                         ->dehydrated()
                         ->visible(fn () => $user->isStoreLevel()),
