@@ -49,6 +49,7 @@ return [
     'finalized_success' => 'Invoice finalized successfully.',
 
     // Return management actions
+    'return_items' => 'Return Items',
     'return_actions' => 'Return Actions',
     'partial_return' => 'Partial Return',
     'cancel_invoice' => 'Cancel Invoice',

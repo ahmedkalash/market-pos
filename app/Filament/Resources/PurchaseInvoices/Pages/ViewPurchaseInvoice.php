@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Pages;
 
-use App\Enums\PurchaseInvoiceStatus;
 use App\Filament\Resources\PurchaseInvoices\PurchaseInvoiceResource;
+use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
 use App\Models\PurchaseInvoice;
 use App\Services\PurchaseInvoiceService;
 use Filament\Actions\Action;
@@ -18,6 +18,7 @@ class ViewPurchaseInvoice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            // ----- Draft-only actions -----
             Action::make('finalize')
                 ->label(__('purchase_invoice.finalize'))
                 ->icon('heroicon-o-check-badge')
@@ -27,7 +28,7 @@ class ViewPurchaseInvoice extends ViewRecord
                 ->modalDescription(__('purchase_invoice.finalize_confirm_body'))
                 ->modalSubmitActionLabel(__('purchase_invoice.finalize'))
                 ->authorize('finalize_purchase_invoice')
-                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft)
+                ->visible(fn (PurchaseInvoice $record): bool => $record->isDraft())
                 ->action(function (PurchaseInvoice $record): void {
                     try {
                         PurchaseInvoiceService::make()->finalize($record);
@@ -60,11 +61,22 @@ class ViewPurchaseInvoice extends ViewRecord
                 ->icon('heroicon-o-pencil-square')
                 ->url(fn (PurchaseInvoice $record): string => PurchaseInvoiceResource::getUrl('edit', ['record' => $record]))
                 ->authorize('update_purchase_invoice')
-                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft),
+                ->visible(fn (PurchaseInvoice $record): bool => $record->isDraft()),
 
             DeleteAction::make()
                 ->authorize('delete_purchase_invoice')
-                ->visible(fn (PurchaseInvoice $record): bool => $record->status === PurchaseInvoiceStatus::Draft),
+                ->visible(fn (PurchaseInvoice $record): bool => $record->isDraft()),
+
+            // ----- Finalized-only actions (return management) -----
+            Action::make('returnItems')
+                ->label(__('purchase_invoice.return_items'))
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('warning')
+                ->authorize('create_purchase_return')
+                ->visible(fn (PurchaseInvoice $record): bool => $record->isFinalized() && ! $record->isFullyReturned())
+                ->url(fn (PurchaseInvoice $record): string => PurchaseReturnResource::getUrl('create', [
+                    'original_invoice_id' => $record->id,
+                ])),
         ];
     }
 }

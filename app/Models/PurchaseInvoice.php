@@ -56,6 +56,11 @@ class PurchaseInvoice extends Model
         return $this->status === PurchaseInvoiceStatus::Finalized;
     }
 
+    public function isDraft(): bool
+    {
+        return $this->status === PurchaseInvoiceStatus::Draft;
+    }
+
     public function isFullyReturned(): bool
     {
         return $this->return_status === InvoiceReturnStatus::FullyReturned;

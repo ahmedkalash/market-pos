@@ -22,6 +22,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 
@@ -144,33 +145,8 @@ class PurchaseReturnForm
                                 return;
                             }
 
-                            $items = [];
-                            foreach ($invoice->items as $originalItem) {
-                                $maxReturnable = $originalItem->remaining_returnable_quantity;
-                                if ($maxReturnable > 0) {
-                                    $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
-                                    $key = 'item_'.$originalItem->id;
-                                    $locale = app()->getLocale();
-                                    $productName = $originalItem->variant->product->{"name_$locale"};
-                                    $variantName = $originalItem->variant->{"name_$locale"};
-                                    $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
-
-                                    $items[$key] = [
-                                        'original_item_id' => $originalItem->id,
-                                        'product_variant_id' => $originalItem->product_variant_id,
-                                        'barcodes' => $barcodes,
-                                        'product_name' => $fullName,
-                                        'max_returnable' => $maxReturnable,
-                                        'quantity' => $maxReturnable,
-                                        'unit_cost' => (float) $originalItem->unit_cost,
-                                        'line_total' => round($maxReturnable * (float) $originalItem->unit_cost, 2),
-                                        'notes' => null,
-                                    ];
-                                }
-                            }
-
+                            $items = static::getAllInvoiceItemsForReturn($invoice);
                             $set('items', $items);
-
                             static::calcTotalAmount($get, $set);
                         })
                         ->visible(fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
@@ -229,7 +205,7 @@ class PurchaseReturnForm
                                 return;
                             }
 
-                            $maxReturnable = $originalItem->remaining_returnable_quantity;
+                            $maxReturnable = $originalItem->getRemainingReturnableQuantity();
                             if ($maxReturnable <= 0) {
                                 Notification::make()->warning()->title(__('purchase_return.no_remaining_quantity'))->send();
                                 $livewire->dispatch('play-sound-error');
@@ -279,7 +255,7 @@ class PurchaseReturnForm
 
                     Repeater::make('items')
                         ->relationship('items')
-                        ->mutateRelationshipDataBeforeFillUsing(function (array $data): array {
+                        ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
                             $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
                             $locale = app()->getLocale();
 
@@ -292,7 +268,7 @@ class PurchaseReturnForm
 
                             $originalItem = PurchaseInvoiceItem::find($data['original_item_id']);
                             if ($originalItem) {
-                                $data['max_returnable'] = $originalItem->remaining_returnable_quantity;
+                                $data['max_returnable'] = $originalItem->getRemainingReturnableQuantity($record->id);
                             }
 
                             return $data;
@@ -441,6 +417,38 @@ class PurchaseReturnForm
         $lineTotal = round($quantity * $unitCost, 2);
 
         $set('line_total', $lineTotal);
+    }
+
+    public static function getAllInvoiceItemsForReturn(PurchaseInvoice $invoice): array
+    {
+        $invoice->loadMissing(['items.variant.product', 'items.variant.barcodes']);
+
+        $items = [];
+        foreach ($invoice->items as $originalItem) {
+            $maxReturnable = $originalItem->getRemainingReturnableQuantity();
+            if ($maxReturnable > 0) {
+                $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
+                $key = 'item_'.$originalItem->id;
+                $locale = app()->getLocale();
+                $productName = $originalItem->variant->product->{"name_$locale"};
+                $variantName = $originalItem->variant->{"name_$locale"};
+                $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
+
+                $items[$key] = [
+                    'original_item_id' => $originalItem->id,
+                    'product_variant_id' => $originalItem->product_variant_id,
+                    'barcodes' => $barcodes,
+                    'product_name' => $fullName,
+                    'max_returnable' => $maxReturnable,
+                    'quantity' => $maxReturnable,
+                    'unit_cost' => (float) $originalItem->unit_cost,
+                    'line_total' => round($maxReturnable * (float) $originalItem->unit_cost, 2),
+                    'notes' => null,
+                ];
+            }
+        }
+
+        return $items;
     }
 
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void

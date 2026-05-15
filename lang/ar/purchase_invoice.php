@@ -49,6 +49,7 @@ return [
     'finalized_success' => 'تم اعتماد الفاتورة بنجاح.',
 
     // Return management actions
+    'return_items' => 'إرجاع بنود',
     'return_actions' => 'إجراءات الإرجاع',
     'partial_return' => 'إرجاع جزئي',
     'cancel_invoice' => 'إلغاء الفاتورة',
