@@ -17,7 +17,11 @@ class InsufficientStockException extends RuntimeException
         public readonly float $available,
     ) {
         parent::__construct(
-            "Insufficient stock for variant #{$variant->id}: requested {$requested}, available {$available}."
+            __('app.insufficient_stock_exception_message', [
+                'product' => $variant->product?->name ?? $variant->id,
+                'requested' => $requested,
+                'available' => $available,
+            ])
         );
     }
 }

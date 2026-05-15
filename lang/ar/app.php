@@ -167,4 +167,5 @@ return [
     'created_at' => 'تاريخ الإنشاء',
     'updated_at' => 'تاريخ التحديث',
     'all' => 'الكل',
+    'insufficient_stock_exception_message' => 'رصيد غير كافٍ للمنتج :product: الكمية المطلوبة :requested، المتاح :available.',
 ];
