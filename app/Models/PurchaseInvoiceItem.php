@@ -61,15 +61,43 @@ class PurchaseInvoiceItem extends Model
     }
 
     /**
-     * Remaining quantity that can still be returned against this invoice line.
-     * Only counts returns that have been finalized (drafts don't reduce the quota).
+     * Gets the total quantity that has been finalized for return.
      */
-    public function getRemainingReturnableQuantityAttribute(): float
+    public function getFinalizedReturnedQuantity(?int $excludeReturnItemId = null): float
     {
-        $returned = $this->returnItems()
-            ->whereHas('purchaseReturn', fn ($q) => $q->finalized())
-            ->sum('quantity');
+        $query = $this->returnItems()
+            ->whereHas('purchaseReturn', fn ($q) => $q->finalized());
 
-        return max(0.0, (float) $this->quantity - (float) $returned);
+        if ($excludeReturnItemId) {
+            $query->where('id', '!=', $excludeReturnItemId);
+        }
+
+        return (float) $query->sum('quantity');
+    }
+
+    /**
+     * Gets the remaining quota based strictly on the invoice (ignores physical stock).
+     */
+    public function getInvoiceReturnableQuantity(?int $excludeReturnItemId = null): float
+    {
+        $returned = $this->getFinalizedReturnedQuantity($excludeReturnItemId);
+
+        return max(0.0, (float) $this->quantity - $returned);
+    }
+
+    /**
+     * Remaining quantity that can still be returned against this invoice line.
+     * Constrained by both the invoice quota and current physical stock.
+     */
+    public function getRemainingReturnableQuantity(?int $excludeReturnItemId = null): float
+    {
+        // 1. What is remaining on the invoice
+        $invoiceRemaining = $this->getInvoiceReturnableQuantity($excludeReturnItemId);
+
+        // 2. What is physically available in stock
+        $currentStock = (float) ($this->variant?->quantity ?? 0);
+
+        // The true returnable amount is the lesser of the two
+        return min($invoiceRemaining, max(0.0, $currentStock));
     }
 }
