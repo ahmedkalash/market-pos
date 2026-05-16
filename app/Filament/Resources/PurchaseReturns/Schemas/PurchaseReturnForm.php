@@ -69,7 +69,7 @@ class PurchaseReturnForm
                                 }
                             }
                         })
-                        ->formatStateUsing(fn ($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
+                        ->formatStateUsing(fn($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
                         ->dehydrated(false)
                         ->helperText(__('purchase_return.invoice_search_helper'))
                         ->prefixAction(
@@ -96,7 +96,7 @@ class PurchaseReturnForm
 
                     Select::make('store_id')
                         ->label(__('purchase_return.store'))
-                        ->relationship('store', 'name_'.app()->getLocale())
+                        ->relationship('store', 'name_' . app()->getLocale())
                         ->default(function () {
                             $invoiceId = request()->query('original_invoice_id');
                             return $invoiceId ? PurchaseInvoice::find($invoiceId)?->store_id : null;
@@ -105,7 +105,7 @@ class PurchaseReturnForm
                         ->dehydrated()
                         ->required()
                         ->helperText(__('purchase_return.store_helper'))
-                        ->visible(fn () => $user->isCompanyLevel()),
+                        ->visible(fn() => $user->isCompanyLevel()),
 
                     Hidden::make('store_id')
                         ->default(function () {
@@ -114,7 +114,7 @@ class PurchaseReturnForm
                         })
                         ->disabled()
                         ->dehydrated()
-                        ->visible(fn () => $user->isStoreLevel()),
+                        ->visible(fn() => $user->isStoreLevel()),
 
                     DatePicker::make('returned_at')
                         ->label(__('purchase_return.returned_at'))
@@ -165,8 +165,9 @@ class PurchaseReturnForm
                             $set('items', $items);
                             static::calcTotalAmount($get, $set);
                         })
-                        ->visible(fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
-                            ! ($livewire instanceof ViewRecord)
+                        ->visible(
+                            fn(Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                                ! ($livewire instanceof ViewRecord)
                         ),
                 ])
                 ->schema([
@@ -231,7 +232,7 @@ class PurchaseReturnForm
                             }
 
                             $items = $get('items') ?? [];
-                            $key = 'item_'.$originalItem->id;
+                            $key = 'item_' . $originalItem->id;
 
                             if (array_key_exists($key, $items)) {
                                 Notification::make()->warning()->title(__('purchase_return.item_already_added'))->send();
@@ -265,8 +266,9 @@ class PurchaseReturnForm
                             $livewire->dispatch('play-sound-success');
                             $livewire->dispatch('focus-barcode');
                         })
-                        ->visible(fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
-                            ! ($livewire instanceof ViewRecord)
+                        ->visible(
+                            fn(Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                                ! ($livewire instanceof ViewRecord)
                         ),
 
                     Repeater::make('items')
@@ -292,7 +294,7 @@ class PurchaseReturnForm
                         ->hiddenLabel()
                         ->compact()
                         ->deleteAction(
-                            fn (Action $action) => $action->after(function (Get $get, Set $set) {
+                            fn(Action $action) => $action->after(function (Get $get, Set $set) {
                                 static::calcTotalAmount($get, $set);
                             })
                         )
@@ -307,7 +309,7 @@ class PurchaseReturnForm
                                 return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>{$barcode}</span>";
                             })->implode('');
 
-                            return new HtmlString("<div class='flex items-center'>".__('purchase_invoice.barcode').': '.$badges.'</div>');
+                            return new HtmlString("<div class='flex items-center'>" . __('purchase_invoice.barcode') . ': ' . $badges . '</div>');
                         })
                         ->schema([
                             Hidden::make('original_item_id')->required(),
@@ -338,7 +340,7 @@ class PurchaseReturnForm
 
                                     static::calcTotalAmount($get, $set, '../../');
                                 })
-                                ->suffix(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
+                                ->suffix(fn(Get $get) => __('purchase_return.max_suffix') . ' ' . $get('max_returnable'))
                                 ->columnSpan(3),
 
                             TextInput::make('unit_cost')
@@ -444,7 +446,7 @@ class PurchaseReturnForm
             $maxReturnable = $originalItem->getRemainingReturnableQuantity();
             if ($maxReturnable > 0) {
                 $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
-                $key = 'item_'.$originalItem->id;
+                $key = 'item_' . $originalItem->id;
                 $locale = app()->getLocale();
                 $productName = $originalItem->variant->product->{"name_$locale"};
                 $variantName = $originalItem->variant->{"name_$locale"};
@@ -469,8 +471,8 @@ class PurchaseReturnForm
 
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
-        $items = $get($prefix.'items') ?? [];
+        $items = $get($prefix . 'items') ?? [];
         $total = collect($items)->sum('line_total');
-        $set($prefix.'total_amount', $total);
+        $set($prefix . 'total_amount', $total);
     }
 }

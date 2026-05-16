@@ -16,7 +16,9 @@ return [
     // Movement Types
     'stock_in' => 'Purchase / Stock In',
     'sale' => 'Sale',
-    'return' => 'Return',
+    'return' => 'مرتجع (إضافة)',
+    'sale_return' => 'Sale Return (POS)',
+    'purchase_return' => 'Purchase Return',
     'adjustment_add' => 'Manual Edit (Add)',
     'adjustment_sub' => 'Manual Edit (Subtract)',
     'transfer_in' => 'Transfer In',

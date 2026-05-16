@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AdjustmentReason;
+use App\Enums\MovementDirection;
 use App\Enums\MovementType;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Company;
@@ -78,6 +79,7 @@ class InventoryServiceTest extends TestCase
         $movement = $this->service->adjustStock(
             variant: $this->variant,
             quantity: 25,
+            direction: MovementDirection::In,
             reason: AdjustmentReason::StocktakeCorrection,
             notes: 'Found extra during count',
         );
@@ -87,8 +89,8 @@ class InventoryServiceTest extends TestCase
         $this->assertEquals(125.0, (float) $this->variant->quantity);
         $this->assertInstanceOf(InventoryMovement::class, $movement);
         $this->assertEquals(MovementType::AdjustmentAdd, $movement->type);
-        $this->assertEquals(25.0, (float) $movement->quantity_in);
-        $this->assertEquals(0.0, (float) $movement->quantity_out);
+        $this->assertEquals(25.0, (float) $movement->quantity);
+        $this->assertEquals(MovementDirection::In, $movement->direction);
         $this->assertEquals(AdjustmentReason::StocktakeCorrection, $movement->reason);
         $this->assertEquals('Found extra during count', $movement->notes);
         $this->assertEquals($this->user->id, $movement->user_id);
@@ -99,7 +101,8 @@ class InventoryServiceTest extends TestCase
     {
         $movement = $this->service->adjustStock(
             variant: $this->variant,
-            quantity: -10,
+            quantity: 10,
+            direction: MovementDirection::Out,
             reason: AdjustmentReason::Damaged,
             notes: '10 bottles broken during stocking',
         );
@@ -108,8 +111,9 @@ class InventoryServiceTest extends TestCase
 
         $this->assertEquals(90.0, (float) $this->variant->quantity);
         $this->assertEquals(MovementType::AdjustmentSub, $movement->type);
-        $this->assertEquals(0.0, (float) $movement->quantity_in);
-        $this->assertEquals(10.0, (float) $movement->quantity_out);
+        $this->assertEquals(0.0, (float) $movement->quantity_in ?? 0);
+        $this->assertEquals(10.0, (float) $movement->quantity);
+        $this->assertEquals(MovementDirection::Out, $movement->direction);
         $this->assertEquals(AdjustmentReason::Damaged, $movement->reason);
     }
 
@@ -119,7 +123,8 @@ class InventoryServiceTest extends TestCase
 
         $this->service->adjustStock(
             variant: $this->variant,
-            quantity: -150,
+            quantity: 150,
+            direction: MovementDirection::Out,
             reason: AdjustmentReason::Shrinkage,
         );
 
@@ -145,7 +150,8 @@ class InventoryServiceTest extends TestCase
         $this->assertEquals(500.0, (float) $zeroVariant->quantity);
         $this->assertEquals(MovementType::OpeningStock, $movement->type);
         $this->assertEquals(AdjustmentReason::OpeningStock, $movement->reason);
-        $this->assertEquals(500.0, (float) $movement->quantity_in);
+        $this->assertEquals(500.0, (float) $movement->quantity);
+        $this->assertEquals(MovementDirection::In, $movement->direction);
     }
 
     public function test_record_movement_stores_correct_store_id(): void
@@ -153,7 +159,7 @@ class InventoryServiceTest extends TestCase
         $movement = $this->service->recordMovement(
             variant: $this->variant,
             type: MovementType::StockIn,
-            quantityIn: 50,
+            quantity: 50,
         );
 
         $this->assertEquals($this->store->id, $movement->store_id);
@@ -164,6 +170,7 @@ class InventoryServiceTest extends TestCase
         $movement = $this->service->adjustStock(
             variant: $this->variant,
             quantity: 5,
+            direction: MovementDirection::In,
             reason: AdjustmentReason::StocktakeCorrection,
         );
 
@@ -179,7 +186,8 @@ class InventoryServiceTest extends TestCase
         try {
             $this->service->adjustStock(
                 variant: $this->variant,
-                quantity: -999,
+                quantity: 999,
+                direction: MovementDirection::Out,
                 reason: AdjustmentReason::Shrinkage,
             );
         } catch (InsufficientStockException) {
@@ -196,10 +204,10 @@ class InventoryServiceTest extends TestCase
 
     public function test_multiple_movements_accumulate_correctly(): void
     {
-        $this->service->adjustStock($this->variant, 20, AdjustmentReason::StocktakeCorrection);
-        $this->service->adjustStock($this->variant, -5, AdjustmentReason::Damaged);
-        $this->service->adjustStock($this->variant, -10, AdjustmentReason::Expired);
-        $this->service->adjustStock($this->variant, 3, AdjustmentReason::StocktakeCorrection);
+        $this->service->adjustStock($this->variant, 20, MovementDirection::In, AdjustmentReason::StocktakeCorrection);
+        $this->service->adjustStock($this->variant, 5, MovementDirection::Out, AdjustmentReason::Damaged);
+        $this->service->adjustStock($this->variant, 10, MovementDirection::Out, AdjustmentReason::Expired);
+        $this->service->adjustStock($this->variant, 3, MovementDirection::In, AdjustmentReason::StocktakeCorrection);
 
         $this->variant->refresh();
 
@@ -212,7 +220,7 @@ class InventoryServiceTest extends TestCase
 
     public function test_variant_has_inventory_movements_relationship(): void
     {
-        $this->service->adjustStock($this->variant, 10, AdjustmentReason::OpeningStock);
+        $this->service->adjustStock($this->variant, 10, MovementDirection::In, AdjustmentReason::OpeningStock);
 
         $movements = $this->variant->inventoryMovements;
 

@@ -17,6 +17,8 @@ return [
     'stock_in' => 'توريد (إضافة)',
     'sale' => 'بيع (خصم)',
     'return' => 'مرتجع (إضافة)',
+    'sale_return' => 'مرتجع مبيعات (إضافة)',
+    'purchase_return' => 'مرتجع مشتريات (خصم)',
     'adjustment_add' => 'تعديل يدوي (إضافة)',
     'adjustment_sub' => 'تعديل يدوي (خصم)',
     'transfer_in' => 'تحويل وارد (إضافة)',
