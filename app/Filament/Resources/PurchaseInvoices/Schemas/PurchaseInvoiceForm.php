@@ -6,6 +6,7 @@ use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
 use App\Models\Store;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -89,11 +90,20 @@ class PurchaseInvoiceForm
                             TextInput::make('barcode')
                                 ->label(__('purchase_invoice.barcode'))
                                 ->dehydrated(false)
-                                ->live(debounce: '500ms')
-                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                ->live(onBlur: true)
+                                ->prefixAction(
+                                    Action::make('search')
+                                        ->icon('heroicon-m-magnifying-glass')
+                                        ->label(__('purchase_return.search'))
+                                )
+                                ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire, $component) {
                                     if (! $state) {
                                         $set('product_variant_id', null);
                                         $set('product_name', null);
+                                        $set('unit_cost', 0);
+                                        $set('quantity', 0);
+                                        self::recalculateLine($get, $set);
+                                        self::calcTotalAmount($get, $set, '../../');
 
                                         return;
                                     }
@@ -106,6 +116,10 @@ class PurchaseInvoiceForm
                                     if (! $barcodeRecord) {
                                         $set('product_variant_id', null);
                                         $set('product_name', __('purchase_invoice.product_not_found'));
+                                        $set('unit_cost', 0);
+                                        $set('quantity', 0);
+                                        self::recalculateLine($get, $set);
+                                        self::calcTotalAmount($get, $set, '../../');
 
                                         return;
                                     }
@@ -118,6 +132,10 @@ class PurchaseInvoiceForm
                                     if (! $variant) {
                                         $set('product_variant_id', null);
                                         $set('product_name', __('purchase_invoice.product_not_found'));
+                                        $set('unit_cost', 0);
+                                        $set('quantity', 0);
+                                        self::recalculateLine($get, $set);
+                                        self::calcTotalAmount($get, $set, '../../');
 
                                         return;
                                     }
@@ -126,6 +144,10 @@ class PurchaseInvoiceForm
                                     if ($storeId && $variant->product->store_id !== (int) $storeId) {
                                         $set('product_variant_id', null);
                                         $set('product_name', __('purchase_invoice.product_wrong_store'));
+                                        $set('unit_cost', 0);
+                                        $set('quantity', 0);
+                                        self::recalculateLine($get, $set);
+                                        self::calcTotalAmount($get, $set, '../../');
 
                                         return;
                                     }
@@ -136,6 +158,10 @@ class PurchaseInvoiceForm
                                         if ($existingVariantId && (int) $existingVariantId === $variant->id && (int) $existingVariantId !== (int) $currentVariantId) {
                                             $set('product_variant_id', null);
                                             $set('product_name', __('purchase_invoice.duplicate_barcode'));
+                                            $set('unit_cost', 0);
+                                            $set('quantity', 0);
+                                            self::recalculateLine($get, $set);
+                                            self::calcTotalAmount($get, $set, '../../');
 
                                             return;
                                         }
@@ -149,6 +175,9 @@ class PurchaseInvoiceForm
                                     // $set('tax_rate', (float) ($variant->product->taxClass?->rate ?? 0));
 
                                     self::recalculateLine($get, $set);
+                                    self::calcTotalAmount($get, $set, '../../');
+
+                                    $livewire->resetValidation($component->getStatePath());
                                 })
                                 ->afterStateHydrated(function ($state, Set $set, Get $get): void {
                                     // On edit: populate barcode from the existing variant's first barcode
@@ -158,6 +187,13 @@ class PurchaseInvoiceForm
                                         $set('barcode', $barcode);
                                     }
                                 })
+                                ->rules([
+                                    fn (Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
+                                        if (! $get('product_variant_id')) {
+                                            $fail($get('product_name') ?? __('purchase_invoice.product_not_found'));
+                                        }
+                                    },
+                                ])
                                 ->columnSpan(2),
 
                             TextInput::make('product_name')
@@ -184,8 +220,12 @@ class PurchaseInvoiceForm
                                 ->default(1)
                                 ->minValue(0.001)
                                 ->step(0.001)
+                                ->disabled(fn(Get $get) => ! $get('product_variant_id'))
                                 ->live(debounce: '500ms')
-                                ->afterStateUpdated(fn (Get $get, Set $set) => self::recalculateLine($get, $set))
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    self::recalculateLine($get, $set);
+                                    self::calcTotalAmount($get, $set, '../../');
+                                })
                                 ->columnSpan(1),
 
                             //  (ex. Tax)
@@ -195,9 +235,13 @@ class PurchaseInvoiceForm
                                 ->required()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->minValue(0)
-                                ->step(0.0001)
+                                ->step(0.01)
+                                ->disabled(fn(Get $get) => ! $get('product_variant_id'))
                                 ->live(debounce: '500ms')
-                                ->afterStateUpdated(fn (Get $get, Set $set) => self::recalculateLine($get, $set))
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    self::recalculateLine($get, $set);
+                                    self::calcTotalAmount($get, $set, '../../');
+                                })
                                 ->helperText(__('purchase_invoice.unit_cost_helper'))
                                 ->columnSpan(2),
 
@@ -242,7 +286,21 @@ class PurchaseInvoiceForm
                         ->addActionLabel(__('purchase_invoice.item').' +')
                         ->reorderable(false)
                         ->cloneable(false)
-                        ->defaultItems(1),
+                        ->defaultItems(1)
+                        ->deleteAction(
+                            fn ($action) => $action->after(fn(Get $get, Set $set) => self::calcTotalAmount($get, $set))
+                        ),
+
+                    TextInput::make('total_amount')
+                        ->label(__('purchase_invoice.total_amount'))
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->extraInputAttributes(['class' => 'text-xl font-bold'])
+                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                        ->afterStateHydrated(function (Get $get, Set $set) {
+                            static::calcTotalAmount($get, $set);
+                        })
+                        ->columnSpanFull(),
                 ]),
         ]);
     }
@@ -264,5 +322,12 @@ class PurchaseInvoiceForm
         //        $set('subtotal', $subtotal);
         //        $set('tax_amount', $taxAmount); // TAX FEATURE POSTPONED
         $set('line_total', $lineTotal);
+    }
+
+    private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
+    {
+        $items = $get($prefix . 'items') ?? [];
+        $total = collect($items)->sum('line_total');
+        $set($prefix . 'total_amount', round($total, 2));
     }
 }

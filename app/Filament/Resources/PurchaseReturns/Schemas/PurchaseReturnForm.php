@@ -473,6 +473,6 @@ class PurchaseReturnForm
     {
         $items = $get($prefix . 'items') ?? [];
         $total = collect($items)->sum('line_total');
-        $set($prefix . 'total_amount', $total);
+        $set($prefix . 'total_amount', round($total, 2));
     }
 }
