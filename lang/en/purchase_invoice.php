@@ -36,6 +36,7 @@ return [
     'product_not_found_hint' => 'Product not in system yet? Create it in Products first.',
     'item_notes' => 'Line Notes',
     'barcode' => 'Barcode',
+    'barcode_scanner' => 'Barcode Scanner',
     'product_name' => 'Product Details',
     'product_not_found' => 'Product Not Found',
     'product_wrong_store' => 'This product does not belong to the selected store.',
@@ -84,4 +85,10 @@ return [
     'has_tax' => 'Tax Applied',
     'taxable' => 'Taxable',
     'tax_exempt' => 'Tax Exempt',
+
+    // Tooltips
+    'quantity_tooltip' => 'Enter the quantity being purchased.',
+    'unit_cost_tooltip' => 'The purchase cost per unit. Updates the latest cost on finalization.',
+    'line_total_tooltip' => 'Calculated automatically: Quantity × Unit Cost.',
+    'notes_tooltip' => 'Optional: Specific notes for this item (e.g., batch number, expiry).',
 ];

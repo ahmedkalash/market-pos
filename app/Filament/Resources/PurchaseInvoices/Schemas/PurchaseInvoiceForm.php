@@ -13,11 +13,14 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class PurchaseInvoiceForm
 {
@@ -79,122 +82,128 @@ class PurchaseInvoiceForm
                 ->icon('heroicon-o-shopping-cart')
                 ->columnSpanFull()
                 ->schema([
+                    TextInput::make('barcode_scanner')
+                        ->label(__('purchase_invoice.barcode_scanner') ?? __('purchase_return.barcode_scanner'))
+                        ->placeholder(__('purchase_return.scan_barcode'))
+                        ->helperText(__('purchase_return.barcode_scanner_helper'))
+                        ->autofocus()
+                        ->extraInputAttributes([
+                            'x-on:focus-barcode.window' => 'setTimeout(() => $el.focus(), 10)',
+                        ])
+                        ->live(onBlur: true)
+                        ->prefixAction(
+                            Action::make('search')
+                                ->icon('heroicon-m-magnifying-glass')
+                                ->label(__('purchase_return.search'))
+                        )
+                        ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
+                            if (! $state) {
+                                return;
+                            }
+                            $set('barcode_scanner', null);
+
+                            $barcodeRecord = ProductBarcode::where('barcode', $state)->first();
+                            if (! $barcodeRecord) {
+                                Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
+                                $livewire->dispatch('play-sound-error');
+                                $livewire->dispatch('focus-barcode');
+
+                                return;
+                            }
+
+                            // Check store boundary
+                            $storeId = $get('store_id');
+                            $variant = ProductVariant::with(['product.taxClass', 'barcodes'])
+                                ->find($barcodeRecord->product_variant_id);
+
+                            if (! $variant) {
+                                Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
+                                $livewire->dispatch('play-sound-error');
+                                $livewire->dispatch('focus-barcode');
+
+                                return;
+                            }
+
+                            // Validate variant belongs to the selected store
+                            if ($storeId && $variant->product->store_id !== (int) $storeId) {
+                                Notification::make()->warning()->title(__('purchase_invoice.product_wrong_store'))->send();
+                                $livewire->dispatch('play-sound-error');
+                                $livewire->dispatch('focus-barcode');
+
+                                return;
+                            }
+
+                            $items = $get('items') ?? [];
+
+                            $newKey = 'item_'.$variant->id;
+                            // Check for duplicate variant in other lines
+                            if (array_key_exists($newKey, $items)) {
+                                Notification::make()->warning()->title(__('purchase_invoice.duplicate_barcode') ?? __('purchase_return.item_already_added'))->send();
+                                $livewire->dispatch('play-sound-error');
+                                $livewire->dispatch('focus-barcode');
+
+                                return;
+                            }
+
+                            $locale = app()->getLocale();
+                            $productName = $variant->product->{"name_$locale"} ?? '';
+                            $variantName = $variant->{"name_$locale"} ?? '';
+                            $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
+
+                            $barcodes = $variant->barcodes->pluck('barcode')->toArray();
+
+                            $unitCost = (float) $variant->purchase_price;
+
+                            $items[$newKey] = [
+                                'product_variant_id' => $variant->id,
+                                'barcodes' => $barcodes,
+                                'product_name' => $fullName,
+                                'quantity' => 1,
+                                'unit_cost' => $unitCost,
+                                'line_total' => round(1 * $unitCost, 2),
+                                'notes' => null,
+                            ];
+
+                            $set('items', $items);
+                            self::calcTotalAmount($get, $set);
+
+                            $livewire->dispatch('play-sound-success');
+                            $livewire->dispatch('focus-barcode');
+                        }),
+
                     Repeater::make('items')
                         ->relationship()
+                        ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
+                            $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
+                            $locale = app()->getLocale();
+
+                            if ($variant) {
+                                $productName = $variant->product?->{"name_{$locale}"} ?? '';
+                                $variantName = $variant->{"name_{$locale}"} ?? '';
+                                $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
+                                $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
+                            }
+
+                            return $data;
+                        })
+                        ->itemLabel(function (array $state): ?HtmlString {
+                            $barcodes = $state['barcodes'] ?? [];
+
+                            if (empty($barcodes)) {
+                                return null;
+                            }
+
+                            $badges = collect($barcodes)->map(function ($barcode) {
+                                return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>{$barcode}</span>";
+                            })->implode('');
+
+                            return new HtmlString("<div class='flex items-center'>".__('purchase_invoice.barcode').': '.$badges.'</div>');
+                        })
                         ->hiddenLabel()
                         ->compact()
                         ->schema([
                             Hidden::make('product_variant_id')
                                 ->required(),
-
-                            TextInput::make('barcode')
-                                ->label(__('purchase_invoice.barcode'))
-                                ->dehydrated(false)
-                                ->live(onBlur: true)
-                                ->prefixAction(
-                                    Action::make('search')
-                                        ->icon('heroicon-m-magnifying-glass')
-                                        ->label(__('purchase_return.search'))
-                                )
-                                ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire, $component) {
-                                    if (! $state) {
-                                        $set('product_variant_id', null);
-                                        $set('product_name', null);
-                                        $set('unit_cost', 0);
-                                        $set('quantity', 0);
-                                        self::recalculateLine($get, $set);
-                                        self::calcTotalAmount($get, $set, '../../');
-
-                                        return;
-                                    }
-
-                                    // Duplicate guard: check if this barcode is already used in another line
-                                    $allItems = $get('../../items') ?? [];
-                                    $currentVariantId = $get('product_variant_id');
-                                    $barcodeRecord = ProductBarcode::where('barcode', $state)->first();
-
-                                    if (! $barcodeRecord) {
-                                        $set('product_variant_id', null);
-                                        $set('product_name', __('purchase_invoice.product_not_found'));
-                                        $set('unit_cost', 0);
-                                        $set('quantity', 0);
-                                        self::recalculateLine($get, $set);
-                                        self::calcTotalAmount($get, $set, '../../');
-
-                                        return;
-                                    }
-
-                                    // Check store boundary
-                                    $storeId = $get('../../store_id');
-                                    $variant = ProductVariant::with('product.taxClass')
-                                        ->find($barcodeRecord->product_variant_id);
-
-                                    if (! $variant) {
-                                        $set('product_variant_id', null);
-                                        $set('product_name', __('purchase_invoice.product_not_found'));
-                                        $set('unit_cost', 0);
-                                        $set('quantity', 0);
-                                        self::recalculateLine($get, $set);
-                                        self::calcTotalAmount($get, $set, '../../');
-
-                                        return;
-                                    }
-
-                                    // Validate variant belongs to the selected store
-                                    if ($storeId && $variant->product->store_id !== (int) $storeId) {
-                                        $set('product_variant_id', null);
-                                        $set('product_name', __('purchase_invoice.product_wrong_store'));
-                                        $set('unit_cost', 0);
-                                        $set('quantity', 0);
-                                        self::recalculateLine($get, $set);
-                                        self::calcTotalAmount($get, $set, '../../');
-
-                                        return;
-                                    }
-
-                                    // Check for duplicate variant in other lines
-                                    foreach ($allItems as $itemKey => $item) {
-                                        $existingVariantId = $item['product_variant_id'] ?? null;
-                                        if ($existingVariantId && (int) $existingVariantId === $variant->id && (int) $existingVariantId !== (int) $currentVariantId) {
-                                            $set('product_variant_id', null);
-                                            $set('product_name', __('purchase_invoice.duplicate_barcode'));
-                                            $set('unit_cost', 0);
-                                            $set('quantity', 0);
-                                            self::recalculateLine($get, $set);
-                                            self::calcTotalAmount($get, $set, '../../');
-
-                                            return;
-                                        }
-                                    }
-
-                                    $set('product_variant_id', $variant->id);
-                                    $set('product_name', "{$variant->product->name_ar} | {$variant->product->name_en}");
-                                    $set('unit_cost', (float) $variant->purchase_price);
-
-                                    // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
-                                    // $set('tax_rate', (float) ($variant->product->taxClass?->rate ?? 0));
-
-                                    self::recalculateLine($get, $set);
-                                    self::calcTotalAmount($get, $set, '../../');
-
-                                    $livewire->resetValidation($component->getStatePath());
-                                })
-                                ->afterStateHydrated(function ($state, Set $set, Get $get): void {
-                                    // On edit: populate barcode from the existing variant's first barcode
-                                    $variantId = $get('product_variant_id');
-                                    if (! $state && $variantId) {
-                                        $barcode = ProductBarcode::where('product_variant_id', $variantId)->value('barcode');
-                                        $set('barcode', $barcode);
-                                    }
-                                })
-                                ->rules([
-                                    fn (Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
-                                        if (! $get('product_variant_id')) {
-                                            $fail($get('product_name') ?? __('purchase_invoice.product_not_found'));
-                                        }
-                                    },
-                                ])
-                                ->columnSpan(2),
 
                             TextInput::make('product_name')
                                 ->label(__('purchase_invoice.product_name'))
@@ -220,8 +229,9 @@ class PurchaseInvoiceForm
                                 ->default(1)
                                 ->minValue(0.001)
                                 ->step(0.001)
-                                ->disabled(fn(Get $get) => ! $get('product_variant_id'))
-                                ->live(debounce: '500ms')
+                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.quantity_tooltip'))
+                                ->disabled(fn (Get $get) => ! $get('product_variant_id'))
+                                ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
                                     self::calcTotalAmount($get, $set, '../../');
@@ -236,13 +246,13 @@ class PurchaseInvoiceForm
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->minValue(0)
                                 ->step(0.01)
-                                ->disabled(fn(Get $get) => ! $get('product_variant_id'))
+                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.unit_cost_tooltip'))
+                                ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                 ->live(debounce: '500ms')
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
                                     self::calcTotalAmount($get, $set, '../../');
                                 })
-                                ->helperText(__('purchase_invoice.unit_cost_helper'))
                                 ->columnSpan(2),
 
                             // TAX FEATURE POSTPONED
@@ -274,21 +284,23 @@ class PurchaseInvoiceForm
                                 ->label(__('purchase_invoice.line_total'))
                                 ->numeric()
                                 ->readOnly()
+                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.line_total_tooltip'))
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->columnSpan(2),
 
                             Textarea::make('notes')
                                 ->label(__('purchase_invoice.item_notes'))
                                 ->maxLength(255)
+                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.notes_tooltip'))
                                 ->columnSpan(2),
                         ])
                         ->columns(8)
-                        ->addActionLabel(__('purchase_invoice.item').' +')
+                        ->addable(false)
                         ->reorderable(false)
                         ->cloneable(false)
-                        ->defaultItems(1)
+                        ->defaultItems(0)
                         ->deleteAction(
-                            fn ($action) => $action->after(fn(Get $get, Set $set) => self::calcTotalAmount($get, $set))
+                            fn ($action) => $action->after(fn (Get $get, Set $set) => self::calcTotalAmount($get, $set))
                         ),
 
                     TextInput::make('total_amount')
@@ -326,8 +338,8 @@ class PurchaseInvoiceForm
 
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
-        $items = $get($prefix . 'items') ?? [];
+        $items = $get($prefix.'items') ?? [];
         $total = collect($items)->sum('line_total');
-        $set($prefix . 'total_amount', round($total, 2));
+        $set($prefix.'total_amount', round($total, 2));
     }
 }
