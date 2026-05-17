@@ -71,6 +71,11 @@ class PurchaseInvoice extends Model
         return $this->return_status === InvoiceReturnStatus::PartiallyReturned;
     }
 
+    public function isFullyOrPartiallyReturned(): bool
+    {
+        return $this->isFullyReturned() || $this->isPartiallyReturned();
+    }
+
     /**
      * @return BelongsTo<Vendor, $this>
      */

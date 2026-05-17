@@ -50,6 +50,7 @@ return [
 
     // Return management actions
     'return_items' => 'إرجاع بنود',
+    'view_returns' => 'عرض المرتجعات',
     'return_actions' => 'إجراءات الإرجاع',
     'partial_return' => 'إرجاع جزئي',
     'cancel_invoice' => 'إلغاء الفاتورة',

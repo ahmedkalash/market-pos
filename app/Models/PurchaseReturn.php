@@ -13,8 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseReturn extends Model
 {
-    use BelongsToCompany;
-    use BelongsToStore;
+    use BelongsToCompany, BelongsToStore;
 
     /** @var list<string> */
     protected $fillable = [

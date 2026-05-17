@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Tables;
 
+use App\Enums\InvoiceReturnStatus;
 use App\Enums\PurchaseInvoiceStatus;
+use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
 use App\Models\PurchaseInvoice;
 use App\Models\User;
 use App\Services\PurchaseInvoiceService;
@@ -69,6 +71,13 @@ class PurchaseInvoicesTable
                     ->badge()
                     ->formatStateUsing(fn (PurchaseInvoiceStatus $state): string => $state->getLabel())
                     ->color(fn (PurchaseInvoiceStatus $state): string => $state->getColor()),
+
+                TextColumn::make('return_status')
+                    ->label(__('purchase_invoice.return_status'))
+                    ->badge()
+                    ->formatStateUsing(fn (InvoiceReturnStatus $state): string => $state->getLabel())
+                    ->color(fn (InvoiceReturnStatus $state): string => $state->getColor())
+                    ->toggleable(),
 
                 TextColumn::make('total_amount')
                     ->label(__('purchase_invoice.total_amount'))
@@ -205,6 +214,15 @@ class PurchaseInvoicesTable
                     ->options([
                         PurchaseInvoiceStatus::Draft->value => __('purchase_invoice.status_draft'),
                         PurchaseInvoiceStatus::Finalized->value => __('purchase_invoice.status_finalized'),
+                    ]),
+
+                SelectFilter::make('return_status')
+                    ->label(__('purchase_invoice.return_status'))
+                    ->multiple()
+                    ->options([
+                        InvoiceReturnStatus::None->value => __('purchase_return.return_status_none'),
+                        InvoiceReturnStatus::PartiallyReturned->value => __('purchase_return.return_status_partially_returned'),
+                        InvoiceReturnStatus::FullyReturned->value => __('purchase_return.return_status_fully_returned'),
                     ]),
 
                 SelectFilter::make('vendor_id')
@@ -358,6 +376,27 @@ class PurchaseInvoicesTable
                                     ->send();
                             }
                         }),
+
+                    Action::make('returnItems')
+                        ->label(__('purchase_invoice.return_items'))
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('warning')
+                        ->authorize('create_purchase_return')
+                        ->visible(fn (PurchaseInvoice $record): bool => $record->isFinalized() && ! $record->isFullyReturned())
+                        ->url(fn (PurchaseInvoice $record): string => PurchaseReturnResource::getUrl('create', [
+                            'original_invoice_id' => $record->id,
+                        ])),
+
+                    Action::make('viewReturns')
+                        ->label(__('purchase_invoice.view_returns'))
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('gray')
+                        ->authorize('view_purchase_return')
+                        ->visible(fn (PurchaseInvoice $record): bool => $record->isFullyOrPartiallyReturned())
+                        ->url(fn (PurchaseInvoice $record): string => PurchaseReturnResource::getUrl('index', [
+                            'invoice_id' => $record->id,
+                        ])),
+
                     ViewAction::make()
                         ->authorize('view_purchase_invoice'),
                     EditAction::make()

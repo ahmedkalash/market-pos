@@ -167,4 +167,6 @@ return [
     'updated_at' => 'Updated At',
     'all' => 'All',
     'insufficient_stock_exception_message' => 'Insufficient stock for :product: requested :requested, available :available.',
+    'from' => 'From',
+    'until' => 'Until',
 ];

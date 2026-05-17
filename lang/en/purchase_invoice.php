@@ -50,6 +50,7 @@ return [
 
     // Return management actions
     'return_items' => 'Return Items',
+    'view_returns' => 'View Returns',
     'return_actions' => 'Return Actions',
     'partial_return' => 'Partial Return',
     'cancel_invoice' => 'Cancel Invoice',

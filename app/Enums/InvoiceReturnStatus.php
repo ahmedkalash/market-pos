@@ -22,7 +22,7 @@ enum InvoiceReturnStatus: string
         return match ($this) {
             self::None => 'gray',
             self::PartiallyReturned => 'warning',
-            self::FullyReturned => 'secondary',
+            self::FullyReturned => 'danger',
         };
     }
 }
