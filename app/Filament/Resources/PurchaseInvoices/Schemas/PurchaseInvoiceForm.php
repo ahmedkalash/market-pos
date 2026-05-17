@@ -83,9 +83,9 @@ class PurchaseInvoiceForm
                 ->columnSpanFull()
                 ->schema([
                     TextInput::make('barcode_scanner')
-                        ->label(__('purchase_invoice.barcode_scanner') ?? __('purchase_return.barcode_scanner'))
-                        ->placeholder(__('purchase_return.scan_barcode'))
-                        ->helperText(__('purchase_return.barcode_scanner_helper'))
+                        ->label(__('purchase_invoice.barcode_scanner'))
+                        ->placeholder(__('purchase_invoice.scan_barcode'))
+                        ->helperText(__('purchase_invoice.barcode_scanner_helper'))
                         ->autofocus()
                         ->extraInputAttributes([
                             'x-on:focus-barcode.window' => 'setTimeout(() => $el.focus(), 10)',
@@ -94,7 +94,7 @@ class PurchaseInvoiceForm
                         ->prefixAction(
                             Action::make('search')
                                 ->icon('heroicon-m-magnifying-glass')
-                                ->label(__('purchase_return.search'))
+                                ->label(__('purchase_invoice.search'))
                         )
                         ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
                             if (! $state) {
@@ -134,11 +134,15 @@ class PurchaseInvoiceForm
                             }
 
                             $items = $get('items') ?? [];
-
                             $newKey = 'item_'.$variant->id;
-                            // Check for duplicate variant in other lines
-                            if (array_key_exists($newKey, $items)) {
-                                Notification::make()->warning()->title(__('purchase_invoice.duplicate_barcode') ?? __('purchase_return.item_already_added'))->send();
+
+                            // Check for duplicate variant in existing items (works for both UUID keys and scanned item keys)
+                            $alreadyExists = collect($items)->contains(
+                                fn ($item) => ((int) ($item['product_variant_id'] ?? 0)) === (int) $variant->id
+                            );
+
+                            if ($alreadyExists) {
+                                Notification::make()->warning()->title(__('purchase_invoice.duplicate_barcode'))->send();
                                 $livewire->dispatch('play-sound-error');
                                 $livewire->dispatch('focus-barcode');
 

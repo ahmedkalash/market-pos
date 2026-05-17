@@ -91,4 +91,9 @@ return [
     'unit_cost_tooltip' => 'The purchase cost per unit. Updates the latest cost on finalization.',
     'line_total_tooltip' => 'Calculated automatically: Quantity × Unit Cost.',
     'notes_tooltip' => 'Optional: Specific notes for this item (e.g., batch number, expiry).',
+
+    // Scanner
+    'scan_barcode' => 'Scan item barcode...',
+    'barcode_scanner_helper' => 'Scan a product barcode to quickly add it to the invoice list.',
+    'search' => 'Search',
 ];
