@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic 7: Computer Networks & Internet</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .content-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .image-caption {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .highlight {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+        .network-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .network-item {
+            background: #fdfdfd;
+            padding: 15px;
+            border: 1px solid #eaeaea;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .network-item img {
+            max-width: 100px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="content-card">
+    <h1>Topic 7: Computer Networks & Internet</h1>
+    
+    <p>A <strong>Computer Network</strong> is a collection of interconnected devices (like computers, smartphones, and printers) that communicate with each other to exchange data and share resources.</p>
+
+    <div class="image-container">
+        <img src="assets/images/network.jpg" alt="Computer Network" onerror="this.style.display='none'">
+        <div class="image-caption">Devices connected to form a network.</div>
+    </div>
+
+    <div class="highlight">
+        <h3>Why Do We Need Networks?</h3>
+        <ul>
+            <li><strong>Resource Sharing:</strong> Multiple computers can share a single printer or a large storage drive, saving money and space.</li>
+            <li><strong>Data Exchange:</strong> Allows for quick transfer of files and documents between users.</li>
+            <li><strong>Communication:</strong> Enables emails, instant messaging, and video conferencing.</li>
+        </ul>
+    </div>
+
+    <h2>Types of Networks (Based on Size)</h2>
+    <p>Networks are usually classified by the physical area they cover:</p>
+
+    <div class="network-grid">
+        <div class="network-item">
+            <h3>PAN (Personal Area Network)</h3>
+            <p>A very small network connecting personal devices within a range of about 10 meters. Example: Connecting wireless headphones to a smartphone via Bluetooth.</p>
+        </div>
+        
+        <div class="network-item">
+            <img src="assets/images/lan.jpg" alt="LAN" onerror="this.style.display='none'">
+            <h3>LAN (Local Area Network)</h3>
+            <p>Connects computers within a limited area, such as a home, a school lab, or an office building. It provides high-speed connection and is easy to set up.</p>
+        </div>
+
+        <div class="network-item">
+            <img src="assets/images/man.jpg" alt="MAN" onerror="this.style.display='none'">
+            <h3>MAN (Metropolitan Area Network)</h3>
+            <p>Covers a larger area than a LAN, typically a city or a large college campus. It connects multiple LANs together.</p>
+        </div>
+
+        <div class="network-item">
+            <img src="assets/images/wan.jpg" alt="WAN" onerror="this.style.display='none'">
+            <h3>WAN (Wide Area Network)</h3>
+            <p>Covers large geographical areas, connecting networks across countries or even continents. WANs use telephone lines, fiber optics, or satellites.</p>
+        </div>
+    </div>
+
+    <h2>The Internet: The Ultimate Network</h2>
+    <p>The <strong>Internet</strong> is the largest WAN in the world. It is literally a "network of networks" that connects millions of private, public, academic, business, and government networks globally.</p>
+
+    <div class="image-container">
+        <img src="assets/images/internet.jpg" alt="The Internet" onerror="this.style.display='none'">
+        <div class="image-caption">The global Internet connects computers worldwide.</div>
+    </div>
+
+    <h3>How do devices connect to the Internet?</h3>
+    <ul>
+        <li><strong>ISP (Internet Service Provider):</strong> Companies that provide access to the internet.</li>
+        <li><strong>Router:</strong> A device that connects your local network (LAN) to the internet and directs data to the right devices.</li>
+        <li><strong>Wi-Fi:</strong> A technology that allows devices to connect to a network wirelessly using radio waves.</li>
+    </ul>
+
+</div>
+
+</body>
+</html>

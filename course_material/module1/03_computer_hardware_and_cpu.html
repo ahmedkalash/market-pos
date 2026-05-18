@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic 3: Computer Hardware & CPU</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .content-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .image-caption {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .highlight {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+        .hardware-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .hardware-item {
+            background: #fdfdfd;
+            padding: 15px;
+            border: 1px solid #eaeaea;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="content-card">
+    <h1>Topic 3: Computer Hardware & CPU</h1>
+    
+    <p>Physical parts of a system that can be seen and touched are known as <strong>computer hardware</strong>. These components work together to process input and produce output based on user instructions. While software provides the instructions, hardware provides the physical power to execute them.</p>
+
+    <h2>Internal Hardware Components</h2>
+    <p>The core of every computer lies inside its casing. Here are the most important internal hardware components:</p>
+
+    <div class="hardware-grid">
+        <div class="hardware-item">
+            <h3>Motherboard</h3>
+            <p>The main circuit board inside a computer. It connects all electronic components together, acting as the central nervous system. Everything from the CPU to the RAM plugs directly into it.</p>
+        </div>
+        <div class="hardware-item">
+            <h3>Power Supply Unit (PSU)</h3>
+            <p>Converts power from the electrical outlet into a form that the computer components can use, supplying electricity to the motherboard and other internal hardware.</p>
+        </div>
+        <div class="hardware-item">
+            <h3>Graphics Processing Unit (GPU)</h3>
+            <p>A specialized hardware component that renders images, videos, and complex graphics. It is essential for gaming, 3D design, and video editing.</p>
+        </div>
+        <div class="hardware-item">
+            <h3>Cooling System</h3>
+            <p>Computers generate a lot of heat. Cooling fans and heat sinks draw hot air away from the CPU and GPU to prevent the system from overheating and shutting down.</p>
+        </div>
+    </div>
+
+    <h2>Deep Dive: The Central Processing Unit (CPU)</h2>
+    <p>The <strong>CPU</strong> is famously known as the "brain of the computer." It is responsible for processing instructions, performing mathematical calculations, and managing the operations of all other components. Just as your brain processes information to make decisions, the CPU processes software instructions to make your computer function.</p>
+
+    <div class="image-container">
+        <img src="assets/images/components_of_computer.webp" alt="CPU Block Diagram">
+        <div class="image-caption">Block diagram showing how the CPU interacts with Input, Memory, and Output.</div>
+    </div>
+
+    <div class="highlight">
+        <h3>The Three Main Parts of a CPU</h3>
+        <ul>
+            <li><strong>Control Unit (CU):</strong> Acts as a traffic cop. It manages the CPU by sending signals (like fetch, hold, and reset) to other parts. It interprets instructions from memory and ensures all components work together in the correct sequence.</li>
+            <li><strong>Arithmetic Logic Unit (ALU):</strong> The math whiz. It handles all mathematical tasks (addition, subtraction, multiplication, division) and logical decisions (comparing values, AND/OR operations).</li>
+            <li><strong>Memory Unit (Registers & Cache):</strong> The CPU's personal notepad. It stores data and instructions temporarily so the ALU and CU can access them at lightning speeds without having to wait for the main RAM.</li>
+        </ul>
+    </div>
+
+    <div class="image-container">
+        <img src="assets/images/CPU-Components-.webp" alt="Internal CPU Components">
+        <div class="image-caption">The internal structure of the CPU.</div>
+    </div>
+
+    <h2>How the CPU Works: The Fetch-Decode-Execute Cycle</h2>
+    <p>The CPU operates in a continuous, endless loop known as the <em>Fetch-Decode-Execute-Store</em> cycle. This cycle happens billions of times every single second!</p>
+
+    <div class="image-container">
+        <img src="assets/images/functions_of_cpu.webp" alt="Fetch Decode Execute Cycle">
+    </div>
+
+    <ol>
+        <li><strong>Fetch:</strong> The CPU retrieves the next instruction from the main memory (RAM).</li>
+        <li><strong>Decode:</strong> The Control Unit translates the instruction so the computer understands what action needs to be taken.</li>
+        <li><strong>Execute:</strong> The ALU performs the required math or logic operation.</li>
+        <li><strong>Store:</strong> The result is saved back into the CPU's memory registers or sent out to the main RAM.</li>
+    </ol>
+
+    <h2>What Makes a CPU Faster?</h2>
+    <p>Modern CPUs are incredibly powerful. Their speed depends on several key factors:</p>
+    <ul>
+        <li><strong>Clock Speed:</strong> Measured in Gigahertz (GHz). A 3.5 GHz processor executes 3.5 billion cycles per second.</li>
+        <li><strong>Multiple Cores:</strong> A "core" is like a mini-processor inside the CPU. A Quad-Core CPU has four brains working together, allowing it to multitask (like playing a game while downloading a file) much better than a Single-Core CPU.</li>
+        <li><strong>Cache Size:</strong> A larger cache means the CPU can store more immediate data close by, reducing the time it takes to fetch information from the main RAM.</li>
+    </ul>
+
+</div>
+
+</body>
+</html>

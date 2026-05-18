@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic 8: Computer Security & Viruses</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .content-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .image-caption {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .highlight {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+        .malware-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .malware-card {
+            background: #fffafa;
+            border: 1px solid #ffcccc;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .malware-card h3 {
+            color: #c0392b;
+            margin-top: 0;
+            border-bottom: 1px solid #ffcccc;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="content-card">
+    <h1>Topic 8: Computer Security & Viruses</h1>
+    
+    <p><strong>Computer Security</strong> is the practice of protecting computer systems, networks, and data from theft, damage, or unauthorized access. Just as you lock the door to your house, you need to secure your computer from digital threats.</p>
+
+    <div class="image-container">
+        <img src="assets/images/computer_security_threats.webp" alt="Computer Security Threats" onerror="this.style.display='none'">
+        <div class="image-caption">Types of Security Threats.</div>
+    </div>
+
+    <h2>Physical vs. Non-Physical Threats</h2>
+    <ul>
+        <li><strong>Physical Threats:</strong> Hardware damage (due to fire, water, or dropping), theft of the device, or natural disasters.</li>
+        <li><strong>Non-Physical Threats:</strong> Hackers, data loss, and malicious software (malware) secretly entering your system.</li>
+    </ul>
+
+    <h2>What is Malware?</h2>
+    <p><strong>Malware</strong> (short for Malicious Software) is any program designed to harm, exploit, or gain unauthorized access to systems. It is the most common non-physical threat.</p>
+
+    <div class="image-container">
+        <img src="assets/images/types_of_malware.webp" alt="Types of Malware" onerror="this.style.display='none'">
+    </div>
+
+    <div class="malware-grid">
+        <div class="malware-card">
+            <h3>Virus</h3>
+            <p>A harmful program that attaches itself to legitimate files. When the file is opened, the virus runs and can spread to other files, corrupting or deleting data.</p>
+        </div>
+        <div class="malware-card">
+            <h3>Worm</h3>
+            <p>Self-replicating software that spreads automatically across networks without you doing anything. It slows down systems by using up memory and bandwidth.</p>
+        </div>
+        <div class="malware-card">
+            <h3>Trojan Horse</h3>
+            <p>Malware disguised as a useful or fun program (like a game). Once you install it, it creates a "backdoor" for hackers to control your system.</p>
+        </div>
+        <div class="malware-card">
+            <h3>Ransomware</h3>
+            <p>Locks your screen or encrypts your files so you can't access them, then demands a money payment (a ransom) to unlock them.</p>
+        </div>
+        <div class="malware-card">
+            <h3>Spyware</h3>
+            <p>Secretly monitors your computer activities, tracking what you type (keyloggers) to steal passwords and bank details.</p>
+        </div>
+        <div class="malware-card">
+            <h3>Adware</h3>
+            <p>Displays unwanted, annoying pop-up advertisements on your screen and tracks your browsing habits.</p>
+        </div>
+    </div>
+
+    <h2>How to Protect Your Computer</h2>
+    <p>You can significantly reduce the risk of malware and hacking by following these basic safety measures:</p>
+    
+    <div class="highlight">
+        <ul>
+            <li><strong>Use Antivirus Software:</strong> Install a reliable antivirus program to scan for and remove malware automatically.</li>
+            <li><strong>Turn on the Firewall:</strong> A firewall acts as a security guard, blocking unauthorized incoming network traffic.</li>
+            <li><strong>Create Strong Passwords:</strong> Use a mix of uppercase letters, lowercase letters, numbers, and symbols. Don't use easily guessable words like "password123".</li>
+            <li><strong>Keep Software Updated:</strong> Regularly update your operating system and apps. Updates often contain patches for newly discovered security holes.</li>
+            <li><strong>Practice Safe Browsing:</strong> Never click on suspicious links in emails (Phishing), and only download software from trusted, official sources.</li>
+            <li><strong>Backup Your Data:</strong> Always keep a copy of your important files on an external hard drive or in the cloud.</li>
+        </ul>
+    </div>
+
+    <div class="image-container">
+        <img src="assets/images/malware-attack.webp" alt="Protection from Malware" onerror="this.style.display='none'">
+        <div class="image-caption">Steps to protect your system from malware attacks.</div>
+    </div>
+
+</div>
+
+</body>
+</html>
