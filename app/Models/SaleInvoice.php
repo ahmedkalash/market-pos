@@ -22,6 +22,7 @@ class SaleInvoice extends Model
     protected $fillable = [
         'company_id',
         'store_id',
+        'customer_id',
         'invoice_number',
         'status',
         'return_status',
@@ -82,6 +83,14 @@ class SaleInvoice extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withoutGlobalScopes();
+    }
+
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     /**

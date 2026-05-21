@@ -76,6 +76,13 @@ return [
                 'delete_sale_invoice',
                 'delete_any_sale_invoice',
                 'finalize_sale_invoice',
+                // customers
+                'view_any_customer',
+                'view_customer',
+                'create_customer',
+                'update_customer',
+                'delete_customer',
+                'delete_any_customer',
             ],
         ],
         Roles::CASHIER->value => [
@@ -102,6 +109,10 @@ return [
                 'create_sale_invoice',
                 'update_sale_invoice',
                 'finalize_sale_invoice',
+                // customers
+                'view_any_customer',
+                'view_customer',
+                'create_customer',
             ],
         ],
         Roles::STOCK_CLERK->value => [

@@ -105,6 +105,13 @@ return [
     'delete_any_sale_invoice' => 'Delete Multiple Sale Invoices',
     'finalize_sale_invoice' => 'Finalize Sale Invoice',
 
+    'view_any_customer' => 'View All Customers',
+    'view_customer' => 'View Customer',
+    'create_customer' => 'Create Customer',
+    'update_customer' => 'Update Customer',
+    'delete_customer' => 'Delete Customer',
+    'delete_any_customer' => 'Delete Multiple Customers',
+
     // Module Headers
     'users' => 'Users',
     'roles' => 'Roles',
@@ -123,4 +130,5 @@ return [
     'purchase invoices' => 'Purchase Invoices',
     'purchase returns' => 'Purchase Returns',
     'sale invoices' => 'Sale Invoices',
+    'customers' => 'Customers',
 ];

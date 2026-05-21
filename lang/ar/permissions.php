@@ -105,6 +105,13 @@ return [
     'delete_any_sale_invoice' => 'حذف عدة فواتير بيع',
     'finalize_sale_invoice' => 'اعتماد فاتورة البيع',
 
+    'view_any_customer' => 'عرض كل العملاء',
+    'view_customer' => 'عرض العميل',
+    'create_customer' => 'إضافة عميل',
+    'update_customer' => 'تعديل عميل',
+    'delete_customer' => 'حذف عميل',
+    'delete_any_customer' => 'حذف عدة عملاء',
+
     // Module Headers
     'users' => 'المستخدمين',
     'roles' => 'الأدوار والصلاحيات',
@@ -123,4 +130,5 @@ return [
     'purchase invoices' => 'فواتير الشراء',
     'purchase returns' => 'مرتجعات الشراء',
     'sale invoices' => 'فواتير البيع',
+    'customers' => 'العملاء',
 ];

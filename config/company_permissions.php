@@ -155,6 +155,14 @@ return [
             'delete_any_sale_invoice',
             'finalize_sale_invoice',
         ],
+        'Customers' => [
+            'view_any_customer',
+            'view_customer',
+            'create_customer',
+            'update_customer',
+            'delete_customer',
+            'delete_any_customer',
+        ],
 
     ],
 ];
