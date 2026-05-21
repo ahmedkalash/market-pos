@@ -47,7 +47,7 @@ return new class extends Migration
             $table->foreignId('finalized_by')->nullable()->constrained('users')->nullOnDelete();
 
             // Creation audit
-            $table->foreignId('created_by')->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
 

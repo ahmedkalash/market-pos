@@ -137,8 +137,6 @@ return [
             'delete_purchase_invoice',   // delete draft invoices only
             'delete_any_purchase_invoice',
             'finalize_purchase_invoice', // lock invoice & update stock (senior staff only)
-            'cancel_purchase_invoice',   // cancel a finalized invoice via full return
-            'correct_purchase_invoice',  // cancel + clone a new draft for correction
         ],
         'Purchase Returns' => [
             'view_any_purchase_return',
@@ -147,6 +145,15 @@ return [
             'update_purchase_return',
             'delete_purchase_return',
             'finalize_purchase_return',  // lock return & reverse stock (senior staff only)
+        ],
+        'Sale Invoices' => [
+            'view_any_sale_invoice',
+            'view_sale_invoice',
+            'create_sale_invoice',
+            'update_sale_invoice',
+            'delete_sale_invoice',
+            'delete_any_sale_invoice',
+            'finalize_sale_invoice',
         ],
 
     ],

@@ -68,6 +68,14 @@ return [
                 'update_vendor',
                 'delete_vendor',
                 'delete_any_vendor',
+                // sale invoices
+                'view_any_sale_invoice',
+                'view_sale_invoice',
+                'create_sale_invoice',
+                'update_sale_invoice',
+                'delete_sale_invoice',
+                'delete_any_sale_invoice',
+                'finalize_sale_invoice',
             ],
         ],
         Roles::CASHIER->value => [
@@ -88,6 +96,12 @@ return [
                 // brands
                 'view_any_brand',
                 'view_brand',
+                // sale invoices
+                'view_any_sale_invoice',
+                'view_sale_invoice',
+                'create_sale_invoice',
+                'update_sale_invoice',
+                'finalize_sale_invoice',
             ],
         ],
         Roles::STOCK_CLERK->value => [
@@ -127,6 +141,9 @@ return [
                 'view_vendor',
                 'create_vendor',
                 'update_vendor',
+                // sale invoices (read-only)
+                'view_any_sale_invoice',
+                'view_sale_invoice',
             ],
         ],
         Roles::ACCOUNTANT->value => [
@@ -135,6 +152,9 @@ return [
                 'view_store',
                 'view_any_company',
                 'company_dashboard',
+                // sale invoices (read-only)
+                'view_any_sale_invoice',
+                'view_sale_invoice',
             ],
         ],
     ],
