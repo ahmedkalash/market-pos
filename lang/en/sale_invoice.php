@@ -24,6 +24,9 @@ return [
     'items' => 'Line Items',
     'item' => 'Line Item',
     'product_variant' => 'Product / Variant',
+    'price_type' => 'Price Type',
+    'price_type_retail' => 'Retail',
+    'price_type_wholesale' => 'Wholesale',
     'quantity' => 'Quantity',
     'unit_price' => 'Unit Price',
     'subtotal' => 'Subtotal',
@@ -66,6 +69,7 @@ return [
     // Tooltips
     'quantity_tooltip' => 'Enter the quantity being sold.',
     'unit_price_tooltip' => 'The selling price per unit.',
+    'wholesale_qty_tooltip' => 'Minimum quantity required for wholesale pricing is :qty',
     'line_total_tooltip' => 'Calculated automatically: Quantity × Unit Price.',
     'notes_tooltip' => 'Optional: Specific notes for this item.',
 

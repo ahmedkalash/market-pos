@@ -24,6 +24,9 @@ return [
     'items' => 'بنود الفاتورة',
     'item' => 'بند',
     'product_variant' => 'المنتج / الصنف',
+    'price_type' => 'نوع السعر',
+    'price_type_retail' => 'تجزئة',
+    'price_type_wholesale' => 'جملة',
     'quantity' => 'الكمية',
     'unit_price' => 'سعر الوحدة',
     'subtotal' => 'المجموع الفرعي',
@@ -66,6 +69,7 @@ return [
     // Tooltips
     'quantity_tooltip' => 'أدخل الكمية المُباعة.',
     'unit_price_tooltip' => 'سعر البيع للوحدة.',
+    'wholesale_qty_tooltip' => 'الحد الأدنى للكمية المطلوبة لتسعير الجملة هو :qty',
     'line_total_tooltip' => 'يُحسب تلقائياً: الكمية × سعر الوحدة.',
     'notes_tooltip' => 'اختياري: ملاحظات خاصة بهذا البند.',
 

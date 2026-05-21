@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PriceType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ class SaleInvoiceItem extends Model
     protected $fillable = [
         'sale_invoice_id',
         'product_variant_id',
+        'price_type',
         'quantity',
         'unit_price',
         'subtotal',
@@ -29,6 +31,7 @@ class SaleInvoiceItem extends Model
     protected function casts(): array
     {
         return [
+            'price_type' => PriceType::class,
             'quantity' => 'decimal:3',
             'unit_price' => 'decimal:4',
             'subtotal' => 'decimal:2',

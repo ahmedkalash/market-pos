@@ -75,6 +75,38 @@ class CompanyPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => new HtmlString('
+                    <div
+                        x-data="{
+                            playSuccess() {
+                                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                                let osc = ctx.createOscillator();
+                                let gain = ctx.createGain();
+                                osc.connect(gain);
+                                gain.connect(ctx.destination);
+                                osc.type = \'sine\';
+                                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                                osc.start();
+                                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.1);
+                                osc.stop(ctx.currentTime + 0.1);
+                            },
+                            playError() {
+                                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                                let osc = ctx.createOscillator();
+                                let gain = ctx.createGain();
+                                osc.connect(gain);
+                                gain.connect(ctx.destination);
+                                osc.type = \'sawtooth\';
+                                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                                osc.start();
+                                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3);
+                                osc.stop(ctx.currentTime + 0.3);
+                            }
+                        }"
+                        x-on:play-sound-success.window="playSuccess()"
+                        x-on:play-sound-error.window="playError()"
+                    ></div>
                     <script>
                         document.addEventListener("keydown", function(event) {
                             if (event.key === "Enter") {
