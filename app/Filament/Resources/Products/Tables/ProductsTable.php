@@ -298,6 +298,13 @@ class ProductsTable
                         return $query->whereHas('variants.barcodes', function (Builder $query) use ($data) {
                             $query->where('barcode', $data['barcode']);
                         });
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (blank($data['barcode'] ?? null)) {
+                            return null;
+                        }
+
+                        return __('product.barcode').': '.$data['barcode'];
                     }),
 
                 Filter::make('attributes')

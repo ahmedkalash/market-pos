@@ -18,9 +18,11 @@ use Filament\Support\Colors\Color;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class PurchaseReturnsTable
@@ -127,13 +129,13 @@ class PurchaseReturnsTable
 
                 SelectFilter::make('original_invoice_id')
                     ->label(__('purchase_return.original_invoice'))
-                    ->relationship('originalInvoice', 'invoice_number', fn(Builder $query) => $query->limit(50))
+                    ->relationship('originalInvoice', 'invoice_number', fn (Builder $query) => $query->limit(50))
                     ->searchable()
                     ->default(request()->query('invoice_id')),
 
                 SelectFilter::make('store_id')
                     ->label(__('purchase_return.store'))
-                    ->relationship('store', 'name_' . app()->getLocale())
+                    ->relationship('store', 'name_'.app()->getLocale())
                     ->visible(fn (): bool => $user->isCompanyLevel()),
 
                 SelectFilter::make('vendor_id')
@@ -156,9 +158,9 @@ class PurchaseReturnsTable
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DatePicker::make('returned_from')->label(__('purchase_return.returned_at') . ' (' . __('app.from') . ')')->native(false)->locale(app()->getLocale()),
-                                DatePicker::make('returned_until')->label(__('purchase_return.returned_at') . ' (' . __('app.until') . ')')->native(false)->locale(app()->getLocale()),
-                            ])
+                                DatePicker::make('returned_from')->label(__('purchase_return.returned_at').' ('.__('app.from').')')->native(false)->locale(app()->getLocale()),
+                                DatePicker::make('returned_until')->label(__('purchase_return.returned_at').' ('.__('app.until').')')->native(false)->locale(app()->getLocale()),
+                            ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -170,6 +172,19 @@ class PurchaseReturnsTable
                                 $data['returned_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('returned_at', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['returned_from'] ?? null) {
+                            $indicators[] = Indicator::make(__('purchase_return.returned_at').' ('.__('app.from').'): '.Carbon::parse($data['returned_from'])->toFormattedDateString())
+                                ->removeField('returned_from');
+                        }
+                        if ($data['returned_until'] ?? null) {
+                            $indicators[] = Indicator::make(__('purchase_return.returned_at').' ('.__('app.until').'): '.Carbon::parse($data['returned_until'])->toFormattedDateString())
+                                ->removeField('returned_until');
+                        }
+
+                        return $indicators;
                     }),
 
                 Filter::make('created_at')
@@ -177,9 +192,9 @@ class PurchaseReturnsTable
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DatePicker::make('created_from')->label(__('app.created_at') . ' (' . __('app.from') . ')')->native(false)->locale(app()->getLocale()),
-                                DatePicker::make('created_until')->label(__('app.created_at') . ' (' . __('app.until') . ')')->native(false)->locale(app()->getLocale()),
-                            ])
+                                DatePicker::make('created_from')->label(__('app.created_at').' ('.__('app.from').')')->native(false)->locale(app()->getLocale()),
+                                DatePicker::make('created_until')->label(__('app.created_at').' ('.__('app.until').')')->native(false)->locale(app()->getLocale()),
+                            ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -191,6 +206,19 @@ class PurchaseReturnsTable
                                 $data['created_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = Indicator::make(__('app.created_at').' ('.__('app.from').'): '.Carbon::parse($data['created_from'])->toFormattedDateString())
+                                ->removeField('created_from');
+                        }
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = Indicator::make(__('app.created_at').' ('.__('app.until').'): '.Carbon::parse($data['created_until'])->toFormattedDateString())
+                                ->removeField('created_until');
+                        }
+
+                        return $indicators;
                     }),
 
                 Filter::make('finalized_at')
@@ -198,9 +226,9 @@ class PurchaseReturnsTable
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DatePicker::make('finalized_from')->label(__('purchase_return.finalized_at') . ' (' . __('app.from') . ')')->native(false)->locale(app()->getLocale()),
-                                DatePicker::make('finalized_until')->label(__('purchase_return.finalized_at') . ' (' . __('app.until') . ')')->native(false)->locale(app()->getLocale()),
-                            ])
+                                DatePicker::make('finalized_from')->label(__('purchase_return.finalized_at').' ('.__('app.from').')')->native(false)->locale(app()->getLocale()),
+                                DatePicker::make('finalized_until')->label(__('purchase_return.finalized_at').' ('.__('app.until').')')->native(false)->locale(app()->getLocale()),
+                            ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -212,6 +240,19 @@ class PurchaseReturnsTable
                                 $data['finalized_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('finalized_at', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['finalized_from'] ?? null) {
+                            $indicators[] = Indicator::make(__('purchase_return.finalized_at').' ('.__('app.from').'): '.Carbon::parse($data['finalized_from'])->toFormattedDateString())
+                                ->removeField('finalized_from');
+                        }
+                        if ($data['finalized_until'] ?? null) {
+                            $indicators[] = Indicator::make(__('purchase_return.finalized_at').' ('.__('app.until').'): '.Carbon::parse($data['finalized_until'])->toFormattedDateString())
+                                ->removeField('finalized_until');
+                        }
+
+                        return $indicators;
                     }),
             ])
             ->filtersLayout(FiltersLayout::AboveContent)
@@ -251,7 +292,7 @@ class PurchaseReturnsTable
                     DeleteAction::make()
                         ->authorize('delete_purchase_return')
                         ->visible(fn (PurchaseReturn $record): bool => ! $record->isFinalized()),
-                ])
+                ]),
             ])
             ->defaultSort('created_at', 'desc')
             ->striped();
