@@ -103,4 +103,9 @@ class ProductVariant extends Model
     {
         return $this->hasMany(InventoryMovement::class, 'variant_id');
     }
+
+    public function hasWholesaleQtyThreshold(): bool
+    {
+        return $this->wholesale_enabled && $this->wholesale_qty_threshold > 0;
+    }
 }

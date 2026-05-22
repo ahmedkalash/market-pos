@@ -77,4 +77,6 @@ return [
     'scan_barcode' => 'Scan item barcode...',
     'barcode_scanner_helper' => 'Scan a product barcode to quickly add it to the sale.',
     'search' => 'Search',
+    'item_added' => 'Item Added',
+    'non_negotiable' => 'Non-negotiable',
 ];

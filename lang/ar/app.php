@@ -170,4 +170,5 @@ return [
     'insufficient_stock_exception_message' => 'رصيد غير كافٍ للمنتج :product: الكمية المطلوبة :requested، المتاح :available.',
     'from' => 'من',
     'until' => 'إلى',
+    'min' => 'الحد الأدنى',
 ];

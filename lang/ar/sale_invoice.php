@@ -77,4 +77,6 @@ return [
     'scan_barcode' => 'امسح باركود المنتج...',
     'barcode_scanner_helper' => 'امسح باركود المنتج لإضافته سريعاً إلى الفاتورة.',
     'search' => 'بحث',
+    'item_added' => 'تم إضافة البند',
+    'non_negotiable' => 'غير قابل للتفاوض',
 ];
