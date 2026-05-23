@@ -9,6 +9,7 @@ enum PriceType: string implements HasColor, HasLabel
 {
     case Retail = 'retail';
     case Wholesale = 'wholesale';
+
     public function getLabel(): string
     {
         return match ($this) {
@@ -23,5 +24,10 @@ enum PriceType: string implements HasColor, HasLabel
             self::Retail => 'primary',
             self::Wholesale => 'info',
         };
+    }
+
+    public static function parseValue(self|string|null $value): ?string
+    {
+        return $value instanceof self ? $value->value : $value;
     }
 }

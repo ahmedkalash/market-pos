@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SaleInvoices\Schemas;
 
+use App\Enums\DiscountType;
 use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Models\ProductBarcode;
@@ -177,6 +178,8 @@ class SaleInvoiceForm
                                 'quantity' => 1,
                                 'unit_price' => $unitPrice,
                                 'subtotal' => $unitPrice,
+                                'discount_type' => null,
+                                'discount_amount' => null,
                                 'line_total' => round(1 * $unitPrice, 2),
                                 'notes' => null,
                             ];
@@ -236,12 +239,13 @@ class SaleInvoiceForm
                                 ->dehydrated(false)
                                 ->disabled()
                                 ->readOnly()
-                                ->columnSpan(2),
+                                ->columnSpan(3),
 
                             Select::make('price_type')
                                 ->label(__('sale_invoice.price_type'))
                                 ->options(PriceType::class)
                                 ->default(PriceType::Retail->value)
+                                ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.price_type_helper_text'))
                                 ->required()
                                 ->disableOptionWhen(function (string $value, Get $get) {
                                     if ($value === PriceType::Wholesale->value) {
@@ -266,9 +270,9 @@ class SaleInvoiceForm
                                         return;
                                     }
 
-                                    $priceType = $state instanceof PriceType ? $state->value : $state;
+                                    $priceType = PriceType::parseValue($state);
 
-                                    if ($priceType === PriceType::Wholesale->value) {
+                                    if ($priceType == PriceType::Wholesale->value) {
                                         $set('unit_price', (float) $variant->wholesale_price);
                                     } else {
                                         $set('unit_price', (float) $variant->retail_price);
@@ -276,7 +280,7 @@ class SaleInvoiceForm
                                     self::recalculateLine($get, $set);
                                     self::calcTotalAmount($get, $set, '../../');
                                 })
-                                ->columnSpan(1),
+                                ->columnSpan(2),
 
                             TextInput::make('quantity')
                                 ->label(__('sale_invoice.quantity'))
@@ -301,7 +305,7 @@ class SaleInvoiceForm
                                 )
                                 ->suffix(function (Get $get) {
                                     $priceType = $get('price_type');
-                                    $priceTypeValue = $priceType instanceof PriceType ? $priceType->value : $priceType;
+                                    $priceTypeValue = PriceType::parseValue($priceType);
 
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
                                         $variantId = $get('product_variant_id');
@@ -317,7 +321,7 @@ class SaleInvoiceForm
                                 })
                                 ->helperText(function (Get $get) {
                                     $priceType = $get('price_type');
-                                    $priceTypeValue = $priceType instanceof PriceType ? $priceType->value : $priceType;
+                                    $priceTypeValue = PriceType::parseValue($priceType);
 
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
                                         $variantId = $get('product_variant_id');
@@ -336,7 +340,7 @@ class SaleInvoiceForm
                                     function (Get $get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
                                             $priceType = $get('price_type');
-                                            $priceTypeValue = $priceType instanceof PriceType ? $priceType->value : $priceType;
+                                            $priceTypeValue = PriceType::parseValue($priceType);
 
                                             if ($priceTypeValue === PriceType::Wholesale->value) {
                                                 $variantId = $get('product_variant_id');
@@ -355,7 +359,7 @@ class SaleInvoiceForm
                                     self::recalculateLine($get, $set);
                                     self::calcTotalAmount($get, $set, '../../');
                                 })
-                                ->columnSpan(2),
+                                ->columnSpan(3),
 
                             TextInput::make('unit_price')
                                 ->label(__('sale_invoice.unit_price'))
@@ -373,7 +377,7 @@ class SaleInvoiceForm
                                     }
 
                                     $priceType = $get('price_type');
-                                    $priceTypeValue = $priceType instanceof PriceType ? $priceType->value : $priceType;
+                                    $priceTypeValue = PriceType::parseValue($priceType);
 
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
                                         return $variant->wholesale_is_price_negotiable
@@ -397,7 +401,7 @@ class SaleInvoiceForm
                                     }
 
                                     $priceType = $get('price_type');
-                                    $priceTypeValue = $priceType instanceof PriceType ? $priceType->value : $priceType;
+                                    $priceTypeValue = PriceType::parseValue($priceType);
 
                                     $isNegotiable = ($priceTypeValue == PriceType::Wholesale->value
                                         ? $variant->wholesale_is_price_negotiable
@@ -431,7 +435,7 @@ class SaleInvoiceForm
                                     }
 
                                     $priceType = $get('price_type');
-                                    $priceTypeValue = $priceType instanceof PriceType ? $priceType->value : $priceType;
+                                    $priceTypeValue = PriceType::parseValue($priceType);
 
                                     return $priceTypeValue === PriceType::Wholesale->value
                                         ? ! $variant->wholesale_is_price_negotiable
@@ -444,21 +448,114 @@ class SaleInvoiceForm
                                 })
                                 ->columnSpan(2),
 
-                            TextInput::make('line_total')
-                                ->label(__('sale_invoice.line_total'))
+                            TextInput::make('subtotal')
+                                ->label(__('sale_invoice.subtotal'))
+                                ->numeric()
+                                ->required()
+                                ->readOnly()
+                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                ->helperText(__('sale_invoice.subtotal_helper_text'))
+                                ->columnSpan(3),
+
+                            Select::make('discount_type')
+                                ->label(__('sale_invoice.discount_type'))
+                                ->options(DiscountType::class)
+                                ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.discount_type_helper_text'))
+                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
+                                ->live()
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    self::recalculateLine($get, $set);
+                                    self::calcTotalAmount($get, $set, '../../');
+                                })
+                                ->columnSpan(3),
+
+                            TextInput::make('unit_discount_amount')
+                                ->label(__('sale_invoice.unit_discount_amount'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->step(0.01)
+                                ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.unit_discount_helper_text'))
+                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
+                                ->prefix(function (TextInput $component) use ($user) {
+                                    $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
+                                    $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
+                                    $percentage = DiscountType::Percentage->value;
+
+                                    return new HtmlString(
+                                        '<span x-data="{}" x-text="$wire.get(\''.$discountTypeStatePath.'\') === \''.$percentage.'\' ? \'%\' : \''.$currency.'\'"></span>'
+                                    );
+                                })
+                                ->live(debounce: '500ms')
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    self::recalculateLine($get, $set);
+                                    self::calcTotalAmount($get, $set, '../../');
+                                })
+                                ->rules([
+                                    function (Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $value = (float) $value;
+                                            $variantId = $get('product_variant_id');
+                                            $discountType = $get('discount_type');
+                                            $discountType = DiscountType::parseValue($discountType);
+                                            $priceType = $get('price_type');
+                                            if (! $variantId || ! $discountType || empty($value)) {
+                                                return;
+                                            }
+
+                                            $variant = self::getCachedVariant((int) $variantId);
+                                            if (! $variant) {
+                                                return;
+                                            }
+
+                                            $priceTypeValue = PriceType::parseValue($priceType);
+                                            $isNegotiable = ($priceTypeValue == PriceType::Wholesale->value ? $variant->wholesale_is_price_negotiable : $variant->retail_is_price_negotiable);
+                                            $minPrice = (float) ($priceTypeValue == PriceType::Wholesale->value ? $variant->min_wholesale_price : $variant->min_retail_price);
+
+                                            if (! $isNegotiable) {
+                                                $fail(__('sale_invoice.item_not_negotiable', ['item' => $variant->name ?? '']));
+
+                                                return;
+                                            }
+
+                                            $unitPrice = (float) ($get('unit_price') ?? 0);
+
+                                            $unitPriceAfterItemDiscount = $discountType === DiscountType::Fixed->value
+                                                ? $unitPrice - $value
+                                                : $unitPrice - ($unitPrice * ($value / 100));
+
+                                            if (round($unitPriceAfterItemDiscount, 2) < round($minPrice, 2)) {
+                                                $fail(__('sale_invoice.item_below_minimum', ['item' => $variant->name ?? '', 'min' => $minPrice]));
+                                            }
+                                        };
+                                    },
+                                ])
+                                ->columnSpan(3),
+
+                            TextInput::make('line_total_discount')
+                                ->label(__('sale_invoice.line_total_discount'))
                                 ->numeric()
                                 ->readOnly()
-                                ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.line_total_tooltip'))
+                                ->dehydrated(false)
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                ->columnSpan(2),
+                                ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.line_total_discount_helper_text'))
+                                ->columnSpan(3)
+                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get)),
+
+                            TextInput::make('line_total')
+                                ->label(__('sale_invoice.final_line_total'))
+                                ->numeric()
+                                ->readOnly()
+                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                ->helperText(__('sale_invoice.final_line_total_helper_text'))
+                                ->columnSpan(4),
 
                             Textarea::make('notes')
                                 ->label(__('sale_invoice.item_notes'))
                                 ->maxLength(255)
                                 ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.notes_tooltip'))
-                                ->columnSpan(2),
+                                ->columnSpan(13),
                         ])
-                        ->columns(9)
+                        ->columns(13)
                         ->addable(false)
                         ->reorderable(false)
                         ->cloneable(false)
@@ -467,11 +564,127 @@ class SaleInvoiceForm
                             fn ($action) => $action->after(fn (Get $get, Set $set) => self::calcTotalAmount($get, $set))
                         ),
 
+                    Section::make(__('sale_invoice.invoice_discount'))
+                        ->icon('heroicon-o-receipt-percent')
+                        ->schema([
+                            Select::make('discount_type')
+                                ->label(__('sale_invoice.discount_type'))
+                                ->options(DiscountType::class)
+                                ->live()
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    static::calcTotalAmount($get, $set);
+                                }),
+                            TextInput::make('discount_amount')
+                                ->label(__('sale_invoice.discount_amount'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->step(0.01)
+                                ->prefix(function (TextInput $component) use ($user) {
+                                    $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
+                                    $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
+                                    $percentage = DiscountType::Percentage->value;
+
+                                    return new HtmlString(
+                                        '<span x-data="{}" x-text="$wire.get(\''.$discountTypeStatePath.'\') === \''.$percentage.'\' ? \'%\' : \''.$currency.'\'"></span>'
+                                    );
+                                })
+                                ->live(debounce: '500ms')
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    static::calcTotalAmount($get, $set);
+                                })
+                                ->rules([
+                                    function (Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $discountType = $get('discount_type');
+                                            $discountType = DiscountType::parseValue($discountType);
+                                            $items = $get('items') ?? [];
+                                            if (! $discountType || empty($value) || empty($items)) {
+                                                return;
+                                            }
+
+                                            $initialSubtotalsSum = 0.0;
+                                            foreach ($items as $item) {
+                                                $unitPrice = (float) ($item['unit_price'] ?? 0);
+                                                $quantity = (float) ($item['quantity'] ?? 1);
+                                                $itemDiscountType = $item['discount_type'] ?? null;
+                                                $itemDiscountType = DiscountType::parseValue($itemDiscountType);
+                                                $itemDiscountAmount = (float) ($item['unit_discount_amount'] ?? 0);
+                                                $itemDiscountValue = 0.0;
+                                                if ($itemDiscountType && $itemDiscountAmount > 0) {
+                                                    $itemDiscountValue = $itemDiscountType === DiscountType::Fixed->value
+                                                        ? $itemDiscountAmount * $quantity
+                                                        : ($unitPrice * $quantity) * ($itemDiscountAmount / 100);
+                                                }
+                                                $initialSubtotalsSum += (($unitPrice * $quantity) - $itemDiscountValue);
+                                            }
+
+                                            $discountAmount = (float) $value;
+                                            $totalInvoiceDiscount = $discountType == DiscountType::Fixed->value
+                                                ? $discountAmount
+                                                : $initialSubtotalsSum * ($discountAmount / 100);
+
+                                            foreach ($items as $item) {
+                                                $variantId = $item['product_variant_id'] ?? null;
+                                                if (! $variantId) {
+                                                    continue;
+                                                }
+                                                $variant = self::getCachedVariant((int) $variantId);
+                                                if (! $variant) {
+                                                    continue;
+                                                }
+
+                                                $priceType = $item['price_type'] ?? null;
+                                                $priceTypeValue = PriceType::parseValue($priceType);
+
+                                                $isNegotiable = ($priceTypeValue == PriceType::Wholesale->value ? $variant->wholesale_is_price_negotiable : $variant->retail_is_price_negotiable);
+                                                $minPrice = (float) ($priceTypeValue == PriceType::Wholesale->value ? $variant->min_wholesale_price : $variant->min_retail_price);
+                                                $unitPrice = (float) ($item['unit_price'] ?? 0);
+                                                $quantity = (float) ($item['quantity'] ?? 1);
+
+                                                $minimumAllowedSubtotal = $isNegotiable ? ($minPrice * $quantity) : ($unitPrice * $quantity);
+
+                                                $itemDiscountType = $item['discount_type'] ?? null;
+                                                $itemDiscountType = DiscountType::parseValue($itemDiscountType);
+                                                $itemDiscountAmount = (float) ($item['unit_discount_amount'] ?? 0);
+                                                $itemDiscountValue = 0.0;
+                                                if ($itemDiscountType && $itemDiscountAmount > 0) {
+                                                    $unitDiscountValue = $itemDiscountType === DiscountType::Fixed->value
+                                                        ? $itemDiscountAmount
+                                                        : $unitPrice * ($itemDiscountAmount / 100);
+                                                    $itemDiscountValue = $unitDiscountValue * $quantity;
+                                                }
+                                                $initialSubtotal = (($unitPrice * $quantity) - $itemDiscountValue);
+
+                                                $distributedInvoiceDiscount = 0.0;
+                                                if ($initialSubtotalsSum > 0 && $totalInvoiceDiscount > 0) {
+                                                    $distributedInvoiceDiscount = ($initialSubtotal / $initialSubtotalsSum) * $totalInvoiceDiscount;
+                                                }
+
+                                                $finalSubtotal = $initialSubtotal - $distributedInvoiceDiscount;
+
+                                                if (round($finalSubtotal, 2) < round($minimumAllowedSubtotal, 2)) {
+                                                    $fail(__('sale_invoice.invoice_discount_breaches_minimum', ['item' => $variant->name ?? '']));
+
+                                                    return;
+                                                }
+                                            }
+                                        };
+                                    },
+                                ]),
+                            TextInput::make('total_discount_amount')
+                                ->label(__('sale_invoice.total_discount_amount'))
+                                ->readOnly()
+                                ->dehydrated()
+                                ->numeric()
+                                ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                        ])->columns(3),
+
                     TextInput::make('total_amount')
                         ->label(__('sale_invoice.total_amount'))
                         ->readOnly()
+                        ->dehydrated()
                         ->numeric()
-                        ->extraInputAttributes(['class' => 'text-xl font-bold'])
+                        ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                         ->afterStateHydrated(function (Get $get, Set $set) {
                             static::calcTotalAmount($get, $set);
@@ -481,24 +694,92 @@ class SaleInvoiceForm
         ]);
     }
 
+    private static function isDiscountDisabled(Get $get): bool
+    {
+        $variantId = $get('product_variant_id');
+        $priceType = $get('price_type');
+        $priceType = PriceType::parseValue($priceType);
+
+        if (! $variantId || ! $priceType) {
+            return false;
+        }
+        $variant = self::getCachedVariant((int) $variantId);
+        if (! $variant) {
+            return false;
+        }
+
+        if ($priceType == PriceType::Wholesale->value) {
+            return ! $variant->wholesale_is_price_negotiable;
+        }
+
+        return ! $variant->retail_is_price_negotiable;
+    }
+
     private static function recalculateLine(Get $get, Set $set): void
     {
+        $variantId = $get('product_variant_id');
+        $priceType = $get('price_type');
+
+        $isNegotiable = true;
+        if ($variantId && $priceType) {
+            $variant = self::getCachedVariant((int) $variantId);
+            if ($variant) {
+                $isNegotiable = ($priceType == PriceType::Wholesale->value)
+                    ? $variant->wholesale_is_price_negotiable
+                    : $variant->retail_is_price_negotiable;
+            }
+        }
+
+        if (! $isNegotiable) {
+            $set('discount_type', null);
+            $set('unit_discount_amount', null);
+            $set('line_total_discount', null);
+        }
+
         $quantity = (float) ($get('quantity') ?? 0);
         $unitPrice = (float) ($get('unit_price') ?? 0);
+        $discountType = DiscountType::parseValue($get('discount_type'));
 
-        $subtotal = round($quantity * $unitPrice, 2);
-        $taxAmount = 0.0; // TAX FEATURE POSTPONED
-        $lineTotal = round($subtotal + $taxAmount, 2);
+        $discountAmount = (float) ($get('unit_discount_amount') ?? 0);
 
-        $set('subtotal', $subtotal);
+        $discountValue = 0.0;
+        if ($discountType == DiscountType::Fixed->value) {
+            $discountValue = $discountAmount * $quantity;
+        } elseif ($discountType == DiscountType::Percentage->value) {
+            $discountValue = ($unitPrice * $quantity) * ($discountAmount / 100);
+        }
+
+        $subtotalBeforeDiscount = $unitPrice * $quantity;
+        $subtotalAfterDiscount = $subtotalBeforeDiscount - $discountValue;
+
+        $lineTotal = round($subtotalAfterDiscount, 2);
+
+        $set('subtotal', round($subtotalBeforeDiscount, 2));
+        $set('line_total_discount', round($discountValue, 2));
         $set('line_total', $lineTotal);
     }
 
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
-        $total = collect($items)->sum('line_total');
-        $set($prefix.'total_amount', round($total, 2));
+        $initialSubtotalsSum = collect($items)->sum(function ($item) {
+            return (float) ($item['subtotal'] ?? 0) - (float) ($item['line_total_discount'] ?? 0);
+        });
+
+        $invoiceDiscountType = DiscountType::parseValue( $get($prefix.'discount_type'));
+        $invoiceDiscountAmount = (float) ($get($prefix.'discount_amount') ?? 0);
+
+        $totalInvoiceDiscount = 0.0;
+        if ($invoiceDiscountType == DiscountType::Fixed->value) {
+            $totalInvoiceDiscount = $invoiceDiscountAmount;
+        } elseif ($invoiceDiscountType == DiscountType::Percentage->value) {
+            $totalInvoiceDiscount = $initialSubtotalsSum * ($invoiceDiscountAmount / 100);
+        }
+
+        $totalAmount = $initialSubtotalsSum - $totalInvoiceDiscount;
+
+        $set($prefix.'total_discount_amount', round($totalInvoiceDiscount, 2));
+        $set($prefix.'total_amount', round($totalAmount, 2));
     }
 
     /**

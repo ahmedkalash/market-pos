@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use App\Enums\PriceType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,9 @@ class SaleInvoiceItem extends Model
         'tax_rate',
         'tax_amount',
         'line_total',
+        'discount_type',
+        'unit_discount_amount',
+        'line_total_discount',
         'notes',
     ];
 
@@ -32,12 +36,15 @@ class SaleInvoiceItem extends Model
     {
         return [
             'price_type' => PriceType::class,
+            'discount_type' => DiscountType::class,
             'quantity' => 'decimal:3',
             'unit_price' => 'decimal:4',
             'subtotal' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'discount_amount' => 'decimal:4',
+            'discount_value' => 'decimal:2',
         ];
     }
 

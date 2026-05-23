@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use App\Enums\PaymentMethod;
 use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
@@ -30,6 +31,9 @@ class SaleInvoice extends Model
         'total_before_tax',
         'total_tax_amount',
         'total_amount',
+        'discount_type',
+        'discount_amount',
+        'total_discount_amount',
         'notes',
         'finalized_at',
         'finalized_by',
@@ -45,9 +49,12 @@ class SaleInvoice extends Model
             'status' => SaleInvoiceStatus::class,
             'return_status' => SaleInvoiceReturnStatus::class,
             'payment_method' => PaymentMethod::class,
+            'discount_type' => DiscountType::class,
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'total_discount_amount' => 'decimal:2',
             'finalized_at' => 'datetime',
         ];
     }
