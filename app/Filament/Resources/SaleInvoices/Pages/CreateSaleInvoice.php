@@ -77,7 +77,15 @@ class CreateSaleInvoice extends CreateRecord
         /** @var SaleInvoice $invoice */
         $invoice = $this->record;
 
-        SaleInvoiceService::make()->recalculateTotals($invoice);
+        try {
+            SaleInvoiceService::make()->recalculateTotals($invoice);
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title(__('sale_invoice.recalculate_failed'))
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
 
         if ($this->shouldFinalize) {
             $this->authorize('finalize_sale_invoice');

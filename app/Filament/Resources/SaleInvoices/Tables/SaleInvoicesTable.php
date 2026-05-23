@@ -233,6 +233,11 @@ class SaleInvoicesTable
                     ->preload()
                     ->visible(fn (): bool => $user->isCompanyLevel()),
 
+                SelectFilter::make('customer_id')
+                    ->label(__('customer.model_label'))
+                    ->relationship('customer', 'name')
+                    ->searchable(),
+
                 Filter::make('total_amount')
                     ->columnSpan(2)
                     ->schema([

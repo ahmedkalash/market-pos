@@ -239,9 +239,8 @@ class SaleInvoiceForm
                                         if (! $variantId) {
                                             return true;
                                         }
-                                        $variant = ProductVariant::find($variantId);
 
-                                        return ! $variant?->wholesale_enabled;
+                                        return ! self::getCachedVariant((int) $variantId)?->wholesale_enabled;
                                     }
 
                                     return false;
@@ -252,7 +251,7 @@ class SaleInvoiceForm
                                     if (! $variantId) {
                                         return;
                                     }
-                                    $variant = ProductVariant::find($variantId);
+                                    $variant = self::getCachedVariant((int) $variantId);
                                     if (! $variant) {
                                         return;
                                     }
@@ -281,7 +280,7 @@ class SaleInvoiceForm
                                     tooltip: function (Get $get) {
                                         $variantId = $get('product_variant_id');
                                         if ($variantId) {
-                                            $variant = ProductVariant::find($variantId);
+                                            $variant = self::getCachedVariant((int) $variantId);
                                             if ($variant && $variant->hasWholesaleQtyThreshold()) {
                                                 return __('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]);
                                             }
@@ -297,7 +296,7 @@ class SaleInvoiceForm
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
                                         $variantId = $get('product_variant_id');
                                         if ($variantId) {
-                                            $variant = ProductVariant::find($variantId);
+                                            $variant = self::getCachedVariant((int) $variantId);
                                             if ($variant && $variant->hasWholesaleQtyThreshold()) {
                                                 return __('app.min').': '.(float) $variant->wholesale_qty_threshold;
                                             }
@@ -313,7 +312,7 @@ class SaleInvoiceForm
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
                                         $variantId = $get('product_variant_id');
                                         if ($variantId) {
-                                            $variant = ProductVariant::find($variantId);
+                                            $variant = self::getCachedVariant((int) $variantId);
                                             if ($variant && $variant->hasWholesaleQtyThreshold()) {
                                                 return new HtmlString('<span class="text-danger-600 dark:text-danger-400 font-medium">'.__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]).'</span>');
                                             }
@@ -332,7 +331,7 @@ class SaleInvoiceForm
                                             if ($priceTypeValue === PriceType::Wholesale->value) {
                                                 $variantId = $get('product_variant_id');
                                                 if ($variantId) {
-                                                    $variant = ProductVariant::find($variantId);
+                                                    $variant = self::getCachedVariant((int) $variantId);
                                                     if ($variant && $variant->hasWholesaleQtyThreshold() && $value < $variant->wholesale_qty_threshold) {
                                                         $fail(__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]));
                                                     }
@@ -358,7 +357,7 @@ class SaleInvoiceForm
                                     if (! $variantId) {
                                         return 0;
                                     }
-                                    $variant = ProductVariant::find($variantId);
+                                    $variant = self::getCachedVariant((int) $variantId);
                                     if (! $variant) {
                                         return 0;
                                     }
@@ -382,7 +381,7 @@ class SaleInvoiceForm
                                     if (! $variantId) {
                                         return null;
                                     }
-                                    $variant = ProductVariant::find($variantId);
+                                    $variant = self::getCachedVariant((int) $variantId);
                                     if (! $variant) {
                                         return null;
                                     }
@@ -416,7 +415,7 @@ class SaleInvoiceForm
                                     if (! $variantId) {
                                         return true;
                                     }
-                                    $variant = ProductVariant::find($variantId);
+                                    $variant = self::getCachedVariant((int) $variantId);
                                     if (! $variant) {
                                         return true;
                                     }
@@ -460,8 +459,8 @@ class SaleInvoiceForm
 
                     TextInput::make('total_amount')
                         ->label(__('sale_invoice.total_amount'))
-                        ->disabled()
-                        ->dehydrated(false)
+                        ->readOnly()
+                        ->numeric()
                         ->extraInputAttributes(['class' => 'text-xl font-bold'])
                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                         ->afterStateHydrated(function (Get $get, Set $set) {
@@ -490,5 +489,19 @@ class SaleInvoiceForm
         $items = $get($prefix.'items') ?? [];
         $total = collect($items)->sum('line_total');
         $set($prefix.'total_amount', round($total, 2));
+    }
+
+    /**
+     * Returns a cached ProductVariant for the given ID, avoiding repeated
+     * DB hits from multiple closure callbacks on the same repeater row.
+     *
+     * Uses a static array (request-scoped) so each variant is fetched at
+     * most once per Livewire render cycle.
+     */
+    private static function getCachedVariant(int $variantId): ?ProductVariant
+    {
+        static $cache = [];
+
+        return $cache[$variantId] ??= ProductVariant::find($variantId);
     }
 }

@@ -53,6 +53,7 @@ return [
     'finalize' => 'Finalize',
     'finalize_confirmation' => 'Are you sure? Once finalized, stock will be deducted and this cannot be undone.',
     'finalized_success' => 'Sale invoice finalized successfully.',
+    'recalculate_failed' => 'Failed to calculate invoice totals. Please check the items and try again.',
 
     // Filters
     'amount_min' => 'Min Amount',
