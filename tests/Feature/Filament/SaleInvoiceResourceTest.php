@@ -3,6 +3,7 @@
 namespace Tests\Feature\Filament;
 
 use App\Actions\CreateDefaultCompanyRolesAction;
+use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Enums\Roles;
 use App\Filament\Resources\SaleInvoices\Pages\CreateSaleInvoice;
@@ -87,6 +88,7 @@ class SaleInvoiceResourceTest extends TestCase
         Livewire::test(CreateSaleInvoice::class)
             ->fillForm([
                 'store_id' => $this->store->id,
+                'payment_method' => PaymentMethod::Cash->value,
                 'items' => [
                     'item1' => [
                         'product_variant_id' => $this->variant->id,
@@ -105,6 +107,7 @@ class SaleInvoiceResourceTest extends TestCase
         Livewire::test(CreateSaleInvoice::class)
             ->fillForm([
                 'store_id' => $this->store->id,
+                'payment_method' => PaymentMethod::Cash->value,
                 'items' => [
                     'item1' => [
                         'product_variant_id' => $this->variant->id,

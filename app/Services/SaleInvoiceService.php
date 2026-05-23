@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\MovementType;
-use App\Enums\PaymentMethod;
 use App\Enums\SaleInvoiceStatus;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
@@ -80,9 +79,9 @@ class SaleInvoiceService
      *
      * @throws \Throwable
      */
-    public function finalize(SaleInvoice $invoice, PaymentMethod $paymentMethod): void
+    public function finalize(SaleInvoice $invoice): void
     {
-        DB::transaction(function () use ($invoice, $paymentMethod) {
+        DB::transaction(function () use ($invoice) {
             /** @var SaleInvoice $invoice */
             $invoice = SaleInvoice::query()->where('id', $invoice->id)->lockForUpdate()->firstOrFail();
 
@@ -125,7 +124,6 @@ class SaleInvoiceService
             // Lock the record
             $invoice->update([
                 'status' => SaleInvoiceStatus::Finalized,
-                'payment_method' => $paymentMethod,
                 'finalized_at' => now(),
                 'finalized_by' => auth()->id(),
             ]);

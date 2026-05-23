@@ -2,13 +2,11 @@
 
 namespace App\Filament\Resources\SaleInvoices\Pages;
 
-use App\Enums\PaymentMethod;
 use App\Filament\Resources\SaleInvoices\SaleInvoiceResource;
 use App\Models\SaleInvoice;
 use App\Services\SaleInvoiceService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -30,20 +28,9 @@ class ViewSaleInvoice extends ViewRecord
                 ->modalSubmitActionLabel(__('sale_invoice.finalize'))
                 ->authorize('finalize_sale_invoice')
                 ->visible(fn (SaleInvoice $record): bool => $record->isDraft())
-                ->schema([
-                    Select::make('payment_method')
-                        ->label(__('sale_invoice.payment_method'))
-                        ->options([
-                            PaymentMethod::Cash->value => __('sale_invoice.payment_method_cash'),
-                            PaymentMethod::Card->value => __('sale_invoice.payment_method_card'),
-                            PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
-                        ])
-                        ->required(),
-                ])
-                ->action(function (SaleInvoice $record, array $data): void {
+                ->action(function (SaleInvoice $record): void {
                     try {
-                        $paymentMethod = PaymentMethod::from($data['payment_method']);
-                        SaleInvoiceService::make()->finalize($record, $paymentMethod);
+                        SaleInvoiceService::make()->finalize($record);
                     } catch (\Throwable $e) {
                         Notification::make()
                             ->title(__('sale_invoice.finalize_failed'))

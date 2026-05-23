@@ -118,6 +118,7 @@ class SaleInvoiceServiceTest extends TestCase
             'company_id' => $this->user->company_id,
             'store_id' => $this->store->id,
             'status' => SaleInvoiceStatus::Draft,
+            'payment_method' => PaymentMethod::Cash,
         ]);
 
         SaleInvoiceItem::factory()->create([
@@ -131,7 +132,7 @@ class SaleInvoiceServiceTest extends TestCase
             'line_total' => 150.00,
         ]);
 
-        $this->service->finalize($invoice, PaymentMethod::Cash);
+        $this->service->finalize($invoice);
 
         $invoice->refresh();
         $this->variant->refresh();
@@ -162,12 +163,13 @@ class SaleInvoiceServiceTest extends TestCase
             'company_id' => $this->user->company_id,
             'store_id' => $this->store->id,
             'status' => SaleInvoiceStatus::Draft,
+            'payment_method' => PaymentMethod::Cash,
         ]);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage(__('sale_invoice.no_items'));
 
-        $this->service->finalize($invoice, PaymentMethod::Cash);
+        $this->service->finalize($invoice);
     }
 
     public function test_finalize_fails_when_insufficient_stock(): void
@@ -176,6 +178,7 @@ class SaleInvoiceServiceTest extends TestCase
             'company_id' => $this->user->company_id,
             'store_id' => $this->store->id,
             'status' => SaleInvoiceStatus::Draft,
+            'payment_method' => PaymentMethod::Cash,
         ]);
 
         // Attempting to sell 150.00 when stock is 100
@@ -193,7 +196,7 @@ class SaleInvoiceServiceTest extends TestCase
         $this->expectException(InsufficientStockException::class);
 
         try {
-            $this->service->finalize($invoice, PaymentMethod::Cash);
+            $this->service->finalize($invoice);
         } finally {
             $invoice->refresh();
             $this->variant->refresh();
@@ -223,6 +226,7 @@ class SaleInvoiceServiceTest extends TestCase
             'company_id' => $this->user->company_id,
             'store_id' => $this->store->id,
             'status' => SaleInvoiceStatus::Draft,
+            'payment_method' => PaymentMethod::Cash,
         ]);
 
         SaleInvoiceItem::factory()->create([
@@ -239,6 +243,6 @@ class SaleInvoiceServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage("Variant [{$otherVariant->id}] does not belong to store [{$this->store->id}].");
 
-        $this->service->finalize($invoice, PaymentMethod::Cash);
+        $this->service->finalize($invoice);
     }
 }

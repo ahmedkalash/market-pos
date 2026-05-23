@@ -2,14 +2,12 @@
 
 namespace App\Filament\Resources\SaleInvoices\Pages;
 
-use App\Enums\PaymentMethod;
 use App\Enums\SequenceType;
 use App\Filament\Resources\SaleInvoices\SaleInvoiceResource;
 use App\Models\SaleInvoice;
 use App\Services\SaleInvoiceService;
 use App\Services\SequenceService;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -19,8 +17,6 @@ class CreateSaleInvoice extends CreateRecord
 
     public bool $shouldFinalize = false;
 
-    public ?string $selectedPaymentMethod = null;
-
     protected function getFormActions(): array
     {
         return [
@@ -29,19 +25,8 @@ class CreateSaleInvoice extends CreateRecord
                 ->authorize('finalize_sale_invoice')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->schema([
-                    Select::make('payment_method')
-                        ->label(__('sale_invoice.payment_method'))
-                        ->options([
-                            PaymentMethod::Cash->value => __('sale_invoice.payment_method_cash'),
-                            PaymentMethod::Card->value => __('sale_invoice.payment_method_card'),
-                            PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
-                        ])
-                        ->required(),
-                ])
-                ->action(function (array $data) {
+                ->action(function () {
                     $this->shouldFinalize = true;
-                    $this->selectedPaymentMethod = $data['payment_method'];
                     $this->create();
                 }),
             $this->getCreateFormAction()
@@ -90,8 +75,7 @@ class CreateSaleInvoice extends CreateRecord
         if ($this->shouldFinalize) {
             $this->authorize('finalize_sale_invoice');
             try {
-                $paymentMethod = PaymentMethod::from($this->selectedPaymentMethod);
-                SaleInvoiceService::make()->finalize($invoice, $paymentMethod);
+                SaleInvoiceService::make()->finalize($invoice);
             } catch (\Throwable $e) {
                 Notification::make()
                     ->title(__('sale_invoice.finalize_failed'))

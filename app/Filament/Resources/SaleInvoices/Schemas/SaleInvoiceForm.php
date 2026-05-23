@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SaleInvoices\Schemas;
 
+use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
@@ -68,6 +69,14 @@ class SaleInvoiceForm
                                     ->maxLength(255),
                             ]),
                         ]),
+                    Select::make('payment_method')
+                        ->label(__('sale_invoice.payment_method'))
+                        ->options([
+                            PaymentMethod::Cash->value => __('sale_invoice.payment_method_cash'),
+                            PaymentMethod::Card->value => __('sale_invoice.payment_method_card'),
+                            PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
+                        ])
+                        ->required(),
                 ])->columns(2),
 
             Section::make(__('sale_invoice.notes'))
