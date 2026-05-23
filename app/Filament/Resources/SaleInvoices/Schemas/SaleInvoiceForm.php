@@ -87,6 +87,7 @@ class SaleInvoiceForm
                         ->label(__('sale_invoice.barcode_scanner'))
                         ->placeholder(__('sale_invoice.scan_barcode'))
                         ->helperText(__('sale_invoice.barcode_scanner_helper'))
+                        ->hiddenOn('view')
                         ->autofocus()
                         ->extraInputAttributes([
                             'x-on:focus-barcode.window' => 'setTimeout(() => $el.focus(), 10)',
