@@ -78,7 +78,7 @@ class SaleInvoiceDiscountTest extends TestCase
         $this->assertEquals(20, $item->line_total_discount);
         $this->assertEquals(180, $item->line_total);
         $this->assertEquals(180, $invoice->total_amount);
-        $this->assertEquals(0, $invoice->total_discount_amount);
+        $this->assertEquals(0, $invoice->global_discount_amount);
     }
 
     public function test_it_applies_item_percentage_discount_successfully()
@@ -190,7 +190,7 @@ class SaleInvoiceDiscountTest extends TestCase
 
         $invoice->refresh();
         $this->assertEquals(270, $invoice->total_amount);
-        $this->assertEquals(30, $invoice->total_discount_amount);
+        $this->assertEquals(30, $invoice->global_discount_amount);
 
         $items = $invoice->items->sortBy('unit_price')->values();
         $this->assertEquals(100, $items[0]->subtotal);
@@ -199,5 +199,62 @@ class SaleInvoiceDiscountTest extends TestCase
 
         $this->assertEquals(200, $items[1]->subtotal);
         $this->assertEquals(180, $items[1]->line_total);
+    }
+
+    public function test_it_calculates_grand_total_discount_correctly()
+    {
+        // Global Invoice Discount + Item level discounts combined
+        $invoice = SaleInvoice::factory()->create([
+            'company_id' => $this->user->company_id,
+            'store_id' => $this->store->id,
+            'discount_type' => DiscountType::Fixed,
+            'discount_amount' => 50, // 50 total invoice discount
+        ]);
+
+        // Item 1: No item discount
+        SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $this->variantNegotiable->id,
+            'quantity' => 2,
+            'unit_price' => 100, // Subtotal: 200
+            'price_type' => PriceType::Retail,
+        ]);
+
+        // Item 2: Fixed item discount
+        SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $this->variantNegotiable->id,
+            'quantity' => 3,
+            'unit_price' => 100, // Subtotal: 300
+            'price_type' => PriceType::Retail,
+            'discount_type' => DiscountType::Fixed,
+            'unit_discount_amount' => 10, // Total item discount: 30
+        ]);
+
+        // Item 3: Percentage item discount
+        SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $this->variantNegotiable->id,
+            'quantity' => 1,
+            'unit_price' => 200, // Subtotal: 200
+            'price_type' => PriceType::Retail,
+            'discount_type' => DiscountType::Percentage,
+            'unit_discount_amount' => 10, // 10% of 200 = 20
+        ]);
+
+        // Total Initial Subtotals sum before any discounts = 200 + 300 + 200 = 700
+        // Item Discounts Sum = 0 + 30 + 20 = 50
+        // Total Subtotals after item discounts = 700 - 50 = 650
+        // Global Invoice Discount = 50 (Fixed)
+        // Grand Total Discount = Item Discounts Sum (50) + Global Invoice Discount (50) = 100
+        // Total Amount = 650 - 50 = 600
+
+        SaleInvoiceService::make()->recalculateTotals($invoice);
+
+        $invoice->refresh();
+
+        $this->assertEquals(600, $invoice->total_amount);
+        $this->assertEquals(50, $invoice->global_discount_amount);
+        $this->assertEquals(100, $invoice->grand_total_discount);
     }
 }

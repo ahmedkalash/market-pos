@@ -33,7 +33,8 @@ class SaleInvoice extends Model
         'total_amount',
         'discount_type',
         'discount_amount',
-        'total_discount_amount',
+        'global_discount_amount',
+        'grand_total_discount',
         'notes',
         'finalized_at',
         'finalized_by',
@@ -54,7 +55,8 @@ class SaleInvoice extends Model
             'total_tax_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'discount_amount' => 'decimal:2',
-            'total_discount_amount' => 'decimal:2',
+            'global_discount_amount' => 'decimal:2',
+            'grand_total_discount' => 'decimal:2',
             'finalized_at' => 'datetime',
         ];
     }

@@ -93,11 +93,12 @@ return [
     'line_total_discount_helper_text' => 'Total discount for this line (Unit Discount × Quantity).',
     'subtotal_helper_text' => 'Unit Price × Quantity (Before any discounts or addition)',
     'discount_value' => 'Discount Value',
-    'total_discount_amount' => 'Total Discount',
+    'global_discount_amount' => 'Global Discount Amount',
     'discount_fixed' => 'Fixed',
     'discount_percentage' => 'Percentage',
     'item_not_negotiable' => 'Item :item is not negotiable.',
     'item_below_minimum' => 'Discount on item :item breaches the minimum allowed price of :min.',
     'invoice_discount_breaches_minimum' => 'Invoice discount pushes item :item below its minimum allowed price.',
     'invoice_discount' => 'Global Invoice Discount',
+    'grand_total_discount' => 'Grand Total Discount',
 ];

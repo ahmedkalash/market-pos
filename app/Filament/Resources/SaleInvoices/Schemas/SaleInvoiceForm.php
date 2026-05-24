@@ -671,25 +671,35 @@ class SaleInvoiceForm
                                         };
                                     },
                                 ]),
-                            TextInput::make('total_discount_amount')
-                                ->label(__('sale_invoice.total_discount_amount'))
+                            TextInput::make('global_discount_amount')
+                                ->label(__('sale_invoice.global_discount_amount'))
                                 ->readOnly()
                                 ->dehydrated()
                                 ->numeric()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م'),
-                        ])->columns(3),
+                        ])->columns(3)
+                        ->compact(),
 
-                    TextInput::make('total_amount')
-                        ->label(__('sale_invoice.total_amount'))
-                        ->readOnly()
-                        ->dehydrated()
-                        ->numeric()
-                        ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
-                        ->prefix($user->company->currency_symbol ?? 'ج.م')
-                        ->afterStateHydrated(function (Get $get, Set $set) {
-                            static::calcTotalAmount($get, $set);
-                        })
-                        ->columnSpanFull(),
+                    Grid::make(2)->schema([
+                        TextInput::make('grand_total_discount')
+                            ->label(__('sale_invoice.grand_total_discount'))
+                            ->readOnly()
+                            ->dehydrated()
+                            ->numeric()
+                            ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
+                            ->prefix($user->company->currency_symbol ?? 'ج.م'),
+
+                        TextInput::make('total_amount')
+                            ->label(__('sale_invoice.total_amount'))
+                            ->readOnly()
+                            ->dehydrated()
+                            ->numeric()
+                            ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
+                            ->prefix($user->company->currency_symbol ?? 'ج.م')
+                            ->afterStateHydrated(function (Get $get, Set $set) {
+                                static::calcTotalAmount($get, $set);
+                            }),
+                    ]),
                 ]),
         ]);
     }
@@ -763,10 +773,10 @@ class SaleInvoiceForm
     {
         $items = $get($prefix.'items') ?? [];
         $initialSubtotalsSum = collect($items)->sum(function ($item) {
-            return (float) ($item['subtotal'] ?? 0) - (float) ($item['line_total_discount'] ?? 0);
+            return (float) ($item['line_total'] ?? 0);
         });
 
-        $invoiceDiscountType = DiscountType::parseValue( $get($prefix.'discount_type'));
+        $invoiceDiscountType = DiscountType::parseValue($get($prefix.'discount_type'));
         $invoiceDiscountAmount = (float) ($get($prefix.'discount_amount') ?? 0);
 
         $totalInvoiceDiscount = 0.0;
@@ -776,9 +786,15 @@ class SaleInvoiceForm
             $totalInvoiceDiscount = $initialSubtotalsSum * ($invoiceDiscountAmount / 100);
         }
 
+        $itemDiscountsSum = collect($items)->sum(function ($item) {
+            return (float) ($item['line_total_discount'] ?? 0);
+        });
+
+        $grandTotalDiscount = $itemDiscountsSum + $totalInvoiceDiscount;
         $totalAmount = $initialSubtotalsSum - $totalInvoiceDiscount;
 
-        $set($prefix.'total_discount_amount', round($totalInvoiceDiscount, 2));
+        $set($prefix.'global_discount_amount', round($totalInvoiceDiscount, 2));
+        $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
     }
 
