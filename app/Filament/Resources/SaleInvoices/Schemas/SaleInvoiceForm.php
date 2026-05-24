@@ -492,19 +492,11 @@ class SaleInvoiceForm
                                 ->rules([
                                     function (Get $get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                            $value = (float) $value;
-                                            $discountType = DiscountType::toString($get('discount_type'));
-                                            if (! $discountType || empty($value)) {
-                                                return;
-                                            }
-
-                                            $variant = self::getCachedVariant($get('product_variant_id'));
-                                            if (! $variant) {
-                                                return;
-                                            }
-
-                                            $priceTypeEnum = PriceType::try($get('price_type') ?? null);
-                                            if (! $priceTypeEnum) {
+                                            if (! ($discountType = DiscountType::toString($get('discount_type'))) ||
+                                                empty($value = (float) $value) ||
+                                                ! ( $variant = self::getCachedVariant($get('product_variant_id'))) ||
+                                                ! ($priceTypeEnum = PriceType::try($get('price_type') ?? null))
+                                            ) {
                                                 return;
                                             }
 
@@ -609,53 +601,18 @@ class SaleInvoiceForm
                                     );
                                 })
                                 ->suffix(function (Get $get) {
-                                    $discountType = DiscountType::toString($get('discount_type'));
-                                    if (! $discountType) {
+                                    if (! ($discountType = DiscountType::try($get('discount_type'))) ||
+                                        empty($items = $get('items') ?? [])
+                                    ) {
                                         return null;
                                     }
 
-                                    $items = $get('items') ?? [];
-                                    if (empty($items)) {
-                                        return null;
-                                    }
 
-                                    $initialSubtotalsSum = 0.0;
-                                    $sumOfMinimumAllowedPrices = 0.0;
+                                    $initialSubtotalsSum = collect($items)->sum(function ($item) {
+                                        return (float) ($item['line_total'] ?? 0);
+                                    });
 
-                                    foreach ($items as $item) {
-                                        $variant = self::getCachedVariant($item['product_variant_id'] ?? null);
-                                        if (! $variant) {
-                                            continue;
-                                        }
-
-                                        $priceTypeEnum = PriceType::try($item['price_type'] ?? null);
-                                        if (! $priceTypeEnum) {
-                                            continue;
-                                        }
-
-                                        $minPrice = $variant->getMinimumAllowedPrice($priceTypeEnum);
-                                        $unitPrice = (float) ($item['unit_price'] ?? 0);
-                                        $quantity = (float) ($item['quantity'] ?? 1);
-
-                                        // The absolute floor subtotal for this specific item
-                                        $minimumAllowedSubtotal = $minPrice * $quantity;
-                                        $sumOfMinimumAllowedPrices += $minimumAllowedSubtotal;
-
-                                        // Calculate how much discount has ALREADY been applied to this item individually
-                                        $itemDiscountType = DiscountType::toString($item['discount_type'] ?? null);
-                                        $itemDiscountAmount = (float) ($item['unit_discount_amount'] ?? 0);
-                                        $itemDiscountValue = 0.0;
-                                        if ($itemDiscountType && $itemDiscountAmount > 0) {
-                                            $unitDiscountValue = $itemDiscountType === DiscountType::Fixed->value
-                                                ? $itemDiscountAmount
-                                                : $unitPrice * ($itemDiscountAmount / 100);
-                                            $itemDiscountValue = $unitDiscountValue * $quantity;
-                                        }
-
-                                        // The initial subtotal is the item's total cost AFTER its individual discount
-                                        $initialSubtotal = (($unitPrice * $quantity) - $itemDiscountValue);
-                                        $initialSubtotalsSum += $initialSubtotal;
-                                    }
+                                    $sumOfMinimumAllowedPrices = self::getMinimumAllowedBasketTotal($items);
 
                                     if ($initialSubtotalsSum <= 0) {
                                         return null;
@@ -665,7 +622,7 @@ class SaleInvoiceForm
                                     $maxFixedGlobalDiscount = max(0, $initialSubtotalsSum - $sumOfMinimumAllowedPrices);
 
                                     // If UI is in percentage mode, convert the max fixed global discount into a percentage
-                                    if ($discountType === DiscountType::Percentage->value) {
+                                    if ($discountType === DiscountType::Percentage) {
                                         $maxPercentage = ($maxFixedGlobalDiscount / $initialSubtotalsSum) * 100;
 
                                         return __('sale_invoice.max_allowed_discount', ['max' => round($maxPercentage, 2).'%']);
@@ -711,28 +668,14 @@ class SaleInvoiceForm
                                                 ? (float) $value
                                                 : $initialLinesTotalSum * ((float) $value / 100));
 
+                                            $grandTotal = round($initialLinesTotalSum - $globalDiscountAmount, 2);
+
                                             // 3. Basket-level minimum threshold validation
-                                            $sumOfMinimumAllowedPrices = 0.0;
-                                            foreach ($items as $item) {
-                                                $variant = self::getCachedVariant(((int) $item['product_variant_id']) ?? null);
-                                                if (! $variant) {
-                                                    continue;
-                                                }
-
-                                                $priceTypeEnum = PriceType::try($item['price_type'] ?? null);
-                                                if (! $priceTypeEnum) {
-                                                    continue;
-                                                }
-
-                                                $minPrice = $variant->getMinimumAllowedPrice($priceTypeEnum);
-                                                $quantity = (float) ($item['quantity'] ?? 1);
-
-                                                $minimumAllowedSubtotal = $minPrice * $quantity;
-                                                $sumOfMinimumAllowedPrices += $minimumAllowedSubtotal;
-                                            }
+                                            $sumOfMinimumAllowedPrices = self::getMinimumAllowedBasketTotal($items);
 
                                             // Reject if the global discount pushes the grand total below the sum of all absolute minimums
-                                            if (round($initialLinesTotalSum - $globalDiscountAmount, 2) < round($sumOfMinimumAllowedPrices, 2)) {
+
+                                            if ($grandTotal < round($sumOfMinimumAllowedPrices, 2)) {
                                                 $fail(__('sale_invoice.invoice_below_minimum_after_global', [
                                                     'min' => number_format($sumOfMinimumAllowedPrices, 2),
                                                 ]));
@@ -899,6 +842,34 @@ class SaleInvoiceForm
         $set($prefix.'global_discount_amount', round($globalDiscountAmount, 2));
         $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
+    }
+
+    /**
+     * Calculates the absolute minimum allowed total for the entire basket
+     * based on each item's variant minimum price.
+     */
+    protected static function getMinimumAllowedBasketTotal(array $items): float
+    {
+        $sum = 0.0;
+
+        foreach ($items as $item) {
+            $variant = self::getCachedVariant((int) ($item['product_variant_id'] ?? 0));
+            if (! $variant) {
+                continue;
+            }
+
+            $priceTypeEnum = PriceType::try($item['price_type'] ?? null);
+            if (! $priceTypeEnum) {
+                continue;
+            }
+
+            $minPrice = $variant->getMinimumAllowedPrice($priceTypeEnum);
+            $quantity = (float) ($item['quantity'] ?? 1);
+
+            $sum += $minPrice * $quantity;
+        }
+
+        return $sum;
     }
 
     /**
