@@ -250,23 +250,15 @@ class SaleInvoiceForm
                                 ->disableOptionWhen(function (string $value, Get $get) {
                                     if ($value === PriceType::Wholesale->value) {
                                         $variantId = $get('product_variant_id');
-                                        if (! $variantId) {
-                                            return true;
-                                        }
 
-                                        return ! self::getCachedVariant((int) $variantId)?->wholesale_enabled;
+                                        return ! self::getCachedVariant($variantId)?->wholesale_enabled;
                                     }
 
                                     return false;
                                 })
                                 ->live()
-                                ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                    $variantId = $get('product_variant_id');
-                                    if (! $variantId) {
-                                        return;
-                                    }
-                                    $variant = self::getCachedVariant((int) $variantId);
-                                    if (! $variant) {
+                                ->afterStateUpdated(function (Get $get, Set $set, $state, $livewire) {
+                                    if (! $variant = self::getCachedVariant($get('product_variant_id'))) {
                                         return;
                                     }
 
@@ -292,12 +284,9 @@ class SaleInvoiceForm
                                 ->hintIcon(
                                     'heroicon-m-information-circle',
                                     tooltip: function (Get $get) {
-                                        $variantId = $get('product_variant_id');
-                                        if ($variantId) {
-                                            $variant = self::getCachedVariant((int) $variantId);
-                                            if ($variant && $variant->hasWholesaleQtyThreshold()) {
-                                                return __('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]);
-                                            }
+                                        $variant = self::getCachedVariant($get('product_variant_id'));
+                                        if ($variant && $variant->hasWholesaleQtyThreshold()) {
+                                            return __('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]);
                                         }
 
                                         return __('sale_invoice.quantity_tooltip');
@@ -308,12 +297,9 @@ class SaleInvoiceForm
                                     $priceTypeValue = PriceType::toString($priceType);
 
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
-                                        $variantId = $get('product_variant_id');
-                                        if ($variantId) {
-                                            $variant = self::getCachedVariant((int) $variantId);
-                                            if ($variant && $variant->hasWholesaleQtyThreshold()) {
-                                                return __('app.min').': '.(float) $variant->wholesale_qty_threshold;
-                                            }
+                                        $variant = self::getCachedVariant($get('product_variant_id'));
+                                        if ($variant && $variant->hasWholesaleQtyThreshold()) {
+                                            return __('app.min').': '.(float) $variant->wholesale_qty_threshold;
                                         }
                                     }
 
@@ -324,12 +310,9 @@ class SaleInvoiceForm
                                     $priceTypeValue = PriceType::toString($priceType);
 
                                     if ($priceTypeValue === PriceType::Wholesale->value) {
-                                        $variantId = $get('product_variant_id');
-                                        if ($variantId) {
-                                            $variant = self::getCachedVariant((int) $variantId);
-                                            if ($variant && $variant->hasWholesaleQtyThreshold()) {
-                                                return new HtmlString('<span class="text-danger-600 dark:text-danger-400 font-medium">'.__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]).'</span>');
-                                            }
+                                        $variant = self::getCachedVariant($get('product_variant_id'));
+                                        if ($variant && $variant->hasWholesaleQtyThreshold()) {
+                                            return new HtmlString('<span class="text-danger-600 dark:text-danger-400 font-medium">'.__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]).'</span>');
                                         }
                                     }
 
@@ -343,12 +326,9 @@ class SaleInvoiceForm
                                             $priceTypeValue = PriceType::toString($priceType);
 
                                             if ($priceTypeValue === PriceType::Wholesale->value) {
-                                                $variantId = $get('product_variant_id');
-                                                if ($variantId) {
-                                                    $variant = self::getCachedVariant((int) $variantId);
-                                                    if ($variant && $variant->hasWholesaleQtyThreshold() && $value < $variant->wholesale_qty_threshold) {
-                                                        $fail(__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]));
-                                                    }
+                                                $variant = self::getCachedVariant($get('product_variant_id'));
+                                                if ($variant && $variant->hasWholesaleQtyThreshold() && $value < $variant->wholesale_qty_threshold) {
+                                                    $fail(__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]));
                                                 }
                                             }
                                         };
@@ -367,11 +347,7 @@ class SaleInvoiceForm
                                 ->required()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->minValue(function (Get $get) {
-                                    $variantId = $get('product_variant_id');
-                                    if (! $variantId) {
-                                        return 0;
-                                    }
-                                    $variant = self::getCachedVariant((int) $variantId);
+                                    $variant = self::getCachedVariant($get('product_variant_id'));
                                     if (! $variant) {
                                         return 0;
                                     }
@@ -385,11 +361,7 @@ class SaleInvoiceForm
                                 })
                                 ->step(0.01)
                                 ->helperText(function (Get $get) use ($user) {
-                                    $variantId = $get('product_variant_id');
-                                    if (! $variantId) {
-                                        return null;
-                                    }
-                                    $variant = self::getCachedVariant((int) $variantId);
+                                    $variant = self::getCachedVariant($get('product_variant_id'));
                                     if (! $variant) {
                                         return null;
                                     }
@@ -415,11 +387,7 @@ class SaleInvoiceForm
                                 ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.unit_price_tooltip'))
                                 ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                 ->readOnly(function (Get $get) {
-                                    $variantId = $get('product_variant_id');
-                                    if (! $variantId) {
-                                        return true;
-                                    }
-                                    $variant = self::getCachedVariant((int) $variantId);
+                                    $variant = self::getCachedVariant($get('product_variant_id'));
                                     if (! $variant) {
                                         return true;
                                     }
@@ -484,12 +452,7 @@ class SaleInvoiceForm
                                         return null;
                                     }
 
-                                    $variantId = $get('product_variant_id');
-                                    if (! $variantId) {
-                                        return null;
-                                    }
-
-                                    $variant = self::getCachedVariant((int) $variantId);
+                                    $variant = self::getCachedVariant($get('product_variant_id'));
                                     if (! $variant) {
                                         return null;
                                     }
@@ -530,13 +493,12 @@ class SaleInvoiceForm
                                     function (Get $get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
                                             $value = (float) $value;
-                                            $variantId = $get('product_variant_id');
                                             $discountType = DiscountType::toString($get('discount_type'));
-                                            if (! $variantId || ! $discountType || empty($value)) {
+                                            if (! $discountType || empty($value)) {
                                                 return;
                                             }
 
-                                            $variant = self::getCachedVariant((int) $variantId);
+                                            $variant = self::getCachedVariant($get('product_variant_id'));
                                             if (! $variant) {
                                                 return;
                                             }
@@ -661,12 +623,7 @@ class SaleInvoiceForm
                                     $sumOfMinimumAllowedPrices = 0.0;
 
                                     foreach ($items as $item) {
-                                        $variantId = $item['product_variant_id'] ?? null;
-                                        if (! $variantId) {
-                                            continue;
-                                        }
-
-                                        $variant = self::getCachedVariant((int) $variantId);
+                                        $variant = self::getCachedVariant($item['product_variant_id'] ?? null);
                                         if (! $variant) {
                                             continue;
                                         }
@@ -724,14 +681,14 @@ class SaleInvoiceForm
                                 ->rules([
                                     function (Get $get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                            $discountType = DiscountType::toString($get('discount_type'));
+                                            $discountType = DiscountType::try($get('discount_type') ?? null);
                                             $items = $get('items') ?? [];
                                             if (! $discountType || empty($value) || empty($items)) {
                                                 return;
                                             }
 
                                             // 1. Reject percentages over 100%
-                                            if ($discountType === DiscountType::Percentage->value && (float) $value > 100) {
+                                            if ($discountType === DiscountType::Percentage && (float) $value > 100) {
                                                 $fail(__('sale_invoice.percentage_exceeds_100'));
 
                                                 return;
@@ -742,7 +699,7 @@ class SaleInvoiceForm
                                             });
 
                                             // 2. Reject fixed discounts that exceed the total invoice amount
-                                            if ($discountType === DiscountType::Fixed->value &&
+                                            if ($discountType === DiscountType::Fixed &&
                                                 round((float) $value, 2) > round($initialLinesTotalSum, 2)) {
                                                 $fail(__('sale_invoice.grand_total_discount_exceeds_total'));
 
@@ -750,7 +707,7 @@ class SaleInvoiceForm
                                             }
 
                                             // Determine the global discount monetary amount
-                                            $globalDiscountAmount = ($discountType === DiscountType::Fixed->value
+                                            $globalDiscountAmount = ($discountType === DiscountType::Fixed
                                                 ? (float) $value
                                                 : $initialLinesTotalSum * ((float) $value / 100));
 
@@ -819,15 +776,10 @@ class SaleInvoiceForm
 
     private static function isDiscountDisabled(Get $get): bool
     {
-        $variantId = $get('product_variant_id');
         $priceTypeEnum = PriceType::try($get('price_type') ?? null);
+        $variant = self::getCachedVariant($get('product_variant_id'));
 
-        if (! $variantId || ! $priceTypeEnum) {
-            return false;
-        }
-
-        $variant = self::getCachedVariant((int) $variantId);
-        if (! $variant) {
+        if (! $variant || ! $priceTypeEnum) {
             return false;
         }
 
@@ -849,16 +801,13 @@ class SaleInvoiceForm
      */
     private static function recalculateLine(Get $get, Set $set): void
     {
-        $variantId = $get('product_variant_id');
         $priceTypeEnum = PriceType::try($get('price_type') ?? null);
+        $variant = self::getCachedVariant($get('product_variant_id'));
 
         $isNegotiable = true;
-        if ($variantId && $priceTypeEnum) {
-            $variant = self::getCachedVariant((int) $variantId);
-            if ($variant) {
-                // Determine negotiability based on the selected price type (wholesale vs retail)
-                $isNegotiable = $variant->isPriceNegotiable($priceTypeEnum);
-            }
+        if ($variant && $priceTypeEnum) {
+            // Determine negotiability based on the selected price type (wholesale vs retail)
+            $isNegotiable = $variant->isPriceNegotiable($priceTypeEnum);
         }
 
         // If the item is strictly non-negotiable, wipe out any applied discounts immediately.

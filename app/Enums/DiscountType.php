@@ -2,7 +2,6 @@
 
 namespace App\Enums;
 
-use App\Models\Concerns\BelongsToCompany;
 use Filament\Support\Contracts\HasLabel;
 
 enum DiscountType: string implements HasLabel
@@ -23,10 +22,10 @@ enum DiscountType: string implements HasLabel
         return $value instanceof self ? $value->value : $value;
     }
 
-//    public static function toString(self|string|null $value): ?string
-//    {
-//        return $value instanceof self ? $value->value : $value;
-//    }
+    //    public static function toString(self|string|null $value): ?string
+    //    {
+    //        return $value instanceof self ? $value->value : $value;
+    //    }
 
     public static function try(self|string|null $value): ?self
     {
@@ -34,6 +33,6 @@ enum DiscountType: string implements HasLabel
             return null;
         }
 
-        return $value instanceof self ? $value: self::tryFrom($value);
+        return $value instanceof self ? $value : self::tryFrom($value);
     }
 }
