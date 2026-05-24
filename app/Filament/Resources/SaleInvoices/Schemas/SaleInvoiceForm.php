@@ -185,7 +185,7 @@ class SaleInvoiceForm
                             ];
 
                             $set('items', $items);
-                            self::calcTotalAmount($get, $set);
+                            self::recalculateTotalAmount($get, $set);
 
                             Notification::make()
                                 ->title(__('sale_invoice.item_added'))
@@ -278,7 +278,7 @@ class SaleInvoiceForm
                                         $set('unit_price', (float) $variant->retail_price);
                                     }
                                     self::recalculateLine($get, $set);
-                                    self::calcTotalAmount($get, $set, '../../');
+                                    self::recalculateTotalAmount($get, $set, '../../');
                                 })
                                 ->columnSpan(2),
 
@@ -357,7 +357,7 @@ class SaleInvoiceForm
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
-                                    self::calcTotalAmount($get, $set, '../../');
+                                    self::recalculateTotalAmount($get, $set, '../../');
                                 })
                                 ->columnSpan(3),
 
@@ -444,7 +444,7 @@ class SaleInvoiceForm
                                 ->live(debounce: '500ms')
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
-                                    self::calcTotalAmount($get, $set, '../../');
+                                    self::recalculateTotalAmount($get, $set, '../../');
                                 })
                                 ->columnSpan(2),
 
@@ -465,7 +465,7 @@ class SaleInvoiceForm
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
-                                    self::calcTotalAmount($get, $set, '../../');
+                                    self::recalculateTotalAmount($get, $set, '../../');
                                 })
                                 ->columnSpan(3),
 
@@ -488,7 +488,7 @@ class SaleInvoiceForm
                                 ->live(debounce: '500ms')
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
-                                    self::calcTotalAmount($get, $set, '../../');
+                                    self::recalculateTotalAmount($get, $set, '../../');
                                 })
                                 ->rules([
                                     function (Get $get) {
@@ -561,7 +561,7 @@ class SaleInvoiceForm
                         ->cloneable(false)
                         ->defaultItems(0)
                         ->deleteAction(
-                            fn ($action) => $action->after(fn (Get $get, Set $set) => self::calcTotalAmount($get, $set))
+                            fn ($action) => $action->after(fn (Get $get, Set $set) => self::recalculateTotalAmount($get, $set))
                         ),
 
                     Section::make(__('sale_invoice.invoice_discount'))
@@ -572,7 +572,7 @@ class SaleInvoiceForm
                                 ->options(DiscountType::class)
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set) {
-                                    static::calcTotalAmount($get, $set);
+                                    static::recalculateTotalAmount($get, $set);
                                 }),
                             TextInput::make('discount_amount')
                                 ->label(__('sale_invoice.discount_amount'))
@@ -590,7 +590,7 @@ class SaleInvoiceForm
                                 })
                                 ->live(debounce: '500ms')
                                 ->afterStateUpdated(function (Get $get, Set $set) {
-                                    static::calcTotalAmount($get, $set);
+                                    static::recalculateTotalAmount($get, $set);
                                 })
                                 ->rules([
                                     function (Get $get) {
@@ -697,7 +697,7 @@ class SaleInvoiceForm
                             ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
                             ->prefix($user->company->currency_symbol ?? 'ج.م')
                             ->afterStateHydrated(function (Get $get, Set $set) {
-                                static::calcTotalAmount($get, $set);
+                                static::recalculateTotalAmount($get, $set);
                             }),
                     ]),
                 ]),
@@ -769,7 +769,7 @@ class SaleInvoiceForm
         $set('line_total', $lineTotal);
     }
 
-    private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
+    private static function recalculateTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
         $initialSubtotalsSum = collect($items)->sum(function ($item) {
