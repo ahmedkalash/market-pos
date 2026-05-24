@@ -103,4 +103,7 @@ return [
     'grand_total_discount' => 'Grand Total Discount',
     'percentage_exceeds_100' => 'Percentage discount cannot exceed 100%.',
     'discount_exceeds_unit_price' => 'Fixed discount cannot exceed the unit price (:max).',
+    'max_allowed_discount' => 'Max: :max',
+    'grand_total_discount_exceeds_total' => 'Grand total discount cannot exceed the total invoice amount.',
+    'invoice_below_minimum_after_global' => 'The global discount reduces the invoice total below the minimum allowed threshold (:min).',
 ];

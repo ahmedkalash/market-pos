@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use App\Models\Concerns\BelongsToCompany;
 use Filament\Support\Contracts\HasLabel;
 
 enum DiscountType: string implements HasLabel
@@ -17,8 +18,22 @@ enum DiscountType: string implements HasLabel
         };
     }
 
-    public static function parseValue(self|string|null $value): ?string
+    public static function toString(self|string|null $value): ?string
     {
         return $value instanceof self ? $value->value : $value;
+    }
+
+//    public static function toString(self|string|null $value): ?string
+//    {
+//        return $value instanceof self ? $value->value : $value;
+//    }
+
+    public static function try(self|string|null $value): ?self
+    {
+        if (is_null($value)) {
+            return null;
+        }
+
+        return $value instanceof self ? $value: self::tryFrom($value);
     }
 }

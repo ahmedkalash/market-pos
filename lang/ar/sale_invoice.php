@@ -103,4 +103,7 @@ return [
     'grand_total_discount' => 'الخصم الإجمالي النهائي',
     'percentage_exceeds_100' => 'نسبة الخصم لا يمكن أن تتجاوز 100%.',
     'discount_exceeds_unit_price' => 'الخصم الثابت لا يمكن أن يتجاوز سعر الوحدة (:max).',
+    'max_allowed_discount' => 'الحد الأقصى: :max',
+    'grand_total_discount_exceeds_total' => 'إجمالي الخصم لا يمكن أن يتجاوز إجمالي مبلغ الفاتورة.',
+    'invoice_below_minimum_after_global' => 'الخصم الإجمالي يخفض إجمالي الفاتورة عن الحد الأدنى المسموح به (:min).',
 ];

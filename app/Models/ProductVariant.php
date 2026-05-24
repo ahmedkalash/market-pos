@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PriceType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -107,5 +108,39 @@ class ProductVariant extends Model
     public function hasWholesaleQtyThreshold(): bool
     {
         return $this->wholesale_enabled && $this->wholesale_qty_threshold > 0;
+    }
+
+    /**
+     * Determine if the price is negotiable based on the selected price type.
+     */
+    public function isPriceNegotiable(PriceType $priceType): bool
+    {
+        return $priceType == PriceType::Wholesale
+            ? $this->wholesale_is_price_negotiable
+            : $this->retail_is_price_negotiable;
+    }
+
+    /**
+     * Get the base (default) price for the selected price type.
+     */
+    public function getBasePrice(PriceType $priceType): float
+    {
+        return (float) ($priceType == PriceType::Wholesale
+            ? $this->wholesale_price
+            : $this->retail_price);
+    }
+
+    /**
+     * Get the absolute minimum allowed price based on the selected price type.
+     */
+    public function getMinimumAllowedPrice(PriceType $priceType): float
+    {
+        if (! $this->isPriceNegotiable($priceType)) {
+            return $this->getBasePrice($priceType);
+        }
+
+        return (float) ($priceType == PriceType::Wholesale
+            ? $this->min_wholesale_price
+            : $this->min_retail_price);
     }
 }
