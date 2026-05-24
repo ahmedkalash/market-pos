@@ -43,8 +43,8 @@ class SaleInvoiceItem extends Model
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
-            'discount_amount' => 'decimal:4',
-            'discount_value' => 'decimal:2',
+            'unit_discount_amount' => 'decimal:4',
+            'line_total_discount' => 'decimal:2',
         ];
     }
 

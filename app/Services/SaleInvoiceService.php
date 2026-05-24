@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
+use App\Enums\DiscountType;
 use App\Enums\MovementType;
+use App\Enums\PriceType;
 use App\Enums\SaleInvoiceStatus;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -43,34 +46,134 @@ class SaleInvoiceService
     {
         $invoice->load('items.variant.product.taxClass');
 
-        $totalBeforeTax = 0;
-        $totalTaxAmount = 0;
+        $invoiceMinimumAcceptableTotal = 0.0;
+        $initialSubtotalsSum = 0.0;
+        $itemCalculations = [];
 
+        // Pass 1: Line Item Calculation & Minimums
         foreach ($invoice->items as $item) {
+            $variant = $item->variant;
             $quantity = (float) $item->quantity;
             $unitPrice = (float) $item->unit_price;
-            // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
-            $taxRate = 0.0;
 
-            $subtotal = round($quantity * $unitPrice, 2);
-            $taxAmount = round($subtotal * $taxRate / 100, 2);
-            $lineTotal = round($subtotal + $taxAmount, 2);
+            // Determine negotiability and minimum price based on PriceType
+            $isNegotiable = false;
+            $minPrice = 0.0;
+
+            if ($item->price_type === PriceType::Retail) {
+                $isNegotiable = (bool) $variant->retail_is_price_negotiable;
+                $minPrice = (float) $variant->min_retail_price;
+            } else {
+                $isNegotiable = (bool) $variant->wholesale_is_price_negotiable;
+                $minPrice = (float) $variant->min_wholesale_price;
+            }
+
+            // Calculate Item Discount
+            $discountValue = 0.0;
+            $unitDiscountValue = 0.0;
+
+            if ($item->discount_type && $item->unit_discount_amount > 0) {
+                if (! $isNegotiable) {
+                    throw new \RuntimeException(__('sale_invoice.item_not_negotiable', ['item' => $variant->name]));
+                }
+
+                $discountAmount = (float) $item->unit_discount_amount;
+                $unitDiscountValue = $item->discount_type === DiscountType::Fixed
+                    ? $discountAmount
+                    : $unitPrice * ($discountAmount / 100);
+
+                $discountValue = $unitDiscountValue * $quantity;
+            }
+
+            $unitPriceAfterItemDiscount = $item->discount_type && $item->unit_discount_amount > 0
+                ? $unitPrice - $unitDiscountValue
+                : $unitPrice;
+
+            $itemSubtotalBeforeDiscount = $unitPrice * $quantity;
+            $discountValue = min($discountValue, $itemSubtotalBeforeDiscount);
+            $itemSubtotalAfterItemDiscount = $itemSubtotalBeforeDiscount - $discountValue;
+
+            if ($item->discount_type && $item->unit_discount_amount > 0 && round($unitPriceAfterItemDiscount, 2) < round($minPrice, 2)) {
+                throw new \RuntimeException(__('sale_invoice.item_below_minimum', ['item' => $variant->name, 'min' => $minPrice]));
+            }
+
+            // The absolute minimum allowed subtotal for this item (to be respected by invoice-level discount too)
+            $minimumAllowedSubtotal = $isNegotiable ? ($minPrice * $quantity) : ($unitPrice * $quantity);
+            $invoiceMinimumAcceptableTotal += $minimumAllowedSubtotal;
+
+            $initialSubtotalsSum += $itemSubtotalAfterItemDiscount;
+
+            // Temporarily store these in an array for Pass 2
+            $itemCalculations[$item->id] = [
+                'pure_subtotal' => $itemSubtotalBeforeDiscount,
+                'initial_subtotal' => $itemSubtotalAfterItemDiscount,
+                'minimum_allowed_subtotal' => $minimumAllowedSubtotal,
+                'calculated_discount_value' => $discountValue,
+            ];
+        }
+
+        // Pass 2: Invoice Level Distribution
+        $totalInvoiceDiscount = 0.0;
+        if ($invoice->discount_type && $invoice->discount_amount > 0) {
+            $discountAmount = (float) $invoice->discount_amount;
+            if ($invoice->discount_type === DiscountType::Fixed) {
+                $totalInvoiceDiscount = min($discountAmount, $initialSubtotalsSum);
+            } else {
+                $discountAmount = min($discountAmount, 100);
+                $totalInvoiceDiscount = $initialSubtotalsSum * ($discountAmount / 100);
+            }
+        }
+
+        $totalBeforeTax = 0.0;
+        $totalTaxAmount = 0.0;
+        $totalItemsDiscount = 0.0;
+
+        foreach ($invoice->items as $item) {
+            $calculations = $itemCalculations[$item->id] ?? [
+                'initial_subtotal' => 0,
+                'minimum_allowed_subtotal' => 0,
+                'calculated_discount_value' => 0,
+            ];
+            $initialSubtotal = (float) $calculations['initial_subtotal'];
+
+            // Distribute the invoice discount proportionally
+            $distributedInvoiceDiscount = 0.0;
+            if ($initialSubtotalsSum > 0 && $totalInvoiceDiscount > 0) {
+                $distributedInvoiceDiscount = ($initialSubtotal / $initialSubtotalsSum) * $totalInvoiceDiscount;
+            }
+
+            $finalSubtotal = $initialSubtotal - $distributedInvoiceDiscount;
+
+            if (round($finalSubtotal, 2) < round((float) $calculations['minimum_allowed_subtotal'], 2)) {
+                $variantName = $item->variant->name ?? 'Unknown';
+                throw new \RuntimeException(__('sale_invoice.invoice_discount_breaches_minimum', ['item' => $variantName]));
+            }
+
+            $taxRate = 0.0; // TAX FEATURE POSTPONED
+            $taxAmount = round($finalSubtotal * $taxRate / 100, 2);
+            $lineTotal = round($finalSubtotal + $taxAmount, 2);
 
             $item->update([
-                'subtotal' => $subtotal,
+                'line_total_discount' => round($calculations['calculated_discount_value'], 2),
+                'subtotal' => round($calculations['pure_subtotal'] ?? 0, 2),
                 'tax_rate' => $taxRate,
                 'tax_amount' => $taxAmount,
                 'line_total' => $lineTotal,
             ]);
 
-            $totalBeforeTax += $subtotal;
+            $totalBeforeTax += $finalSubtotal;
             $totalTaxAmount += $taxAmount;
+            $totalItemsDiscount += $calculations['calculated_discount_value'];
         }
 
+        $grandTotalDiscount = $totalItemsDiscount + $totalInvoiceDiscount;
+
         $invoice->update([
+            'global_discount_amount' => round($totalInvoiceDiscount, 2),
+            'grand_total_discount' => round($grandTotalDiscount, 2),
             'total_before_tax' => round($totalBeforeTax, 2),
             'total_tax_amount' => round($totalTaxAmount, 2),
-            'total_amount' => round($totalBeforeTax + $totalTaxAmount, 2),
+            'total_amount' => round(max(0, $totalBeforeTax + $totalTaxAmount), 2),
         ]);
     }
 
@@ -125,7 +228,7 @@ class SaleInvoiceService
             $invoice->update([
                 'status' => SaleInvoiceStatus::Finalized,
                 'finalized_at' => now(),
-                'finalized_by' => auth()->id(),
+                'finalized_by' => Auth::id(),
             ]);
         });
     }

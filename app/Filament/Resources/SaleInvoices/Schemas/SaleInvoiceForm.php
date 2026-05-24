@@ -185,7 +185,7 @@ class SaleInvoiceForm
                             ];
 
                             $set('items', $items);
-                            self::recalculateTotalAmount($get, $set);
+                            self::recalculateTotals($get, $set);
 
                             Notification::make()
                                 ->title(__('sale_invoice.item_added'))
@@ -278,7 +278,7 @@ class SaleInvoiceForm
                                         $set('unit_price', (float) $variant->retail_price);
                                     }
                                     self::recalculateLine($get, $set);
-                                    self::recalculateTotalAmount($get, $set, '../../');
+                                    self::recalculateTotals($get, $set, '../../');
                                 })
                                 ->columnSpan(2),
 
@@ -357,7 +357,7 @@ class SaleInvoiceForm
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
-                                    self::recalculateTotalAmount($get, $set, '../../');
+                                    self::recalculateTotals($get, $set, '../../');
                                 })
                                 ->columnSpan(3),
 
@@ -444,7 +444,7 @@ class SaleInvoiceForm
                                 ->live(debounce: '500ms')
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
-                                    self::recalculateTotalAmount($get, $set, '../../');
+                                    self::recalculateTotals($get, $set, '../../');
                                 })
                                 ->columnSpan(2),
 
@@ -463,9 +463,12 @@ class SaleInvoiceForm
                                 ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.discount_type_helper_text'))
                                 ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
                                 ->live()
-                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
                                     self::recalculateLine($get, $set);
-                                    self::recalculateTotalAmount($get, $set, '../../');
+                                    self::recalculateTotals($get, $set, '../../');
+
+                                    $unitDiscountAmountPath = str_replace($component->getName(), 'unit_discount_amount', $component->getStatePath());
+                                    $livewire->validateOnly($unitDiscountAmountPath);
                                 })
                                 ->columnSpan(3),
 
@@ -486,18 +489,17 @@ class SaleInvoiceForm
                                     );
                                 })
                                 ->live(debounce: '500ms')
-                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
                                     self::recalculateLine($get, $set);
-                                    self::recalculateTotalAmount($get, $set, '../../');
+                                    self::recalculateTotals($get, $set, '../../');
+                                    $livewire->validateOnly($component->getStatePath());
                                 })
                                 ->rules([
                                     function (Get $get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
                                             $value = (float) $value;
                                             $variantId = $get('product_variant_id');
-                                            $discountType = $get('discount_type');
-                                            $discountType = DiscountType::parseValue($discountType);
-                                            $priceType = $get('price_type');
+                                            $discountType = DiscountType::parseValue($get('discount_type'));
                                             if (! $variantId || ! $discountType || empty($value)) {
                                                 return;
                                             }
@@ -507,7 +509,7 @@ class SaleInvoiceForm
                                                 return;
                                             }
 
-                                            $priceTypeValue = PriceType::parseValue($priceType);
+                                            $priceTypeValue = PriceType::parseValue($get('price_type'));
                                             $isNegotiable = ($priceTypeValue == PriceType::Wholesale->value ? $variant->wholesale_is_price_negotiable : $variant->retail_is_price_negotiable);
                                             $minPrice = (float) ($priceTypeValue == PriceType::Wholesale->value ? $variant->min_wholesale_price : $variant->min_retail_price);
 
@@ -517,11 +519,23 @@ class SaleInvoiceForm
                                                 return;
                                             }
 
+                                            if ($discountType === DiscountType::Percentage->value && $value > 100) {
+                                                $fail(__('sale_invoice.percentage_exceeds_100'));
+
+                                                return;
+                                            }
+
                                             $unitPrice = (float) ($get('unit_price') ?? 0);
 
-                                            $unitPriceAfterItemDiscount = $discountType === DiscountType::Fixed->value
+                                            if ($discountType === DiscountType::Fixed->value && round($value, 2) > round($unitPrice, 2)) {
+                                                $fail(__('sale_invoice.discount_exceeds_unit_price', ['max' => $unitPrice]));
+
+                                                return;
+                                            }
+
+                                            $unitPriceAfterItemDiscount = ($discountType == DiscountType::Fixed->value
                                                 ? $unitPrice - $value
-                                                : $unitPrice - ($unitPrice * ($value / 100));
+                                                : $unitPrice - ($unitPrice * ($value / 100)));
 
                                             if (round($unitPriceAfterItemDiscount, 2) < round($minPrice, 2)) {
                                                 $fail(__('sale_invoice.item_below_minimum', ['item' => $variant->name ?? '', 'min' => $minPrice]));
@@ -545,6 +559,7 @@ class SaleInvoiceForm
                                 ->label(__('sale_invoice.final_line_total'))
                                 ->numeric()
                                 ->readOnly()
+                                ->minValue(0)
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->helperText(__('sale_invoice.final_line_total_helper_text'))
                                 ->columnSpan(4),
@@ -561,7 +576,7 @@ class SaleInvoiceForm
                         ->cloneable(false)
                         ->defaultItems(0)
                         ->deleteAction(
-                            fn ($action) => $action->after(fn (Get $get, Set $set) => self::recalculateTotalAmount($get, $set))
+                            fn ($action) => $action->after(fn (Get $get, Set $set) => self::recalculateTotals($get, $set))
                         ),
 
                     Section::make(__('sale_invoice.invoice_discount'))
@@ -571,8 +586,11 @@ class SaleInvoiceForm
                                 ->label(__('sale_invoice.discount_type'))
                                 ->options(DiscountType::class)
                                 ->live()
-                                ->afterStateUpdated(function (Get $get, Set $set) {
-                                    static::recalculateTotalAmount($get, $set);
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
+                                    static::recalculateTotals($get, $set);
+
+                                    $discountAmountPath = str_replace($component->getName(), 'discount_amount', $component->getStatePath());
+                                    $livewire->validateOnly($discountAmountPath);
                                 }),
                             TextInput::make('discount_amount')
                                 ->label(__('sale_invoice.discount_amount'))
@@ -589,8 +607,9 @@ class SaleInvoiceForm
                                     );
                                 })
                                 ->live(debounce: '500ms')
-                                ->afterStateUpdated(function (Get $get, Set $set) {
-                                    static::recalculateTotalAmount($get, $set);
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
+                                    static::recalculateTotals($get, $set);
+                                    $livewire->validateOnly($component->getStatePath());
                                 })
                                 ->rules([
                                     function (Get $get) {
@@ -599,6 +618,12 @@ class SaleInvoiceForm
                                             $discountType = DiscountType::parseValue($discountType);
                                             $items = $get('items') ?? [];
                                             if (! $discountType || empty($value) || empty($items)) {
+                                                return;
+                                            }
+
+                                            if ($discountType === DiscountType::Percentage->value && (float) $value > 100) {
+                                                $fail(__('sale_invoice.percentage_exceeds_100'));
+
                                                 return;
                                             }
 
@@ -620,7 +645,7 @@ class SaleInvoiceForm
 
                                             $discountAmount = (float) $value;
                                             $totalInvoiceDiscount = $discountType == DiscountType::Fixed->value
-                                                ? $discountAmount
+                                                ? min($discountAmount, $initialSubtotalsSum)
                                                 : $initialSubtotalsSum * ($discountAmount / 100);
 
                                             foreach ($items as $item) {
@@ -677,7 +702,8 @@ class SaleInvoiceForm
                                 ->dehydrated()
                                 ->numeric()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م'),
-                        ])->columns(3)
+                        ])
+                        ->columns(3)
                         ->compact(),
 
                     Grid::make(2)->schema([
@@ -697,7 +723,7 @@ class SaleInvoiceForm
                             ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
                             ->prefix($user->company->currency_symbol ?? 'ج.م')
                             ->afterStateHydrated(function (Get $get, Set $set) {
-                                static::recalculateTotalAmount($get, $set);
+                                static::recalculateTotals($get, $set);
                             }),
                     ]),
                 ]),
@@ -750,50 +776,50 @@ class SaleInvoiceForm
         $unitPrice = (float) ($get('unit_price') ?? 0);
         $discountType = DiscountType::parseValue($get('discount_type'));
 
-        $discountAmount = (float) ($get('unit_discount_amount') ?? 0);
+        $unitDiscountAmount = (float) ($get('unit_discount_amount') ?? 0);
 
-        $discountValue = 0.0;
+        $lineTotalDiscount = 0.0;
         if ($discountType == DiscountType::Fixed->value) {
-            $discountValue = $discountAmount * $quantity;
+            $lineTotalDiscount = $unitDiscountAmount * $quantity;
         } elseif ($discountType == DiscountType::Percentage->value) {
-            $discountValue = ($unitPrice * $quantity) * ($discountAmount / 100);
+            $lineTotalDiscount = ($unitPrice * $quantity) * ($unitDiscountAmount / 100);
         }
 
         $subtotalBeforeDiscount = $unitPrice * $quantity;
-        $subtotalAfterDiscount = $subtotalBeforeDiscount - $discountValue;
-
-        $lineTotal = round($subtotalAfterDiscount, 2);
+        $lineTotalDiscount = min($lineTotalDiscount, $subtotalBeforeDiscount);
+        $subtotalAfterDiscount = $subtotalBeforeDiscount - $lineTotalDiscount;
 
         $set('subtotal', round($subtotalBeforeDiscount, 2));
-        $set('line_total_discount', round($discountValue, 2));
-        $set('line_total', $lineTotal);
+        $set('line_total_discount', round($lineTotalDiscount, 2));
+        $set('line_total', round($subtotalAfterDiscount, 2));
     }
 
-    private static function recalculateTotalAmount(Get $get, Set $set, string $prefix = ''): void
+    private static function recalculateTotals(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
-        $initialSubtotalsSum = collect($items)->sum(function ($item) {
+        $initialLinesTotalSum = collect($items)->sum(function ($item) {
             return (float) ($item['line_total'] ?? 0);
         });
 
         $invoiceDiscountType = DiscountType::parseValue($get($prefix.'discount_type'));
         $invoiceDiscountAmount = (float) ($get($prefix.'discount_amount') ?? 0);
 
-        $totalInvoiceDiscount = 0.0;
+        $globalDiscountAmount = 0.0;
         if ($invoiceDiscountType == DiscountType::Fixed->value) {
-            $totalInvoiceDiscount = $invoiceDiscountAmount;
+            $globalDiscountAmount = min($invoiceDiscountAmount, $initialLinesTotalSum);
         } elseif ($invoiceDiscountType == DiscountType::Percentage->value) {
-            $totalInvoiceDiscount = $initialSubtotalsSum * ($invoiceDiscountAmount / 100);
+            $invoiceDiscountAmount = min($invoiceDiscountAmount, 100);
+            $globalDiscountAmount = $initialLinesTotalSum * ($invoiceDiscountAmount / 100);
         }
 
         $itemDiscountsSum = collect($items)->sum(function ($item) {
             return (float) ($item['line_total_discount'] ?? 0);
         });
 
-        $grandTotalDiscount = $itemDiscountsSum + $totalInvoiceDiscount;
-        $totalAmount = $initialSubtotalsSum - $totalInvoiceDiscount;
+        $totalAmount = $initialLinesTotalSum - $globalDiscountAmount;
+        $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;
 
-        $set($prefix.'global_discount_amount', round($totalInvoiceDiscount, 2));
+        $set($prefix.'global_discount_amount', round($globalDiscountAmount, 2));
         $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
     }

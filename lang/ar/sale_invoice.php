@@ -101,4 +101,6 @@ return [
     'invoice_discount_breaches_minimum' => 'خصم الفاتورة يخفض سعر الصنف :item عن الحد الأدنى المسموح به.',
     'invoice_discount' => 'تطبيق خصم علي مستوي الفاتورة ككل',
     'grand_total_discount' => 'الخصم الإجمالي النهائي',
+    'percentage_exceeds_100' => 'نسبة الخصم لا يمكن أن تتجاوز 100%.',
+    'discount_exceeds_unit_price' => 'الخصم الثابت لا يمكن أن يتجاوز سعر الوحدة (:max).',
 ];

@@ -101,4 +101,6 @@ return [
     'invoice_discount_breaches_minimum' => 'Invoice discount pushes item :item below its minimum allowed price.',
     'invoice_discount' => 'Global Invoice Discount',
     'grand_total_discount' => 'Grand Total Discount',
+    'percentage_exceeds_100' => 'Percentage discount cannot exceed 100%.',
+    'discount_exceeds_unit_price' => 'Fixed discount cannot exceed the unit price (:max).',
 ];
