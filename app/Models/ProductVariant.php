@@ -143,4 +143,9 @@ class ProductVariant extends Model
             ? $this->min_wholesale_price
             : $this->min_retail_price);
     }
+
+    public function name()
+    {
+        return $this->{'name_'.app()->getLocale()};
+    }
 }

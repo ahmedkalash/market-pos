@@ -119,16 +119,16 @@ class SaleInvoiceDiscountTest extends TestCase
 
     public function test_it_can_apply_global_invoice_discount()
     {
-        Livewire::actingAs($this->user)
+        $res = Livewire::actingAs($this->user)
             ->test(CreateSaleInvoice::class)
             ->fillForm([
                 'store_id' => $this->store->id,
                 'payment_method' => 'cash',
                 'discount_type' => DiscountType::Fixed->value,
-                'discount_amount' => 15.00,
                 'subtotal_amount' => 100.00,
                 'total_amount' => 85.00,
             ])
+            ->set('data.discount_amount', 15.00)
             ->set('data.items', [
                 [
                     'product_variant_id' => $this->variant->id,
@@ -140,8 +140,8 @@ class SaleInvoiceDiscountTest extends TestCase
                     'line_total' => 100.00,
                 ],
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->call('create');
+        $res->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('sale_invoices', [
             'global_discount_amount' => 15.00,
@@ -158,10 +158,10 @@ class SaleInvoiceDiscountTest extends TestCase
                 'store_id' => $this->store->id,
                 'payment_method' => 'cash',
                 'discount_type' => DiscountType::Fixed->value,
-                'discount_amount' => 25.00, // Total minimum basket is 80, current basket is 100. Max discount is 20.
                 'subtotal_amount' => 100.00,
                 'total_amount' => 75.00,
             ])
+            ->set('data.discount_amount', 25.00)
             ->set('data.items', [
                 [
                     'product_variant_id' => $this->variant->id,

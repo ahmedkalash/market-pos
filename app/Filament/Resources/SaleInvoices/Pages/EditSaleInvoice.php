@@ -8,6 +8,7 @@ use App\Services\SaleInvoiceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\DB;
 
 class EditSaleInvoice extends EditRecord
 {
@@ -39,7 +40,7 @@ class EditSaleInvoice extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
     /**
@@ -65,6 +66,7 @@ class EditSaleInvoice extends EditRecord
         try {
             SaleInvoiceService::make()->recalculateTotals($invoice);
         } catch (\Throwable $e) {
+            DB::rollBack();
             Notification::make()
                 ->title(__('sale_invoice.recalculate_failed'))
                 ->body($e->getMessage())
@@ -80,6 +82,7 @@ class EditSaleInvoice extends EditRecord
             try {
                 SaleInvoiceService::make()->finalize($invoice);
             } catch (\Throwable $e) {
+                DB::rollBack();
                 Notification::make()
                     ->title(__('sale_invoice.finalize_failed'))
                     ->body($e->getMessage())

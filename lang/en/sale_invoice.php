@@ -57,6 +57,7 @@ return [
     'finalize_confirmation' => 'Are you sure? Once finalized, stock will be deducted and this cannot be undone.',
     'finalized_success' => 'Sale invoice finalized successfully.',
     'recalculate_failed' => 'Failed to calculate invoice totals. Please check the items and try again.',
+    'draft_prices_warning' => 'Note: Product prices may have changed since this draft was created. To fetch the latest prices, please save the invoice as a draft before finalizing.',
 
     // Filters
     'amount_min' => 'Min Amount',

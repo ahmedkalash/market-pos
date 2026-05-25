@@ -15,6 +15,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -37,6 +38,12 @@ class SaleInvoiceForm
             Section::make(__('sale_invoice.sale_invoice'))
                 ->icon('heroicon-o-document-arrow-up')
                 ->schema([
+                    TextEntry::make('draft_warning')
+                        ->hiddenLabel()
+                        ->state(new HtmlString('<div class="text-warning-600 bg-warning-50 p-3 rounded-lg dark:text-warning-400 dark:bg-warning-400/10 text-sm font-medium">'.__('sale_invoice.draft_prices_warning').'</div>'))
+                        ->hidden(fn (?Model $record, string $operation) => $operation === 'create' || $record?->isFinalized())
+                        ->columnSpanFull(),
+
                     Select::make('store_id')
                         ->label(__('sale_invoice.store'))
                         ->options(fn (): array => Store::query()
@@ -409,6 +416,7 @@ class SaleInvoiceForm
                                 ->options(DiscountType::class)
                                 ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.discount_type_helper_text'))
                                 ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
+                                ->dehydrated()
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
                                     self::recalculateLine($get, $set);
@@ -427,6 +435,7 @@ class SaleInvoiceForm
                                 ->required(fn (Get $get) => filled($get('discount_type')))
                                 ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.unit_discount_helper_text'))
                                 ->disabled(fn (Get $get) => self::isDiscountDisabled($get) || blank($get('discount_type')))
+                                ->dehydrated()
                                 ->prefix(function (TextInput $component) use ($user) {
                                     $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
                                     $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
@@ -492,7 +501,7 @@ class SaleInvoiceForm
 
                                             // 1. Reject any discount if the item is flagged as non-negotiable
                                             if (! $variant->isPriceNegotiable($priceTypeEnum)) {
-                                                $fail(__('sale_invoice.item_not_negotiable', ['item' => $variant->name ?? '']));
+                                                $fail(__('sale_invoice.item_not_negotiable', ['item' => $variant->name() ?? '']));
 
                                                 return;
                                             }
@@ -522,7 +531,7 @@ class SaleInvoiceForm
 
                                             // 4. Reject if the post-discount price falls below the item's minimum threshold
                                             if (round($unitPriceAfterItemDiscount, 2) < round($minPrice, 2)) {
-                                                $fail(__('sale_invoice.item_below_minimum', ['item' => $variant->name ?? '', 'min' => $minPrice]));
+                                                $fail(__('sale_invoice.item_below_minimum', ['item' => $variant->name() ?? '', 'min' => $minPrice]));
                                             }
                                         };
                                     },
@@ -536,7 +545,8 @@ class SaleInvoiceForm
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.line_total_discount_helper_text'))
                                 ->columnSpan(3)
-                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get)),
+                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
+                                ->dehydrated(),
 
                             TextInput::make('line_total')
                                 ->label(__('sale_invoice.final_line_total'))
@@ -582,6 +592,7 @@ class SaleInvoiceForm
                                 ->step(0.01)
                                 ->required(fn (Get $get) => filled($get('discount_type')))
                                 ->disabled(fn (Get $get) => blank($get('discount_type')))
+                                ->dehydrated()
                                 ->prefix(function (TextInput $component) use ($user) {
                                     $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
                                     $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
@@ -757,8 +768,10 @@ class SaleInvoiceForm
             $isNegotiable = $variant->isPriceNegotiable($priceTypeEnum);
         }
 
-        // If the item is strictly non-negotiable, wipe out any applied discounts immediately.
-        if (! $isNegotiable) {
+        $discountType = DiscountType::toString($get('discount_type'));
+
+        // If the item is strictly non-negotiable or the discount type is cleared, wipe out any applied discounts immediately.
+        if (! $isNegotiable || blank($discountType)) {
             $set('discount_type', null);
             $set('unit_discount_amount', null);
             $set('line_total_discount', null);
@@ -767,7 +780,6 @@ class SaleInvoiceForm
         // Retrieve raw input values
         $quantity = (float) ($get('quantity') ?? 0);
         $unitPrice = (float) ($get('unit_price') ?? 0);
-        $discountType = DiscountType::toString($get('discount_type'));
         $unitDiscountAmount = (float) ($get('unit_discount_amount') ?? 0);
 
         // Calculate the absolute monetary value of the discount for the entire line
@@ -824,6 +836,12 @@ class SaleInvoiceForm
 
         // Retrieve global invoice discount inputs
         $invoiceDiscountType = DiscountType::toString($get($prefix.'discount_type'));
+
+        // If the global discount type is cleared, wipe out the discount amount
+        if (blank($invoiceDiscountType)) {
+            $set($prefix.'discount_amount', null);
+        }
+
         $invoiceDiscountAmount = (float) ($get($prefix.'discount_amount') ?? 0);
 
         $globalDiscountAmount = 0.0;
