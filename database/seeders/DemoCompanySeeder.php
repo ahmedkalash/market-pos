@@ -49,19 +49,6 @@ class DemoCompanySeeder extends Seeder
             ]
         );
 
-        // Seed default Units of Measure for the demo company
-        $defaultUoms = config('company_unit_of_measurements');
-        foreach ($defaultUoms as $uom) {
-            UnitOfMeasure::firstOrCreate(
-                ['company_id' => $company->id, 'name_en' => $uom['name_en']],
-                [
-                    'name_ar' => $uom['name_ar'],
-                    'abbreviation_en' => $uom['abbreviation_en'],
-                    'abbreviation_ar' => $uom['abbreviation_ar'],
-                ]
-            );
-        }
-
         $storeNasrCity = Store::firstOrCreate(
             ['company_id' => $company->id, 'name_en' => 'Mool - Nasr City'],
             [
@@ -83,6 +70,34 @@ class DemoCompanySeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        // Seed default Units of Measure for the demo company
+        $defaultUoms = config('company_unit_of_measurements');
+        foreach ($defaultUoms as $uom) {
+            UnitOfMeasure::firstOrCreate(
+                ['company_id' => $company->id, 'store_id' => $storeMaadi->id, 'name_en' => $uom['name_en']],
+                [
+                    'name_ar' => $uom['name_ar'],
+                    'abbreviation_en' => $uom['abbreviation_en'],
+                    'abbreviation_ar' => $uom['abbreviation_ar'],
+                ]
+            );
+        }
+
+
+        // Seed default Units of Measure for the demo company
+        $defaultUoms = config('company_unit_of_measurements');
+        foreach ($defaultUoms as $uom) {
+            UnitOfMeasure::firstOrCreate(
+                ['company_id' => $company->id, 'store_id' => $storeNasrCity->id, 'name_en' => $uom['name_en']],
+                [
+                    'name_ar' => $uom['name_ar'],
+                    'abbreviation_en' => $uom['abbreviation_en'],
+                    'abbreviation_ar' => $uom['abbreviation_ar'],
+                ]
+            );
+        }
+
 
         app(CreateDefaultCompanyRolesAction::class)->execute($company);
         app(PermissionRegistrar::class)->setPermissionsTeamId($company->id);

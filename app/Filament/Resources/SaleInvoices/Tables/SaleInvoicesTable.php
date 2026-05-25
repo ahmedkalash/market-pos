@@ -14,7 +14,6 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
@@ -82,6 +81,14 @@ class SaleInvoicesTable
                     ->color(fn (?PaymentMethod $state): string => $state?->getColor() ?? 'gray')
                     ->placeholder('—')
                     ->toggleable(),
+
+                TextColumn::make('total_discount_amount')
+                    ->label(__('sale_invoice.total_discount_amount'))
+                    ->color(Color::Orange)
+                    ->numeric(decimalPlaces: 2, locale: 'en')
+                    ->prefix($currencySymbol.' ')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('total_amount')
                     ->label(__('sale_invoice.total_amount'))
@@ -370,20 +377,9 @@ class SaleInvoicesTable
                         ->requiresConfirmation()
                         ->authorize('finalize_sale_invoice')
                         ->visible(fn (SaleInvoice $record): bool => ! $record->isFinalized())
-                        ->schema([
-                            Select::make('payment_method')
-                                ->label(__('sale_invoice.payment_method'))
-                                ->options([
-                                    PaymentMethod::Cash->value => __('sale_invoice.payment_method_cash'),
-                                    PaymentMethod::Card->value => __('sale_invoice.payment_method_card'),
-                                    PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
-                                ])
-                                ->required(),
-                        ])
-                        ->action(function (SaleInvoice $record, array $data) {
+                        ->action(function (SaleInvoice $record) {
                             try {
-                                $paymentMethod = PaymentMethod::from($data['payment_method']);
-                                SaleInvoiceService::make()->finalize($record, $paymentMethod);
+                                SaleInvoiceService::make()->finalize($record);
 
                                 Notification::make()
                                     ->title(__('sale_invoice.finalized_success'))
