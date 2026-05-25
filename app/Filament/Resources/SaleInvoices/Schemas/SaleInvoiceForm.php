@@ -424,8 +424,9 @@ class SaleInvoiceForm
                                 ->numeric()
                                 ->minValue(0)
                                 ->step(0.01)
+                                ->required(fn (Get $get) => filled($get('discount_type')))
                                 ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.unit_discount_helper_text'))
-                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
+                                ->disabled(fn (Get $get) => self::isDiscountDisabled($get) || blank($get('discount_type')))
                                 ->prefix(function (TextInput $component) use ($user) {
                                     $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
                                     $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
@@ -579,6 +580,8 @@ class SaleInvoiceForm
                                 ->numeric()
                                 ->minValue(0)
                                 ->step(0.01)
+                                ->required(fn (Get $get) => filled($get('discount_type')))
+                                ->disabled(fn (Get $get) => blank($get('discount_type')))
                                 ->prefix(function (TextInput $component) use ($user) {
                                     $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
                                     $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
