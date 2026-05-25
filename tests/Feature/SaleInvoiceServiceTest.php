@@ -101,15 +101,15 @@ class SaleInvoiceServiceTest extends TestCase
         $item->refresh();
         $invoice->refresh();
 
-        // Subtotal = 2 * 10 = 20.00. Tax rate is forced to 0 for MVP as per SaleInvoiceService.php.
-        $this->assertEquals(20.00, (float) $item->subtotal);
+        // Subtotal = 2 * 15.00 = 30.00. Tax rate is forced to 0 for MVP as per SaleInvoiceService.php.
+        $this->assertEquals(30.00, (float) $item->subtotal);
         $this->assertEquals(0.00, (float) $item->tax_rate);
         $this->assertEquals(0.00, (float) $item->tax_amount);
-        $this->assertEquals(20.00, (float) $item->line_total);
+        $this->assertEquals(30.00, (float) $item->line_total);
 
-        $this->assertEquals(20.00, (float) $invoice->total_before_tax);
+        $this->assertEquals(30.00, (float) $invoice->total_before_tax);
         $this->assertEquals(0.00, (float) $invoice->total_tax_amount);
-        $this->assertEquals(20.00, (float) $invoice->total_amount);
+        $this->assertEquals(30.00, (float) $invoice->total_amount);
     }
 
     public function test_finalize_deducts_stock_and_locks_invoice(): void

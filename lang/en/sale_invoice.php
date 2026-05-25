@@ -111,4 +111,5 @@ return [
     'max_allowed_discount' => 'Max: :max',
     'grand_total_discount_exceeds_total' => 'Grand total discount cannot exceed the total invoice amount.',
     'invoice_below_minimum_after_global' => 'The global discount reduces the invoice total below the minimum allowed threshold (:min).',
+    'invoice_discount_breaches_minimum_total' => 'The global invoice discount pushes the total amount below the allowed minimum.',
 ];

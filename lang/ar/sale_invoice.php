@@ -111,4 +111,5 @@ return [
     'max_allowed_discount' => 'الحد الأقصى: :max',
     'grand_total_discount_exceeds_total' => 'إجمالي الخصم لا يمكن أن يتجاوز إجمالي مبلغ الفاتورة.',
     'invoice_below_minimum_after_global' => 'الخصم الإجمالي يخفض إجمالي الفاتورة عن الحد الأدنى المسموح به (:min).',
+    'invoice_discount_breaches_minimum_total' => 'خصم الفاتورة الإجمالي يخفض إجمالي المبلغ عن الحد الأدنى المسموح به.',
 ];

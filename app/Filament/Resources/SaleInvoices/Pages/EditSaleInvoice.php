@@ -8,7 +8,6 @@ use App\Services\SaleInvoiceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Support\Facades\DB;
 
 class EditSaleInvoice extends EditRecord
 {
@@ -66,28 +65,32 @@ class EditSaleInvoice extends EditRecord
         try {
             SaleInvoiceService::make()->recalculateTotals($invoice);
         } catch (\Throwable $e) {
-            DB::rollBack();
             Notification::make()
                 ->title(__('sale_invoice.recalculate_failed'))
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
+
+            $this->halt(true);
         }
 
         // Hydrate server-computed totals back into the form
         $this->refreshFormData(['total_amount', 'total_before_tax', 'total_tax_amount']);
 
         if ($this->shouldFinalize) {
+            $this->shouldFinalize = false;
+
             $this->authorize('finalize_sale_invoice');
             try {
                 SaleInvoiceService::make()->finalize($invoice);
             } catch (\Throwable $e) {
-                DB::rollBack();
                 Notification::make()
                     ->title(__('sale_invoice.finalize_failed'))
                     ->body($e->getMessage())
                     ->danger()
                     ->send();
+
+                $this->halt(true);
             }
         }
     }

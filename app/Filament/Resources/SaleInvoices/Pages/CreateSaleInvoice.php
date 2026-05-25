@@ -10,7 +10,6 @@ use App\Services\SequenceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\DB;
 
 class CreateSaleInvoice extends CreateRecord
 {
@@ -66,25 +65,31 @@ class CreateSaleInvoice extends CreateRecord
         try {
             SaleInvoiceService::make()->recalculateTotals($invoice);
         } catch (\Throwable $e) {
-            DB::rollBack();
             Notification::make()
                 ->title(__('sale_invoice.recalculate_failed'))
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
+
+            $this->record = null;
+            $this->halt(true);
         }
 
         if ($this->shouldFinalize) {
+            $this->shouldFinalize = false;
+
             $this->authorize('finalize_sale_invoice');
             try {
                 SaleInvoiceService::make()->finalize($invoice);
             } catch (\Throwable $e) {
-                DB::rollBack();
                 Notification::make()
                     ->title(__('sale_invoice.finalize_failed'))
                     ->body($e->getMessage())
                     ->danger()
                     ->send();
+
+                $this->record = null;
+                $this->halt(true);
             }
         }
     }
