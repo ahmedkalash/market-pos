@@ -84,7 +84,6 @@ class DemoCompanySeeder extends Seeder
             );
         }
 
-
         // Seed default Units of Measure for the demo company
         $defaultUoms = config('company_unit_of_measurements');
         foreach ($defaultUoms as $uom) {
@@ -97,7 +96,6 @@ class DemoCompanySeeder extends Seeder
                 ]
             );
         }
-
 
         app(CreateDefaultCompanyRolesAction::class)->execute($company);
         app(PermissionRegistrar::class)->setPermissionsTeamId($company->id);

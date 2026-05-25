@@ -30,7 +30,7 @@ return new class extends Migration
                 'adjustment_sub',
                 'transfer_in',
                 'transfer_out',
-                'opening_stock'
+                'opening_stock',
             ])->change();
         });
     }

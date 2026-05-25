@@ -37,6 +37,6 @@ enum PriceType: string implements HasColor, HasLabel
             return null;
         }
 
-        return $value instanceof self ? $value: self::tryFrom($value);
+        return $value instanceof self ? $value : self::tryFrom($value);
     }
 }

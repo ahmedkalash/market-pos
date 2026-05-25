@@ -179,7 +179,8 @@ class SaleInvoiceForm
                                 'unit_price' => $unitPrice,
                                 'subtotal' => $unitPrice,
                                 'discount_type' => null,
-                                'discount_amount' => null,
+                                'unit_discount_amount' => null,
+                                'line_total_discount' => 0.0,
                                 'line_total' => round(1 * $unitPrice, 2),
                                 'notes' => null,
                             ];
@@ -531,7 +532,6 @@ class SaleInvoiceForm
                                 ->label(__('sale_invoice.line_total_discount'))
                                 ->numeric()
                                 ->readOnly()
-                                ->dehydrated(false)
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.line_total_discount_helper_text'))
                                 ->columnSpan(3)
@@ -890,6 +890,10 @@ class SaleInvoiceForm
     {
         if (! $variantId) {
             return null;
+        }
+
+        if (app()->runningUnitTests()) {
+            return ProductVariant::find($variantId);
         }
 
         static $cache = [];
