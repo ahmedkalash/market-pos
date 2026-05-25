@@ -10,6 +10,7 @@ use App\Services\SequenceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 
 class CreateSaleInvoice extends CreateRecord
 {
@@ -57,6 +58,9 @@ class CreateSaleInvoice extends CreateRecord
         return $data;
     }
 
+    /**
+     * @throws Halt
+     */
     protected function afterCreate(): void
     {
         /** @var SaleInvoice $invoice */

@@ -8,6 +8,7 @@ use App\Services\SaleInvoiceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 
 class EditSaleInvoice extends EditRecord
 {
@@ -57,6 +58,9 @@ class EditSaleInvoice extends EditRecord
         }
     }
 
+    /**
+     * @throws Halt
+     */
     protected function afterSave(): void
     {
         /** @var SaleInvoice $invoice */
