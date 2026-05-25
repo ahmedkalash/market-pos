@@ -334,7 +334,7 @@ class SaleInvoiceForm
                                         };
                                     },
                                 ])
-                                ->live()
+                                ->live(onBlur: true)
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
                                     self::recalculateTotals($get, $set, '../../');
@@ -386,19 +386,7 @@ class SaleInvoiceForm
                                 })
                                 ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.unit_price_tooltip'))
                                 ->disabled(fn (Get $get) => ! $get('product_variant_id'))
-                                ->readOnly(function (Get $get) {
-                                    $variant = self::getCachedVariant($get('product_variant_id'));
-                                    if (! $variant) {
-                                        return true;
-                                    }
-
-                                    $priceTypeEnum = PriceType::try($get('price_type') ?? null);
-                                    if (! $priceTypeEnum) {
-                                        return true;
-                                    }
-
-                                    return ! $variant->isPriceNegotiable($priceTypeEnum);
-                                })
+                                ->readOnly()
                                 ->live(debounce: '500ms')
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::recalculateLine($get, $set);
@@ -483,7 +471,7 @@ class SaleInvoiceForm
 
                                     return __('sale_invoice.max_allowed_discount', ['max' => round($maxDiscountAmount, 2)]);
                                 })
-                                ->live(debounce: '500ms')
+                                ->live(onBlur: true)
                                 ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
                                     self::recalculateLine($get, $set);
                                     self::recalculateTotals($get, $set, '../../');
@@ -494,7 +482,7 @@ class SaleInvoiceForm
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
                                             if (! ($discountType = DiscountType::toString($get('discount_type'))) ||
                                                 empty($value = (float) $value) ||
-                                                ! ( $variant = self::getCachedVariant($get('product_variant_id'))) ||
+                                                ! ($variant = self::getCachedVariant($get('product_variant_id'))) ||
                                                 ! ($priceTypeEnum = PriceType::try($get('price_type') ?? null))
                                             ) {
                                                 return;
@@ -607,7 +595,6 @@ class SaleInvoiceForm
                                         return null;
                                     }
 
-
                                     $initialSubtotalsSum = collect($items)->sum(function ($item) {
                                         return (float) ($item['line_total'] ?? 0);
                                     });
@@ -630,7 +617,7 @@ class SaleInvoiceForm
 
                                     return __('sale_invoice.max_allowed_discount', ['max' => round($maxFixedGlobalDiscount, 2)]);
                                 })
-                                ->live(debounce: '500ms')
+                                ->live(onBlur: true)
                                 ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
                                     static::recalculateTotals($get, $set);
                                     $livewire->validateOnly($component->getStatePath());
@@ -693,26 +680,40 @@ class SaleInvoiceForm
                         ->columns(3)
                         ->compact(),
 
-                    Grid::make(2)->schema([
-                        TextInput::make('grand_total_discount')
-                            ->label(__('sale_invoice.grand_total_discount'))
-                            ->readOnly()
-                            ->dehydrated()
-                            ->numeric()
-                            ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
-                            ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                    Section::make()
+                        ->schema([
+                            Grid::make(3)->schema([
+                                TextInput::make('subtotal_amount')
+                                    ->label(__('sale_invoice.subtotal_amount'))
+                                    ->readOnly()
+                                    ->dehydrated(false)
+                                    ->numeric()
+                                    ->extraInputAttributes(['class' => 'text-lg font-semibold'])
+                                    ->helperText(__('sale_invoice.subtotal_amount_helper'))
+                                    ->prefix($user->company->currency_symbol ?? 'ج.م'),
 
-                        TextInput::make('total_amount')
-                            ->label(__('sale_invoice.total_amount'))
-                            ->readOnly()
-                            ->dehydrated()
-                            ->numeric()
-                            ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
-                            ->prefix($user->company->currency_symbol ?? 'ج.م')
-                            ->afterStateHydrated(function (Get $get, Set $set) {
-                                static::recalculateTotals($get, $set);
-                            }),
-                    ]),
+                                TextInput::make('grand_total_discount')
+                                    ->label(__('sale_invoice.grand_total_discount'))
+                                    ->readOnly()
+                                    ->dehydrated()
+                                    ->numeric()
+                                    ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
+                                    ->helperText(__('sale_invoice.grand_total_discount_helper'))
+                                    ->prefix($user->company->currency_symbol ?? 'ج.م'),
+
+                                TextInput::make('total_amount')
+                                    ->label(__('sale_invoice.total_amount'))
+                                    ->readOnly()
+                                    ->dehydrated()
+                                    ->numeric()
+                                    ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
+                                    ->helperText(__('sale_invoice.total_amount_helper'))
+                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                    ->afterStateHydrated(function (Get $get, Set $set) {
+                                        static::recalculateTotals($get, $set);
+                                    }),
+                            ]),
+                        ]),
                 ]),
         ]);
     }
@@ -813,6 +814,11 @@ class SaleInvoiceForm
             return (float) ($item['line_total'] ?? 0);
         });
 
+        // Sum the 'subtotal' of all items (these are subtotals BEFORE any discounts)
+        $initialSubtotalsSum = collect($items)->sum(function ($item) {
+            return (float) ($item['subtotal'] ?? 0);
+        });
+
         // Retrieve global invoice discount inputs
         $invoiceDiscountType = DiscountType::toString($get($prefix.'discount_type'));
         $invoiceDiscountAmount = (float) ($get($prefix.'discount_amount') ?? 0);
@@ -839,6 +845,7 @@ class SaleInvoiceForm
         $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;
 
         // Update the Livewire component state with rounded final values
+        $set($prefix.'subtotal_amount', round($initialSubtotalsSum, 2));
         $set($prefix.'global_discount_amount', round($globalDiscountAmount, 2));
         $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
