@@ -15,7 +15,7 @@ class CreateSaleInvoice extends CreateRecord
 {
     protected static string $resource = SaleInvoiceResource::class;
 
-    public bool $shouldFinalize = false;
+    protected bool $shouldFinalize = false;
 
     protected function getFormActions(): array
     {
