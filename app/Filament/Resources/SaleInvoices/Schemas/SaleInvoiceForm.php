@@ -7,6 +7,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
+use App\Models\ShippingDestination;
 use App\Models\Store;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -23,6 +24,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
@@ -702,6 +704,47 @@ class SaleInvoiceForm
                                 ->columns(3)
                                 ->compact(),
 
+                            Section::make(__('shipping.shipping_and_delivery'))
+                                ->icon('heroicon-o-truck')
+                                ->schema([
+                                    Select::make('shipping_destination_id')
+                                        ->label(__('shipping.destination'))
+                                        ->relationship('shippingDestination', 'name', fn (Builder $query) => $query->active())
+                                        ->searchable()
+                                        ->preload()
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                            if ($state) {
+                                                $destination = ShippingDestination::query()->find($state);
+                                                if ($destination) {
+                                                    $set('shipping_cost', (float) $destination->cost);
+                                                    static::recalculateTotals($get, $set);
+                                                }
+                                            } else {
+                                                $set('shipping_cost', 0);
+                                                static::recalculateTotals($get, $set);
+                                            }
+                                        }),
+
+                                    TextInput::make('shipping_cost')
+                                        ->label(__('shipping.shipping_cost'))
+                                        ->numeric()
+                                        ->default(0)
+                                        ->minValue(0)
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->live(debounce: 1000)
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            static::recalculateTotals($get, $set);
+                                        }),
+
+                                    Textarea::make('shipping_address')
+                                        ->label(__('shipping.shipping_address'))
+                                        ->rows(2)
+                                        ->columnSpanFull(),
+                                ])
+                                ->columns(2)
+                                ->compact(),
+
                             Section::make()
                                 ->schema([
                                     Grid::make(3)->schema([
@@ -868,8 +911,10 @@ class SaleInvoiceForm
             return (float) ($item['line_total_discount'] ?? 0);
         });
 
-        // The final payable amount is the sum of item line totals minus the global invoice discount
-        $totalAmount = $initialLinesTotalSum - $globalDiscountAmount;
+        $shippingCost = (float) ($get($prefix.'shipping_cost') ?? 0);
+
+        // The final payable amount is the sum of item line totals minus the global invoice discount plus shipping cost
+        $totalAmount = ($initialLinesTotalSum - $globalDiscountAmount) + $shippingCost;
 
         // The grand total discount is the aggregate of all item discounts PLUS the global invoice discount
         $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;

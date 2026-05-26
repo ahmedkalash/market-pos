@@ -70,7 +70,9 @@ class SaleInvoiceService
             }
 
             $grandTotalDiscount = $totalItemsDiscount + $globalInvoiceDiscount;
-            $totalAmount = max(0, $totalBeforeTax + $totalTaxAmount);
+
+            $shippingCost = (float) ($invoice->shipping_cost ?? 0);
+            $totalAmount = max(0, $totalBeforeTax + $totalTaxAmount + $shippingCost);
 
             // Persist the final invoice totals
             $this->updateInvoiceTotals($invoice, [

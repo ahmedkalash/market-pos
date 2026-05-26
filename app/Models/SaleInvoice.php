@@ -39,6 +39,9 @@ class SaleInvoice extends Model
         'notes',
         'finalized_at',
         'finalized_by',
+        'shipping_destination_id',
+        'shipping_cost',
+        'shipping_address',
         'created_by',
     ];
 
@@ -59,6 +62,7 @@ class SaleInvoice extends Model
             'discount_amount' => 'decimal:2',
             'global_discount_amount' => 'decimal:2',
             'grand_total_discount' => 'decimal:2',
+            'shipping_cost' => 'decimal:2',
             'finalized_at' => 'datetime',
         ];
     }
@@ -110,6 +114,14 @@ class SaleInvoice extends Model
     public function finalizedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'finalized_by')->withoutGlobalScopes();
+    }
+
+    /**
+     * @return BelongsTo<ShippingDestination, $this>
+     */
+    public function shippingDestination(): BelongsTo
+    {
+        return $this->belongsTo(ShippingDestination::class);
     }
 
     /**
