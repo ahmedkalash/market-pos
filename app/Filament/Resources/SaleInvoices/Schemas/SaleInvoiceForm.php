@@ -350,7 +350,7 @@ class SaleInvoiceForm
                                                 };
                                             },
                                         ])
-                                        ->live(onBlur: true)
+                                        ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
                                             self::recalculateTotals($get, $set, '../../');
@@ -403,7 +403,7 @@ class SaleInvoiceForm
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.unit_price_tooltip'))
                                         ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->readOnly()
-                                        ->live(debounce: '500ms')
+                                        ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
                                             self::recalculateTotals($get, $set, '../../');
@@ -490,7 +490,7 @@ class SaleInvoiceForm
 
                                             return __('sale_invoice.max_allowed_discount', ['max' => round($maxDiscountAmount, 2)]);
                                         })
-                                        ->live(onBlur: true)
+                                        ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
                                             self::recalculateLine($get, $set);
                                             self::recalculateTotals($get, $set, '../../');
@@ -639,7 +639,7 @@ class SaleInvoiceForm
 
                                             return __('sale_invoice.max_allowed_discount', ['max' => round($maxFixedGlobalDiscount, 2)]);
                                         })
-                                        ->live(onBlur: true)
+                                        ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
                                             static::recalculateTotals($get, $set);
                                             $livewire->validateOnly($component->getStatePath());
