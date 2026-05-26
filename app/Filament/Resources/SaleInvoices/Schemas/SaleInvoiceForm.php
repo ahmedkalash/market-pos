@@ -697,10 +697,10 @@ class SaleInvoiceForm
                     Section::make()
                         ->schema([
                             Grid::make(3)->schema([
-                                TextInput::make('subtotal_amount')
+                                TextInput::make('subtotal')
                                     ->label(__('sale_invoice.subtotal_amount'))
                                     ->readOnly()
-                                    ->dehydrated(false)
+                                    ->dehydrated()
                                     ->numeric()
                                     ->extraInputAttributes(['class' => 'text-lg font-semibold'])
                                     ->helperText(__('sale_invoice.subtotal_amount_helper'))
@@ -866,7 +866,7 @@ class SaleInvoiceForm
         $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;
 
         // Update the Livewire component state with rounded final values
-        $set($prefix.'subtotal_amount', round($initialSubtotalsSum, 2));
+        $set($prefix.'subtotal', round($initialSubtotalsSum, 2));
         $set($prefix.'global_discount_amount', round($globalDiscountAmount, 2));
         $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));

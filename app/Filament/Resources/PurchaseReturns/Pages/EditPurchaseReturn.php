@@ -40,7 +40,7 @@ class EditPurchaseReturn extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
     /**
@@ -81,14 +81,29 @@ class EditPurchaseReturn extends EditRecord
         }
     }
 
+    /**
+     * @throws Halt
+     */
     protected function afterSave(): void
     {
         /** @var PurchaseReturn $return */
         $return = $this->record;
 
-        PurchaseInvoiceService::make()->recalculateReturnTotals($return);
+        try {
+            PurchaseInvoiceService::make()->recalculateReturnTotals($return);
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title(__('purchase_return.recalculate_failed') ?? 'Recalculation Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $this->halt(true);
+        }
 
         if ($this->shouldFinalize) {
+            $this->shouldFinalize = false;
+
             $this->authorize('finalize_purchase_return');
             try {
                 PurchaseInvoiceService::make()->finalizeReturn($return);
@@ -98,6 +113,8 @@ class EditPurchaseReturn extends EditRecord
                     ->body($e->getMessage())
                     ->danger()
                     ->send();
+
+                $this->halt(true);
             }
         }
     }

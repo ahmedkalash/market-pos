@@ -10,6 +10,7 @@ use App\Services\SequenceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 
 class CreatePurchaseInvoice extends CreateRecord
 {
@@ -38,7 +39,7 @@ class CreatePurchaseInvoice extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
     /**
@@ -59,14 +60,30 @@ class CreatePurchaseInvoice extends CreateRecord
         return $data;
     }
 
+    /**
+     * @throws Halt
+     */
     protected function afterCreate(): void
     {
         /** @var PurchaseInvoice $invoice */
         $invoice = $this->record;
 
-        PurchaseInvoiceService::make()->recalculateTotals($invoice);
+        try {
+            PurchaseInvoiceService::make()->recalculateTotals($invoice);
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title(__('purchase_invoice.recalculate_failed') ?? 'Recalculation Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $this->record = null;
+            $this->halt(true);
+        }
 
         if ($this->shouldFinalize) {
+            $this->shouldFinalize = false;
+
             $this->authorize('finalize_purchase_invoice');
             try {
                 PurchaseInvoiceService::make()->finalize($invoice);
@@ -76,6 +93,9 @@ class CreatePurchaseInvoice extends CreateRecord
                     ->body($e->getMessage())
                     ->danger()
                     ->send();
+
+                $this->record = null;
+                $this->halt(true);
             }
         }
     }

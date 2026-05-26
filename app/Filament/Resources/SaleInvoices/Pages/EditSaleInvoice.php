@@ -79,7 +79,7 @@ class EditSaleInvoice extends EditRecord
         }
 
         // Hydrate server-computed totals back into the form
-        $this->refreshFormData(['total_amount', 'total_before_tax', 'total_tax_amount']);
+        $this->refreshFormData(['subtotal', 'total_amount', 'total_before_tax', 'total_tax_amount']);
 
         if ($this->shouldFinalize) {
             $this->shouldFinalize = false;

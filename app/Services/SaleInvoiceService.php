@@ -51,6 +51,7 @@ class SaleInvoiceService
 
             // Pass 1: Calculate individual item totals, validate minimums, and update line items
             [
+                'subtotals_before_discount_sum' => $subtotalsBeforeDiscountSum,
                 'subtotals_after_discount_sum' => $subtotalsAfterDiscountSum,
                 'total_minimum_allowed' => $totalMinimumAllowed,
                 'total_tax_amount' => $totalTaxAmount,
@@ -73,6 +74,7 @@ class SaleInvoiceService
 
             // Persist the final invoice totals
             $this->updateInvoiceTotals($invoice, [
+                'subtotal' => round($subtotalsBeforeDiscountSum, 2),
                 'global_discount_amount' => round($globalInvoiceDiscount, 2),
                 'grand_total_discount' => round($grandTotalDiscount, 2),
                 'total_before_tax' => round($totalBeforeTax, 2),
@@ -132,6 +134,7 @@ class SaleInvoiceService
      */
     private function processLineItems(SaleInvoice $invoice): array
     {
+        $subtotalsBeforeDiscountSum = 0.0;
         $subtotalsAfterDiscountSum = 0.0;
         $totalMinimumAllowed = 0.0;
         $totalTaxAmount = 0.0;
@@ -182,6 +185,7 @@ class SaleInvoiceService
                 'line_total' => $lineTotal,
             ]);
 
+            $subtotalsBeforeDiscountSum += $itemSubtotalBeforeDiscount;
             $subtotalsAfterDiscountSum += $itemSubtotalAfterItemDiscount;
             $totalMinimumAllowed += $minimumAllowedSubtotal;
             $totalTaxAmount += $taxAmount;
@@ -189,6 +193,7 @@ class SaleInvoiceService
         }
 
         return [
+            'subtotals_before_discount_sum' => $subtotalsBeforeDiscountSum,
             'subtotals_after_discount_sum' => $subtotalsAfterDiscountSum,
             'total_minimum_allowed' => $totalMinimumAllowed,
             'total_tax_amount' => $totalTaxAmount,

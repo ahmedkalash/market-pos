@@ -72,11 +72,12 @@ class SaleInvoiceDiscountTest extends TestCase
         SaleInvoiceService::make()->recalculateTotals($invoice);
 
         $invoice->refresh();
-        $item = $invoice->items->first();
+        $item = $invoice->items()->first();
 
         $this->assertEquals(200, $item->subtotal);
         $this->assertEquals(20, $item->line_total_discount);
         $this->assertEquals(180, $item->line_total);
+        $this->assertEquals(200, $invoice->subtotal);
         $this->assertEquals(180, $invoice->total_amount);
         $this->assertEquals(0, $invoice->global_discount_amount);
     }
@@ -101,11 +102,12 @@ class SaleInvoiceDiscountTest extends TestCase
         SaleInvoiceService::make()->recalculateTotals($invoice);
 
         $invoice->refresh();
-        $item = $invoice->items->first();
+        $item = $invoice->items()->first();
 
         $this->assertEquals(200, $item->subtotal);
         $this->assertEquals(20, $item->line_total_discount);
         $this->assertEquals(180, $item->line_total);
+        $this->assertEquals(200, $invoice->subtotal);
     }
 
     public function test_it_throws_if_item_discount_breaches_minimum()
@@ -189,16 +191,17 @@ class SaleInvoiceDiscountTest extends TestCase
         SaleInvoiceService::make()->recalculateTotals($invoice);
 
         $invoice->refresh();
+        $this->assertEquals(300, $invoice->subtotal);
         $this->assertEquals(270, $invoice->total_amount);
         $this->assertEquals(30, $invoice->global_discount_amount);
 
-        $items = $invoice->items->sortBy('unit_price')->values();
+        $items = $invoice->items()->orderBy('unit_price')->get();
         $this->assertEquals(100, $items[0]->subtotal);
         $this->assertEquals(0, $items[0]->line_total_discount);
-        $this->assertEquals(90, $items[0]->line_total);
+        $this->assertEquals(100, $items[0]->line_total);
 
         $this->assertEquals(200, $items[1]->subtotal);
-        $this->assertEquals(180, $items[1]->line_total);
+        $this->assertEquals(200, $items[1]->line_total);
     }
 
     public function test_it_calculates_grand_total_discount_correctly()
@@ -253,8 +256,9 @@ class SaleInvoiceDiscountTest extends TestCase
 
         $invoice->refresh();
 
-        $this->assertEquals(600, $invoice->total_amount);
+        $this->assertEquals(600, $invoice->subtotal);
+        $this->assertEquals(510, $invoice->total_amount);
         $this->assertEquals(50, $invoice->global_discount_amount);
-        $this->assertEquals(100, $invoice->grand_total_discount);
+        $this->assertEquals(90, $invoice->grand_total_discount);
     }
 }

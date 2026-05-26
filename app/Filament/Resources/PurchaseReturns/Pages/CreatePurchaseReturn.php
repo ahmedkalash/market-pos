@@ -40,7 +40,7 @@ class CreatePurchaseReturn extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
+        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -79,14 +79,30 @@ class CreatePurchaseReturn extends CreateRecord
         }
     }
 
+    /**
+     * @throws Halt
+     */
     protected function afterCreate(): void
     {
         /** @var PurchaseReturn $return */
         $return = $this->record;
 
-        PurchaseInvoiceService::make()->recalculateReturnTotals($return);
+        try {
+            PurchaseInvoiceService::make()->recalculateReturnTotals($return);
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title(__('purchase_return.recalculate_failed') ?? 'Recalculation Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $this->record = null;
+            $this->halt(true);
+        }
 
         if ($this->shouldFinalize) {
+            $this->shouldFinalize = false;
+
             $this->authorize('finalize_purchase_return');
             try {
                 PurchaseInvoiceService::make()->finalizeReturn($return);
@@ -96,6 +112,9 @@ class CreatePurchaseReturn extends CreateRecord
                     ->body($e->getMessage())
                     ->danger()
                     ->send();
+
+                $this->record = null;
+                $this->halt(true);
             }
         }
     }

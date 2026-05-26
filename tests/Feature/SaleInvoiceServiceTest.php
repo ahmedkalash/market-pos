@@ -107,6 +107,7 @@ class SaleInvoiceServiceTest extends TestCase
         $this->assertEquals(0.00, (float) $item->tax_amount);
         $this->assertEquals(30.00, (float) $item->line_total);
 
+        $this->assertEquals(30.00, (float) $invoice->subtotal);
         $this->assertEquals(30.00, (float) $invoice->total_before_tax);
         $this->assertEquals(0.00, (float) $invoice->total_tax_amount);
         $this->assertEquals(30.00, (float) $invoice->total_amount);
@@ -147,9 +148,10 @@ class SaleInvoiceServiceTest extends TestCase
         $this->assertEquals(90.0, (float) $this->variant->quantity);
 
         // Verify movement recorded
-        $movement = InventoryMovement::where('reference_type', SaleInvoice::class)
-            ->where('reference_id', $invoice->id)
-            ->first();
+        $movement = InventoryMovement::where([
+            'reference_type' => SaleInvoice::class,
+            'reference_id' => $invoice->id,
+        ])->first();
 
         $this->assertNotNull($movement);
         $this->assertEquals(MovementType::Sale, $movement->type);

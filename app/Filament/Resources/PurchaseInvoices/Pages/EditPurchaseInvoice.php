@@ -8,6 +8,7 @@ use App\Services\PurchaseInvoiceService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 
 class EditPurchaseInvoice extends EditRecord
 {
@@ -53,18 +54,33 @@ class EditPurchaseInvoice extends EditRecord
         $invoice = $this->record;
 
         if ($invoice->isFinalized()) {
-            $this->redirect($this->getResource()::getUrl('view', ['record' => $invoice]));
+            $this->redirect($this->getResource()::getUrl('edit', ['record' => $invoice]));
         }
     }
 
+    /**
+     * @throws Halt
+     */
     protected function afterSave(): void
     {
         /** @var PurchaseInvoice $invoice */
         $invoice = $this->record;
 
-        PurchaseInvoiceService::make()->recalculateTotals($invoice);
+        try {
+            PurchaseInvoiceService::make()->recalculateTotals($invoice);
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title(__('purchase_invoice.recalculate_failed') ?? 'Recalculation Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $this->halt(true);
+        }
 
         if ($this->shouldFinalize) {
+            $this->shouldFinalize = false;
+
             $this->authorize('finalize_purchase_invoice');
             try {
                 PurchaseInvoiceService::make()->finalize($invoice);
@@ -74,6 +90,8 @@ class EditPurchaseInvoice extends EditRecord
                     ->body($e->getMessage())
                     ->danger()
                     ->send();
+
+                $this->halt(true);
             }
         }
     }

@@ -27,6 +27,7 @@ class SaleInvoiceFactory extends Factory
             'status' => SaleInvoiceStatus::Draft,
             'return_status' => SaleInvoiceReturnStatus::None,
             'payment_method' => null,
+            'subtotal' => 0.00,
             'total_before_tax' => 0.00,
             'total_tax_amount' => 0.00,
             'total_amount' => 0.00,
