@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Models\Store;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -22,15 +23,8 @@ trait BelongsToStore
             if (auth()->hasUser()) {
                 $user = auth()->user();
 
-                // Skip scoping for Super Admins
-                if ($user->isSuperAdmin()) {
-                    return;
-                }
-
-                // If Company-level staff, scope by company across all their stores
-                if ($user->isCompanyLevel()) {
-                    $query->whereHas('store', fn ($q) => $q->where('company_id', $user->company_id));
-
+                // Skip scoping for Super Admins and Company Level users
+                if ($user->isSuperAdmin() || $user->isCompanyLevel()) {
                     return;
                 }
 

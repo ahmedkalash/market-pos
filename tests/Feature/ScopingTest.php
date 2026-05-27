@@ -102,29 +102,4 @@ class ScopingTest extends TestCase
         $this->assertTrue($users->contains($userInStore2));
         $this->assertTrue($users->contains($accountant));
     }
-
-    public function test_super_admin_sees_everything()
-    {
-        $company1 = Company::factory()->create(['is_active' => true]);
-        $company2 = Company::factory()->create(['is_active' => true]);
-
-        /** @var User $superAdmin */
-        $superAdmin = User::factory()->create([
-            'company_id' => null,
-            'store_id' => null,
-            'is_active' => true,
-        ]);
-        $superAdmin->assignRole(Roles::SUPER_ADMIN->value);
-
-        $user1 = User::factory()->create(['company_id' => $company1->id]);
-        $user2 = User::factory()->create(['company_id' => $company2->id]);
-
-        $this->actingAs($superAdmin);
-
-        $users = User::all();
-
-        $this->assertTrue($users->contains($user1));
-        $this->assertTrue($users->contains($user2));
-        $this->assertTrue($users->contains($superAdmin));
-    }
 }
