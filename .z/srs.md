@@ -588,6 +588,10 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] **Streamlined Localization UI & Nullable English Fields (V2):**
       - Make all English columns (`name_en`, `description_en`, etc.) nullable in the database, as many users in the Arabic market may not require English data.
       - Refactor the UI (tables and forms) to consolidate the display of localized names. Instead of separate columns for Arabic and English, display the primary Arabic name prominently with the English name underneath it as a secondary description, saving horizontal space and simplifying the interface.
+- [ ] **Unit of Measurement Enhancements:**
+      - **Decimal Support:** Add an `allow_decimals` toggle. If enabled, allow the user to specify the `allowed_decimals` count (e.g., 2 for Meters, 3 for Grams). This ensures a clean UX (preventing cashiers from selling "1.5 Pieces") while cleanly handling weight/length measurements.
+      - **Base Units & Conversions (V2):** Allow defining base units (e.g., Piece) and related composite units (e.g., Carton = 24 Pieces, Box = 12 Pieces) for advanced purchasing and inventory breakdown.
+      - **Active/Inactive Status:** A toggle to disable unused units from appearing in dropdowns without deleting them and breaking historical records.
 ---
 
 ## 10. Out of Scope for v1.0
