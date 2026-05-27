@@ -47,9 +47,11 @@ class SaleInvoicesTable
                     ->weight('bold')
                     ->sortable(),
 
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('sale_invoice.store'))
                     ->visible(fn (): bool => $user->isCompanyLevel())
+                    ->copyable()
+                    ->tooltip(__('app.click_to_copy_item'))
                     ->searchable()
                     ->toggleable(),
 

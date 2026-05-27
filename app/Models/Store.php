@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Actions\SeedDefaultStoreCatalogSettingsAction;
 use App\Models\Concerns\BelongsToCompany;
 use Database\Factories\StoreFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -125,5 +126,15 @@ class Store extends Model implements HasMedia
     public function getResolvedLocale(): string
     {
         return $this->getSetting('locale') ?? config('app.locale');
+    }
+
+    /**
+     * Get the localized store name.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->{'name_'.app()->getLocale()},
+        );
     }
 }

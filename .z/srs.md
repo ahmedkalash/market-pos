@@ -487,7 +487,8 @@ settings
 ### Phase 4 — Purchasing & Vendors (Weeks 12–13)
 - [x] Vendor management
 - [x] Purchase Invoices (Direct Receiving — existing variants only)
-- [x] Purchase Invoices Return 
+- [x] Purchase Invoices Return
+- [ ] **TODO: Apply race condition fixes to Purchase Invoices & Returns:** Wrap forms in a fieldset with `wire:loading.attr="disabled"` and apply `->live(debounce: 1000)` to all live fields to prevent overlapping requests (identical to Sale Invoice fixes). 
 
 
 ### Phase 4.1 — Sales & Returns Invoices
