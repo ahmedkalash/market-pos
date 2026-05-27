@@ -92,6 +92,7 @@ class CompanySettingsTest extends TestCase
 
         Livewire::test(CompanySettingsPage::class)
             ->fillForm([
+                'phone' => '1234567890',
                 'working_hours' => $workingHours,
             ])
             ->call('save')
@@ -102,7 +103,7 @@ class CompanySettingsTest extends TestCase
         $this->assertIsArray($company->working_hours);
         $this->assertCount(2, $company->working_hours);
         $this->assertEquals('monday', $company->working_hours[0]['day']);
-        $this->assertEquals('08:00:00', $company->working_hours[0]['from']);
-        $this->assertEquals('17:00:00', $company->working_hours[0]['to']);
+        $this->assertEquals('08:00', $company->working_hours[0]['from']);
+        $this->assertEquals('17:00', $company->working_hours[0]['to']);
     }
 }

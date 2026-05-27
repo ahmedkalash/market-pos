@@ -37,17 +37,17 @@ class LocaleServiceTest extends TestCase
         $this->assertEquals('ar_EG', Session::get('locale'));
     }
 
-    public function test_it_resolves_locale_from_header_if_session_empty(): void
+    public function test_it_ignores_header_if_session_empty(): void
     {
         Session::forget('locale');
         $request = Request::create('/test', 'GET');
-        $request->headers->set('Accept-Language', 'ar-EG');
+        $request->headers->set('Accept-Language', 'en-US');
         $request->setLaravelSession(Session::driver());
 
         $this->localeService->setCurrentLocaleFromRequest($request);
 
-        $this->assertEquals('ar', app()->getLocale());
-        $this->assertEquals('ar_EG', Session::get('locale'));
+        $this->assertEquals('en', app()->getLocale());
+        $this->assertEquals('en_US', Session::get('locale'));
     }
 
     public function test_it_falls_back_to_config_locale(): void

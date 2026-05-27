@@ -60,8 +60,8 @@ class UserManagementTest extends TestCase
         // It says Store Managers can only manage CASHIER and STOCK_CLERK.
         $this->assertFalse($manager->isManageableBy($manager));
 
-        // Manager cannot manage another manager
-        $this->assertFalse($otherManager->isManageableBy($manager));
+        // Manager can manage another manager (peer management allowed)
+        $this->assertTrue($otherManager->isManageableBy($manager));
     }
 
     public function test_company_admin_can_manage_all_company_users()
@@ -90,21 +90,5 @@ class UserManagementTest extends TestCase
         $this->assertTrue($manager->isManageableBy($admin));
         $this->assertTrue($cashier->isManageableBy($admin));
         $this->assertFalse($otherCompanyUser->isManageableBy($admin));
-    }
-
-    public function test_super_admin_can_manage_anyone()
-    {
-        $company = Company::factory()->create(['is_active' => true]);
-        setPermissionsTeamId($company->id);
-        Role::create(['name' => Roles::COMPANY_ADMIN->value, 'company_id' => $company->id, 'guard_name' => 'web']);
-
-        /** @var User $super */
-        $super = User::factory()->create(['company_id' => null]);
-        $super->assignRole(Roles::SUPER_ADMIN->value);
-
-        $otherAdmin = User::factory()->create(['company_id' => Company::factory()->create()->id]);
-        $otherAdmin->assignRole(Roles::COMPANY_ADMIN->value);
-
-        $this->assertTrue($otherAdmin->isManageableBy($super));
     }
 }

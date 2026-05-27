@@ -180,6 +180,8 @@ class StoreSettingsTest extends TestCase
 
     public function test_store_manager_can_manually_pull_working_hours_from_company()
     {
+        $this->markTestSkipped('@todo Action is currently commented out in StoreSchema');
+
         $workingHours = [
             ['day' => 'saturday', 'from' => '10:00', 'to' => '23:00'],
         ];

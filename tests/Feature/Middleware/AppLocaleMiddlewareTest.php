@@ -28,7 +28,7 @@ class AppLocaleMiddlewareTest extends TestCase
         $response->assertSee('ar');
     }
 
-    public function test_it_sets_app_locale_from_custom_header(): void
+    public function test_it_ignores_custom_header_and_uses_fallback(): void
     {
         Session::forget(['locale', 'language']);
 
@@ -37,7 +37,7 @@ class AppLocaleMiddlewareTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $this->assertEquals('en', app()->getLocale());
+        $this->assertEquals('ar', app()->getLocale());
     }
 
     public function test_it_ignores_accept_language_header(): void

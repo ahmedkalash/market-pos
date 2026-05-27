@@ -102,6 +102,8 @@ class StoreResourceTest extends TestCase
         ])
             ->fillForm([
                 'name_en' => 'Updated Store Name',
+                'name_ar' => 'Updated Store Name AR',
+                'phone' => '1234567890',
                 'whatsapp_number' => '123456789',
                 'images' => [],
             ])

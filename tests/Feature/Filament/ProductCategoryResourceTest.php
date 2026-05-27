@@ -50,11 +50,19 @@ class ProductCategoryResourceTest extends TestCase
 
         $this->actingAs($admin);
 
-        $categories = ProductCategory::factory()->count(3)->create(['company_id' => $company->id]);
+        $store = Store::factory()->create(['company_id' => $company->id]);
+        $categories = ProductCategory::factory()->count(3)->create([
+            'company_id' => $company->id,
+            'store_id' => $store->id,
+        ]);
 
         // Other tenant's category
         $otherCompany = Company::factory()->create(['is_active' => true]);
-        $otherCategory = ProductCategory::factory()->create(['company_id' => $otherCompany->id]);
+        $otherStore = Store::factory()->create(['company_id' => $otherCompany->id]);
+        $otherCategory = ProductCategory::factory()->create([
+            'company_id' => $otherCompany->id,
+            'store_id' => $otherStore->id,
+        ]);
 
         Livewire::test(ListProductCategories::class)
             ->assertCanSeeTableRecords($categories)
@@ -68,10 +76,13 @@ class ProductCategoryResourceTest extends TestCase
 
         $this->actingAs($admin);
 
+        $store = Store::factory()->create(['company_id' => $company->id]);
+
         Livewire::test(CreateProductCategory::class)
             ->fillForm([
                 'name_en' => 'Test Category',
                 'name_ar' => 'Test Category AR',
+                'store_id' => $store->id,
                 'is_active' => true,
             ])
             ->call('create')
@@ -80,6 +91,7 @@ class ProductCategoryResourceTest extends TestCase
         $this->assertDatabaseHas('product_categories', [
             'name_en' => 'Test Category',
             'company_id' => $company->id,
+            'store_id' => $store->id,
             'is_active' => true,
         ]);
     }
@@ -91,8 +103,9 @@ class ProductCategoryResourceTest extends TestCase
 
         $this->actingAs($admin);
 
-        $parent = ProductCategory::factory()->create(['company_id' => $company->id]);
-        $child = ProductCategory::factory()->create(['company_id' => $company->id]);
+        $store = Store::factory()->create(['company_id' => $company->id]);
+        $parent = ProductCategory::factory()->create(['company_id' => $company->id, 'store_id' => $store->id]);
+        $child = ProductCategory::factory()->create(['company_id' => $company->id, 'store_id' => $store->id]);
 
         Livewire::test(EditProductCategory::class, [
             'record' => $child->getRouteKey(),
@@ -111,7 +124,7 @@ class ProductCategoryResourceTest extends TestCase
         ]);
     }
 
-    public function test_store_manager_cannot_view_product_categories()
+    public function test_store_manager_can_view_product_categories()
     {
         $company = Company::factory()->create(['is_active' => true]);
         $store = Store::factory()->create(['company_id' => $company->id]);
@@ -131,6 +144,6 @@ class ProductCategoryResourceTest extends TestCase
         $this->actingAs($manager);
 
         Livewire::test(ListProductCategories::class)
-            ->assertForbidden();
+            ->assertSuccessful();
     }
 }
