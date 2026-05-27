@@ -146,7 +146,7 @@ class ProductVariant extends Model
 
     public function name()
     {
-        return $this->{'name_'.app()->getLocale()};
+        return $this->{lang_suffix('name')};
     }
 
     public function getNameAttribute(): string

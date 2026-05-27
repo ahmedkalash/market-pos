@@ -18,7 +18,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -94,10 +93,9 @@ class AttributeResource extends Resource
             ->components([
                 Select::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(),
-                        fn (Builder $query) => $query->filterByCompany($user->company_id))
+                    ->relationship('store', lang_suffix('name'))
                     ->required(fn () => $user->isCompanyLevel())
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn () => $user->isCompanyLevel()),
 
@@ -120,11 +118,12 @@ class AttributeResource extends Resource
 
         return $table
             ->columns([
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('app.store'))
                     ->sortable()
                     ->badge()
                     ->color('gray')
+                    ->searchable(['name_en', 'name_ar'])
                     ->visible(fn () => $user->isCompanyLevel()),
 
                 TextColumn::make('name_en')
@@ -151,8 +150,8 @@ class AttributeResource extends Resource
             ->filters([
                 SelectFilter::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(),
-                        fn (Builder $query) => $query->filterByCompany($user->company_id))
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->visible(fn () => $user->isCompanyLevel()),
             ])
             ->recordActions([

@@ -134,7 +134,7 @@ class Store extends Model implements HasMedia
     protected function name(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->{'name_'.app()->getLocale()},
+            get: fn () => $this->{lang_suffix('name')},
         );
     }
 }

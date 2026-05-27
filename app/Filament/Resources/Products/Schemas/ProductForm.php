@@ -9,7 +9,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class ProductForm
@@ -54,9 +53,9 @@ class ProductForm
                     ->schema([
                         Select::make('store_id')
                             ->label(__('app.store'))
-                            ->relationship('store', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
+                            ->relationship('store', lang_suffix('name'))
                             ->required()
-                            ->searchable()
+                            ->searchable(['name_en', 'name_ar'])
                             ->preload()
                             ->visible(fn () => auth()->user()->isCompanyLevel()),
 
@@ -66,23 +65,23 @@ class ProductForm
                         Select::make('category_id')
                             ->label(__('product_category.category'))
                             ->helperText(__('product_category.category_helper'))
-                            ->relationship('category', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
-                            ->searchable()
+                            ->relationship('category', lang_suffix('name'))
+                            ->searchable(['name_en', 'name_ar'])
                             ->preload()
                             ->nullable(),
 
                         Select::make('tax_class_id')
                             ->label(__('tax_class.tax_class'))
                             ->helperText(__('tax_class.tax_class_helper'))
-                            ->relationship('taxClass', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
+                            ->relationship('taxClass', lang_suffix('name'))
                             ->required()
-                            ->searchable()
+                            ->searchable(['name_en', 'name_ar'])
                             ->preload(),
 
                         Select::make('brand_id')
                             ->label(__('brand.brand'))
-                            ->relationship('brand', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
-                            ->searchable()
+                            ->relationship('brand', lang_suffix('name'))
+                            ->searchable(['name_en', 'name_ar'])
                             ->preload()
                             ->nullable(),
 

@@ -7,7 +7,6 @@ use Auth;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
 
 class UnitOfMeasureForm
 {
@@ -20,10 +19,9 @@ class UnitOfMeasureForm
             ->components([
                 Select::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(),
-                        fn (Builder $query) => $query->filterByCompany($user->company_id))
+                    ->relationship('store', lang_suffix('name'))
                     ->required(fn () => $user->isCompanyLevel())
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn () => $user->isCompanyLevel()),
                 TextInput::make('name_ar')

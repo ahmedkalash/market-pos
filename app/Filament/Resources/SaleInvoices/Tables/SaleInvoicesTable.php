@@ -52,7 +52,7 @@ class SaleInvoicesTable
                     ->visible(fn (): bool => $user->isCompanyLevel())
                     ->copyable()
                     ->tooltip(__('app.click_to_copy_item'))
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->toggleable(),
 
                 TextColumn::make('customer.name')
@@ -236,9 +236,9 @@ class SaleInvoicesTable
 
                 SelectFilter::make('store_id')
                     ->label(__('sale_invoice.store'))
-                    ->relationship('store', 'name_'.app()->getLocale())
+                    ->relationship('store', lang_suffix('name'))
                     ->multiple()
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn (): bool => $user->isCompanyLevel()),
 

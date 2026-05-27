@@ -585,9 +585,9 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] Advanced Barcode Parsing (Weighted Items)
       In the Arab region (and globally), deli counters and butchers use scales that print a specific barcode (e.g., starts with 20 or 21, followed by the PLU code, then the weight/price). While your plan says "We do not need to support complex scale-generated barcodes", adding a smart barcode parser that automatically extracts weight and calculates price at the POS screen is a massive selling point for a premium supermarket POS.
 - [ ] add discounts feature to the purchase invoices and also handle it their return
-
-
-
+- [ ] **Streamlined Localization UI & Nullable English Fields (V2):**
+      - Make all English columns (`name_en`, `description_en`, etc.) nullable in the database, as many users in the Arabic market may not require English data.
+      - Refactor the UI (tables and forms) to consolidate the display of localized names. Instead of separate columns for Arabic and English, display the primary Arabic name prominently with the English name underneath it as a secondary description, saving horizontal space and simplifying the interface.
 ---
 
 ## 10. Out of Scope for v1.0

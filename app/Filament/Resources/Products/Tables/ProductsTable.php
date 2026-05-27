@@ -36,33 +36,38 @@ class ProductsTable
 
         return $table
             ->columns([
-                TextColumn::make('name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('name'))
                     ->label(__('app.name'))
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->sortable(),
 
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('app.store'))
                     ->sortable()
                     ->badge()
                     ->color('gray')
+                    ->searchable(['name_en', 'name_ar'])
                     ->visible(fn () => $user->isCompanyLevel()),
 
-                TextColumn::make('category.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('category.name'))
                     ->label(__('product_category.category'))
                     ->sortable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->placeholder('-'),
 
-                TextColumn::make('brand.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('brand.name'))
                     ->label(__('brand.brand'))
                     ->sortable()
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->placeholder('-'),
 
-                TextColumn::make('taxClass.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('taxClass.name'))
                     ->label(__('tax_class.tax_class'))
                     ->badge()
-                    ->color('warning'),
+                    ->color('warning')
+                    ->sortable()
+                    ->searchable(['name_en', 'name_ar'])
+                    ->placeholder('-'),
 
                 TextColumn::make('variants_count')
                     ->label(__('product.variants'))
@@ -76,29 +81,30 @@ class ProductsTable
             ->filters([
                 SelectFilter::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(),
-                        fn (Builder $query) => $query->filterByCompany($user->company_id))
-                    ->visible(fn () => $user->isCompanyLevel()),
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
+                    ->visible(fn () => $user->isCompanyLevel())
+                    ->preload(),
 
                 TernaryFilter::make('is_active')
                     ->label(__('app.active')),
 
                 SelectFilter::make('category_id')
                     ->label(__('product_category.category'))
-                    ->relationship('category', 'name_'.app()->getLocale())
-                    ->searchable()
+                    ->relationship('category', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload(),
 
                 SelectFilter::make('brand_id')
                     ->label(__('brand.brand'))
-                    ->relationship('brand', 'name_'.app()->getLocale())
-                    ->searchable()
+                    ->relationship('brand', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload(),
 
                 SelectFilter::make('tax_class_id')
                     ->label(__('tax_class.tax_class'))
-                    ->relationship('taxClass', 'name_'.app()->getLocale())
-                    ->searchable()
+                    ->relationship('taxClass', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload(),
 
                 TernaryFilter::make('retail_is_price_negotiable')
@@ -271,8 +277,7 @@ class ProductsTable
 
                 SelectFilter::make('uom_id')
                     ->label(__('unit_of_measure.unit_of_measure'))
-                    ->options(fn () => UnitOfMeasure::query()->filterByCompany($user->company_id)
-                        ->pluck('name_'.app()->getLocale(), 'id'))
+                    ->options(fn () => UnitOfMeasure::query()->pluck(lang_suffix('name'), 'id'))
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
                             return $query;
@@ -314,8 +319,7 @@ class ProductsTable
                     ->schema([
                         Select::make('attribute_id')
                             ->label(__('attribute.attribute'))
-                            ->options(fn () => Attribute::query()->filterByCompany($user->company_id)
-                                ->pluck('name_'.app()->getLocale(), 'id'))
+                            ->options(fn () => Attribute::query()->pluck(lang_suffix('name'), 'id'))
                             ->live()
                             ->afterStateUpdated(fn (Set $set) => $set('attribute_value_id', null)),
                         Select::make('attribute_value_id')
@@ -326,7 +330,7 @@ class ProductsTable
                                 }
 
                                 return AttributeValue::where('attribute_id', $get('attribute_id'))
-                                    ->pluck('value_'.app()->getLocale(), 'id');
+                                    ->pluck(lang_suffix('value'), 'id');
                             })
                             ->multiple()
                             ->preload()
@@ -348,11 +352,11 @@ class ProductsTable
 
                         $attribute = Attribute::find($data['attribute_id']);
                         $values = AttributeValue::whereIn('id', (array) $data['attribute_value_id'])
-                            ->pluck('value_'.app()->getLocale())
+                            ->pluck(lang_suffix('value'))
                             ->implode(', ');
 
                         return [
-                            ($attribute?->{'name_'.app()->getLocale()} ?? __('attribute.attribute')).': '.$values,
+                            ($attribute?->{lang_suffix('name')} ?? __('attribute.attribute')).': '.$values,
                         ];
                     }),
 

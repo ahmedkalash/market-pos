@@ -14,7 +14,6 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class ProductCategoriesTable
 {
@@ -31,11 +30,12 @@ class ProductCategoriesTable
                     ->collection('image')
                     ->conversion('thumb')
                     ->circular(),
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('app.store'))
                     ->sortable()
                     ->badge()
                     ->color('gray')
+                    ->searchable(['name_en', 'name_ar'])
                     ->visible(fn () => $user->isCompanyLevel()),
                 TextColumn::make('name_en')
                     ->label(__('product_category.name_en'))
@@ -45,12 +45,12 @@ class ProductCategoriesTable
                     ->label(__('product_category.name_ar'))
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('parent.name_en')
+                TextColumn::make(lang_suffix('parent.name'))
                     ->label(__('product_category.parent_category'))
                     ->default(__('product_category.no_parent_category'))
                     ->color(fn ($record) => $record->parent_id ? 'primary' : 'danger')
                     ->badge()
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->sortable(),
                 ToggleColumn::make('is_active')
                     ->label(__('product_category.active')),
@@ -62,8 +62,10 @@ class ProductCategoriesTable
             ->filters([
                 SelectFilter::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(), fn (Builder $query) => $query->filterByCompany($user->company_id))
-                    ->visible(fn () => $user->isCompanyLevel()),
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
+                    ->visible(fn () => $user->isCompanyLevel())
+                    ->preload(),
 
                 TernaryFilter::make('is_active')
                     ->label(__('product_category.active_status')),

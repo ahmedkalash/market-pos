@@ -57,14 +57,11 @@ class SaleInvoiceForm
 
                             Select::make('store_id')
                                 ->label(__('sale_invoice.store'))
-                                ->options(fn (): array => Store::query()
-                                    ->filterByCompany($user->company_id)
-                                    ->pluck('name_'.app()->getLocale(), 'id')
-                                    ->toArray()
-                                )
+                                ->relationship('store', lang_suffix('name'))
                                 ->default(fn (): ?int => $user->store_id)
                                 ->required()
-                                ->searchable()
+                                ->searchable(['name_en', 'name_ar'])
+                                ->preload()
                                 ->live()
                                 ->visible(fn () => $user->isCompanyLevel()),
 
@@ -179,9 +176,8 @@ class SaleInvoiceForm
                                         return;
                                     }
 
-                                    $locale = app()->getLocale();
-                                    $productName = $variant->product->{"name_$locale"} ?? '';
-                                    $variantName = $variant->{"name_$locale"} ?? '';
+                                    $productName = $variant->product->{lang_suffix('name')} ?? '';
+                                    $variantName = $variant->{lang_suffix('name')} ?? '';
                                     $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
 
                                     $barcodes = $variant->barcodes->pluck('barcode')->toArray();
@@ -220,11 +216,10 @@ class SaleInvoiceForm
                                 ->relationship()
                                 ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
                                     $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
-                                    $locale = app()->getLocale();
 
                                     if ($variant) {
-                                        $productName = $variant->product?->{"name_{$locale}"} ?? '';
-                                        $variantName = $variant->{"name_{$locale}"} ?? '';
+                                        $productName = $variant->product?->{lang_suffix('name')} ?? '';
+                                        $variantName = $variant->{lang_suffix('name')} ?? '';
                                         $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
                                         $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
                                     }

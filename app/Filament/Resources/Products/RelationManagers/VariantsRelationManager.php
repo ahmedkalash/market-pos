@@ -91,9 +91,9 @@ class VariantsRelationManager extends RelationManager
                         Select::make('uom_id')
                             ->label(__('unit_of_measure.unit_of_measure'))
                             ->helperText(__('unit_of_measure.uom_helper'))
-                            ->relationship('unitOfMeasure', 'name_'.app()->getLocale(), fn (Builder $query) => $query->where('company_id', $companyId))
+                            ->relationship('unitOfMeasure', lang_suffix('name'))
                             ->required()
-                            ->searchable()
+                            ->searchable(['name_en', 'name_ar'])
                             ->preload(),
 
                     ])->columns(2),
@@ -258,8 +258,8 @@ class VariantsRelationManager extends RelationManager
                                 Select::make('attribute_id')
                                     ->label(__('attribute.attribute'))
                                     ->helperText(__('attribute.attribute_helper'))
-                                    ->options(function () use ($companyId) {
-                                        return Attribute::where('company_id', $companyId)->pluck('name_'.app()->getLocale(), 'id');
+                                    ->options(function () {
+                                        return Attribute::query()->pluck(lang_suffix('name'), 'id');
                                     })
                                     ->live()
                                     ->required()
@@ -289,7 +289,7 @@ class VariantsRelationManager extends RelationManager
                                             return [];
                                         }
 
-                                        return AttributeValue::where('attribute_id', $get('attribute_id'))->pluck('value_'.app()->getLocale(), 'id');
+                                        return AttributeValue::query()->where('attribute_id', $get('attribute_id'))->pluck(lang_suffix('value'), 'id');
                                     })
                                     ->required()
                                     ->createOptionForm([
@@ -325,7 +325,7 @@ class VariantsRelationManager extends RelationManager
         $user = Auth::user();
 
         return $table
-            ->recordTitleAttribute('name_'.app()->getLocale())
+            ->recordTitleAttribute(lang_suffix('name'))
             ->recordActionsColumnLabel(__('app.actions'))
             ->columns([
                 TextColumn::make('name_ar')
@@ -334,7 +334,7 @@ class VariantsRelationManager extends RelationManager
                     ->searchable(['name_en', 'name_ar'])
                     ->sortable(),
 
-                TextColumn::make('attributeValues.value_'.app()->getLocale())
+                TextColumn::make(lang_suffix('attributeValues.value'))
                     ->label(__('attribute.attributes'))
                     ->badge()
                     ->color('primary')
@@ -439,7 +439,7 @@ class VariantsRelationManager extends RelationManager
                     ->sortable()
                     ->color(fn (ProductVariant $record): ?string => $record->isLowStock() ? 'danger' : null),
 
-                TextColumn::make('unitOfMeasure.abbreviation_'.app()->getLocale())
+                TextColumn::make(lang_suffix('unitOfMeasure.abbreviation'))
                     ->label(__('unit_of_measure.uom'))
                     ->badge()
                     ->color('gray'),
@@ -516,12 +516,8 @@ class VariantsRelationManager extends RelationManager
 
                 SelectFilter::make('uom_id')
                     ->label(__('unit_of_measure.unit_of_measure'))
-                    ->relationship(
-                        'unitOfMeasure',
-                        'name_'.app()->getLocale(),
-                        fn (Builder $query) => $query->filterByCompany($user->company_id)
-                    )
-                    ->searchable()
+                    ->relationship('unitOfMeasure', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload(),
 
                 Filter::make('purchase_price_range')
@@ -588,8 +584,7 @@ class VariantsRelationManager extends RelationManager
                     ->schema([
                         Select::make('attribute_id')
                             ->label(__('attribute.attribute'))
-                            ->options(fn () => Attribute::query()->filterByCompany($user->company_id)
-                                ->pluck('name_'.app()->getLocale(), 'id'))
+                            ->options(fn () => Attribute::query()->pluck(lang_suffix('name'), 'id'))
                             ->live()
                             ->afterStateUpdated(fn (Set $set) => $set('attribute_value_id', null)),
                         Select::make('attribute_value_id')
@@ -599,8 +594,8 @@ class VariantsRelationManager extends RelationManager
                                     return [];
                                 }
 
-                                return AttributeValue::where('attribute_id', $get('attribute_id'))
-                                    ->pluck('value_'.app()->getLocale(), 'id');
+                                return AttributeValue::query()->where('attribute_id', $get('attribute_id'))
+                                    ->pluck(lang_suffix('value'), 'id');
                             })
                             ->multiple()
                             ->preload()
@@ -620,13 +615,13 @@ class VariantsRelationManager extends RelationManager
                             return [];
                         }
 
-                        $attribute = Attribute::find($data['attribute_id']);
-                        $values = AttributeValue::whereIn('id', (array) $data['attribute_value_id'])
-                            ->pluck('value_'.app()->getLocale())
+                        $attribute = Attribute::query()->find($data['attribute_id']);
+                        $values = AttributeValue::query()->whereIn('id', (array) $data['attribute_value_id'])
+                            ->pluck(lang_suffix('value'))
                             ->implode(', ');
 
                         return [
-                            ($attribute?->{'name_'.app()->getLocale()} ?? __('attribute.attribute')).': '.$values,
+                            ($attribute?->{lang_suffix('name')} ?? __('attribute.attribute')).': '.$values,
                         ];
                     }),
 

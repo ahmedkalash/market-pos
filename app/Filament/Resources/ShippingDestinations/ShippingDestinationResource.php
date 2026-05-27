@@ -20,6 +20,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 
@@ -53,9 +54,9 @@ class ShippingDestinationResource extends Resource
             ->components([
                 Select::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale())
+                    ->relationship('store', lang_suffix('name'))
                     ->required()
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn () => $user?->isCompanyLevel()),
                 Hidden::make('store_id')
@@ -86,7 +87,7 @@ class ShippingDestinationResource extends Resource
         return $table
             ->recordActionsColumnLabel(__('app.actions'))
             ->columns([
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('app.store'))
                     ->sortable()
                     ->badge()
@@ -108,7 +109,12 @@ class ShippingDestinationResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('store_id')
+                    ->label(__('app.store'))
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
+                    ->preload()
+                    ->visible(fn () => $user->isCompanyLevel()),
             ])
             ->recordActions([
                 ActionGroup::make([

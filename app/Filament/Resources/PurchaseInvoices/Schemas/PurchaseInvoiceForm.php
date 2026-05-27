@@ -42,14 +42,10 @@ class PurchaseInvoiceForm
 
                     Select::make('store_id')
                         ->label(__('purchase_invoice.store'))
-                        ->options(fn (): array => Store::query()
-                            ->filterByCompany($user->company_id)
-                            ->pluck('name_'.app()->getLocale(), 'id')
-                            ->toArray()
-                        )
+                        ->relationship('store', lang_suffix('name'))
                         ->default(fn (): ?int => $user->store_id)
                         ->required()
-                        ->searchable()
+                        ->searchable(['name_en', 'name_ar'])
                         ->live()
                         ->visible(fn () => $user->isCompanyLevel()),
 
@@ -102,7 +98,7 @@ class PurchaseInvoiceForm
                             }
                             $set('barcode_scanner', null);
 
-                            $barcodeRecord = ProductBarcode::where('barcode', $state)->first();
+                            $barcodeRecord = ProductBarcode::query()->where('barcode', $state)->first();
                             if (! $barcodeRecord) {
                                 Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
                                 $livewire->dispatch('play-sound-error');
@@ -149,9 +145,8 @@ class PurchaseInvoiceForm
                                 return;
                             }
 
-                            $locale = app()->getLocale();
-                            $productName = $variant->product->{"name_$locale"} ?? '';
-                            $variantName = $variant->{"name_$locale"} ?? '';
+                            $productName = $variant->product->{lang_suffix('name')} ?? '';
+                            $variantName = $variant->{lang_suffix('name')} ?? '';
                             $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
 
                             $barcodes = $variant->barcodes->pluck('barcode')->toArray();
@@ -182,8 +177,8 @@ class PurchaseInvoiceForm
                             $locale = app()->getLocale();
 
                             if ($variant) {
-                                $productName = $variant->product?->{"name_{$locale}"} ?? '';
-                                $variantName = $variant->{"name_{$locale}"} ?? '';
+                                $productName = $variant->product?->{lang_suffix('name')} ?? '';
+                                $variantName = $variant->{lang_suffix('name')} ?? '';
                                 $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
                                 $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
                             }

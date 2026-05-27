@@ -11,7 +11,6 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class UnitOfMeasuresTable
 {
@@ -23,7 +22,7 @@ class UnitOfMeasuresTable
         return $table
             ->recordActionsColumnLabel(__('app.actions'))
             ->columns([
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('app.store'))
                     ->sortable()
                     ->badge()
@@ -51,8 +50,9 @@ class UnitOfMeasuresTable
             ->filters([
                 SelectFilter::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', 'name_'.app()->getLocale(),
-                        fn (Builder $query) => $query->filterByCompany($user->company_id))
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
+                    ->preload()
                     ->visible(fn () => $user->isCompanyLevel()),
             ])
             ->recordActions([

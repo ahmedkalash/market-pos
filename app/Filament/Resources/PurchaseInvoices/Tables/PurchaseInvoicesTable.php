@@ -62,10 +62,10 @@ class PurchaseInvoicesTable
                     ->tooltip(__('app.click_to_copy_item'))
                     ->placeholder('—'),
 
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('purchase_invoice.store'))
                     ->visible(fn (): bool => $user->isCompanyLevel())
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->toggleable(),
 
                 TextColumn::make('status')
@@ -257,7 +257,8 @@ class PurchaseInvoicesTable
 
                 SelectFilter::make('store_id')
                     ->label(__('purchase_invoice.store'))
-                    ->relationship('store', 'name_'.app()->getLocale())
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->multiple()
                     ->searchable()
                     ->preload()

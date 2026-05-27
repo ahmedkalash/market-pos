@@ -10,6 +10,6 @@ if (! function_exists('is_standard_role')) {
 if (! function_exists('lang_suffix')) {
     function lang_suffix(?string $path = null): string
     {
-        return ($path ?? '') . '_' . app()->getLocale();
+        return ($path ?? '').'_'.app()->getLocale();
     }
 }

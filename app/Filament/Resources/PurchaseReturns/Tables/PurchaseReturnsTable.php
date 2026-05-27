@@ -63,10 +63,10 @@ class PurchaseReturnsTable
                     ->searchable()
                     ->placeholder('—'),
 
-                TextColumn::make('store.name_'.app()->getLocale())
+                TextColumn::make(lang_suffix('store.name'))
                     ->label(__('purchase_return.store'))
                     ->visible(fn (): bool => $user->isCompanyLevel())
-                    ->searchable()
+                    ->searchable(['name_en', 'name_ar'])
                     ->toggleable(),
 
                 TextColumn::make('status')
@@ -135,7 +135,8 @@ class PurchaseReturnsTable
 
                 SelectFilter::make('store_id')
                     ->label(__('purchase_return.store'))
-                    ->relationship('store', 'name_'.app()->getLocale())
+                    ->relationship('store', lang_suffix('name'))
+                    ->searchable(['name_en', 'name_ar'])
                     ->visible(fn (): bool => $user->isCompanyLevel()),
 
                 SelectFilter::make('vendor_id')

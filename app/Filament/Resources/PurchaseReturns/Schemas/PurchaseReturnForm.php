@@ -41,7 +41,7 @@ class PurchaseReturnForm
                         ->default(function () {
                             $invoiceId = request()->query('original_invoice_id');
 
-                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->invoice_number : null;
+                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->invoice_number : null;
                         })
                         ->live(onBlur: true)
                         ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
@@ -89,7 +89,7 @@ class PurchaseReturnForm
                         ->default(function () {
                             $invoiceId = request()->query('original_invoice_id');
 
-                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->vendor_id : null;
+                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->vendor_id : null;
                         })
                         ->disabled()
                         ->dehydrated()
@@ -97,11 +97,13 @@ class PurchaseReturnForm
 
                     Select::make('store_id')
                         ->label(__('purchase_return.store'))
-                        ->relationship('store', 'name_'.app()->getLocale())
+                        ->relationship('store', lang_suffix('name'))
+                        ->searchable(['name_en', 'name_ar'])
+                        ->preload()
                         ->default(function () {
                             $invoiceId = request()->query('original_invoice_id');
 
-                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->store_id : null;
+                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->store_id : null;
                         })
                         ->disabled()
                         ->dehydrated()
@@ -113,7 +115,7 @@ class PurchaseReturnForm
                         ->default(function () {
                             $invoiceId = request()->query('original_invoice_id');
 
-                            return $invoiceId ? PurchaseInvoice::find($invoiceId)?->store_id : null;
+                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->store_id : null;
                         })
                         ->disabled()
                         ->dehydrated()
@@ -203,7 +205,7 @@ class PurchaseReturnForm
                                 return;
                             }
 
-                            $barcodeRecord = ProductBarcode::where('barcode', $state)->first();
+                            $barcodeRecord = ProductBarcode::query()->where('barcode', $state)->first();
                             if (! $barcodeRecord) {
                                 Notification::make()->warning()->title(__('purchase_return.barcode_not_found'))->send();
                                 $livewire->dispatch('play-sound-error');
@@ -252,9 +254,8 @@ class PurchaseReturnForm
 
                             $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
 
-                            $locale = app()->getLocale();
-                            $productName = $originalItem->variant->product->{"name_$locale"};
-                            $variantName = $originalItem->variant->{"name_$locale"};
+                            $productName = $originalItem->variant->product->{lang_suffix('name')};
+                            $variantName = $originalItem->variant->{lang_suffix('name')};
                             $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
 
                             $items[$key] = [
@@ -286,13 +287,13 @@ class PurchaseReturnForm
                             $locale = app()->getLocale();
 
                             if ($variant) {
-                                $productName = $variant->product?->{"name_{$locale}"} ?? '';
-                                $variantName = $variant->{"name_{$locale}"} ?? '';
+                                $productName = $variant->product?->{lang_suffix('name')} ?? '';
+                                $variantName = $variant->{lang_suffix('name')} ?? '';
                                 $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
                                 $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
                             }
 
-                            $originalItem = PurchaseInvoiceItem::find($data['original_item_id']);
+                            $originalItem = PurchaseInvoiceItem::query()->find($data['original_item_id']);
                             if ($originalItem) {
                                 $data['max_returnable'] = $originalItem->getRemainingReturnableQuantity($record->id);
                             }
@@ -418,8 +419,8 @@ class PurchaseReturnForm
                 $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
                 $key = 'item_'.$originalItem->id;
                 $locale = app()->getLocale();
-                $productName = $originalItem->variant->product->{"name_$locale"};
-                $variantName = $originalItem->variant->{"name_$locale"};
+                $productName = $originalItem->variant->product->{lang_suffix('name')};
+                $variantName = $originalItem->variant->{lang_suffix('name')};
                 $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
 
                 $items[$key] = [

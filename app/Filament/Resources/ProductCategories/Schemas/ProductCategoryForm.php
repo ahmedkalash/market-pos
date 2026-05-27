@@ -29,10 +29,9 @@ class ProductCategoryForm
                         Grid::make(3)->schema([
                             Select::make('store_id')
                                 ->label(__('app.store'))
-                                ->relationship('store', 'name_'.app()->getLocale(),
-                                    fn (Builder $query) => $query->filterByCompany($user->company_id))
+                                ->relationship('store', lang_suffix('name'))
                                 ->required(fn () => $user->isCompanyLevel())
-                                ->searchable()
+                                ->searchable(['name_en', 'name_ar'])
                                 ->preload()
                                 ->visible(fn () => $user->isCompanyLevel()),
                             TextInput::make('name_en')
@@ -47,7 +46,7 @@ class ProductCategoryForm
                                 ->label(__('product_category.parent_category'))
                                 ->relationship(
                                     name: 'parent',
-                                    titleAttribute: 'name_en',
+                                    titleAttribute: lang_suffix('name'),
                                     modifyQueryUsing: fn (Builder $query, Select $component) => $query
                                         ->active()
                                         ->where('id', '!=', $component->getRecord()?->id)
@@ -56,7 +55,7 @@ class ProductCategoryForm
                                             fn (Builder $query, $record) => $query->whereNotIn('id', $record->descendants()->withoutGlobalScopes()->pluck('id')->toArray())
                                         )
                                 )
-                                ->searchable()
+                                ->searchable(['name_en', 'name_ar'])
                                 ->preload(),
                             Toggle::make('is_active')
                                 ->label(__('product_category.active_status'))
