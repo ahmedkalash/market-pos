@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseReturns\Tables;
 
+use \Filament\Support\Exceptions\Halt;
 use App\Enums\PurchaseReturnStatus;
 use App\Models\PurchaseReturn;
 use App\Models\User;
@@ -270,19 +271,18 @@ class PurchaseReturnsTable
                         ->modalDescription(__('purchase_return.finalize_confirm_body'))
                         ->authorize('finalize_purchase_return')
                         ->visible(fn (PurchaseReturn $record): bool => ! $record->isFinalized())
+                        ->successNotificationTitle(__('purchase_return.finalize_success'))
                         ->action(function (PurchaseReturn $record) {
                             try {
                                 PurchaseInvoiceService::make()->finalizeReturn($record);
-                                Notification::make()
-                                    ->title(__('purchase_return.finalize_success'))
-                                    ->success()
-                                    ->send();
                             } catch (\Exception $e) {
                                 Notification::make()
                                     ->title(__('purchase_return.finalize_failed'))
                                     ->body($e->getMessage())
                                     ->danger()
                                     ->send();
+
+                                throw (new Halt())->rollBackDatabaseTransaction(true);
                             }
                         }),
                     ViewAction::make()

@@ -3,6 +3,7 @@
 return [
     'catalog' => 'Catalog',
     'product' => 'Product',
+    'model_label' => 'Product',
     'products' => 'Products',
     'general_information' => 'General Information',
     'organization' => 'Organization',

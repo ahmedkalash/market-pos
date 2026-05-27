@@ -27,6 +27,7 @@ class EditSaleInvoice extends EditRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->authorize('finalize_sale_invoice')
+                ->successNotificationTitle(__('sale_invoice.finalized_success'))
                 ->action(function () {
                     $this->shouldFinalize = true;
                     $this->save();
@@ -40,7 +41,7 @@ class EditSaleInvoice extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     /**

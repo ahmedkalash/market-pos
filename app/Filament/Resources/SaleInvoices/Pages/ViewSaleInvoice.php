@@ -26,6 +26,7 @@ class ViewSaleInvoice extends ViewRecord
                 ->modalHeading(__('sale_invoice.finalize_confirm_title'))
                 ->modalDescription(__('sale_invoice.finalize_confirm_body'))
                 ->modalSubmitActionLabel(__('sale_invoice.finalize'))
+                ->successNotificationTitle(__('sale_invoice.finalized_success'))
                 ->authorize('finalize_sale_invoice')
                 ->visible(fn (SaleInvoice $record): bool => $record->isDraft())
                 ->action(function (SaleInvoice $record): void {
@@ -38,13 +39,8 @@ class ViewSaleInvoice extends ViewRecord
                             ->danger()
                             ->send();
 
-                        return;
+                        $this->halt(true);
                     }
-
-                    Notification::make()
-                        ->title(__('sale_invoice.finalize'))
-                        ->success()
-                        ->send();
 
                     $this->refreshFormData([
                         'status',

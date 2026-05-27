@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PriceType;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -152,5 +153,12 @@ class ProductVariant extends Model
     public function getNameAttribute(): string
     {
         return $this->name();
+    }
+
+    #[Scope]
+    public function whereNameLike($query, string $name)
+    {
+        return $query->where('name_en', 'like', "%{$name}%")
+            ->orWhere('name_ar', 'like', "%{$name}%");
     }
 }

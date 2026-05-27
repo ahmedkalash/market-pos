@@ -3,6 +3,7 @@
 return [
     'catalog' => 'الكتالوج',
     'product' => 'منتج',
+    'model_label' => 'المنتج',
     'products' => 'المنتجات',
     'general_information' => 'المعلومات العامة',
     'organization' => 'التنظيم',

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToStore;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -65,5 +66,12 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    #[Scope]
+    public function whereNameLike($query, string $name)
+    {
+        return $query->where('name_en', 'like', "%{$name}%")
+            ->orWhere('name_ar', 'like', "%{$name}%");
     }
 }

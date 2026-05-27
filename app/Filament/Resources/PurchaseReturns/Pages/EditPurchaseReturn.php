@@ -27,6 +27,7 @@ class EditPurchaseReturn extends EditRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->authorize(['update_purchase_return', 'finalize_purchase_return'])
+                ->successNotificationTitle(__('purchase_return.finalize_success'))
                 ->action(function () {
                     $this->shouldFinalize = true;
                     $this->save();
@@ -40,7 +41,7 @@ class EditPurchaseReturn extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     /**

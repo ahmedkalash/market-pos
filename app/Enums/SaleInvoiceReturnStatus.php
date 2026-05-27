@@ -2,7 +2,10 @@
 
 namespace App\Enums;
 
-enum SaleInvoiceReturnStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum SaleInvoiceReturnStatus: string implements HasColor, HasLabel
 {
     case None = 'none';
     case PartiallyReturned = 'partially_returned';

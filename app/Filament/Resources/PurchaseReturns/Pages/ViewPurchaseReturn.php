@@ -25,6 +25,7 @@ class ViewPurchaseReturn extends ViewRecord
                 ->modalHeading(__('purchase_return.finalize_confirm_title'))
                 ->modalDescription(__('purchase_return.finalize_confirm_body'))
                 ->modalSubmitActionLabel(__('purchase_return.finalize'))
+                ->successNotificationTitle(__('purchase_return.finalize_success'))
                 ->authorize('finalize_purchase_return')
                 ->visible(fn (PurchaseReturn $record): bool => ! $record->isFinalized())
                 ->action(function (PurchaseReturn $record): void {
@@ -37,13 +38,8 @@ class ViewPurchaseReturn extends ViewRecord
                             ->danger()
                             ->send();
 
-                        return;
+                        $this->halt(true);
                     }
-
-                    Notification::make()
-                        ->title(__('purchase_return.finalize_success'))
-                        ->success()
-                        ->send();
 
                     $this->refreshFormData([
                         'status',

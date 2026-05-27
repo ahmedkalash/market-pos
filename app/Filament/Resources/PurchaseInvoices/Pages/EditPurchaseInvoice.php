@@ -27,6 +27,7 @@ class EditPurchaseInvoice extends EditRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->authorize('finalize_purchase_invoice')
+                ->successNotificationTitle(__('purchase_invoice.finalized_success'))
                 ->action(function () {
                     $this->shouldFinalize = true;
                     $this->save();
@@ -54,7 +55,7 @@ class EditPurchaseInvoice extends EditRecord
         $invoice = $this->record;
 
         if ($invoice->isFinalized()) {
-            $this->redirect($this->getResource()::getUrl('edit', ['record' => $invoice]));
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $invoice]));
         }
     }
 

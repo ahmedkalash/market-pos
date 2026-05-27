@@ -73,6 +73,7 @@ class SaleInvoiceForm
                                 ->label(__('customer.model_label'))
                                 ->relationship('customer', 'name')
                                 ->searchable()
+                                ->preload()
                                 ->createOptionForm([
                                     Grid::make(2)->schema([
                                         TextInput::make('name')

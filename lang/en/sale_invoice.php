@@ -60,6 +60,9 @@ return [
     'draft_prices_warning' => 'Note: Product prices may have changed since this draft was created. To fetch the latest prices, please save the invoice as a draft before finalizing.',
 
     // Filters
+    'total_discount_amount' => 'Total Discount Amount',
+    'discount_min' => 'Min Discount',
+    'discount_max' => 'Max Discount',
     'amount_min' => 'Min Amount',
     'amount_max' => 'Max Amount',
     'created_from' => 'Created From',

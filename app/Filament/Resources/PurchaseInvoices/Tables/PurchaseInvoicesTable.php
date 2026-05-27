@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Tables;
 
+use \Filament\Support\Exceptions\Halt;
 use App\Enums\InvoiceReturnStatus;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
@@ -436,20 +437,18 @@ class PurchaseInvoicesTable
                         ->requiresConfirmation()
                         ->authorize('finalize_purchase_invoice')
                         ->visible(fn (PurchaseInvoice $record): bool => ! $record->isFinalized())
+                        ->successNotificationTitle(__('purchase_invoice.finalized_success'))
                         ->action(function (PurchaseInvoice $record) {
                             try {
                                 PurchaseInvoiceService::make()->finalize($record);
-
-                                Notification::make()
-                                    ->title(__('purchase_invoice.finalized_success'))
-                                    ->success()
-                                    ->send();
                             } catch (\Throwable $e) {
                                 Notification::make()
                                     ->title(__('purchase_invoice.finalize_failed'))
                                     ->body($e->getMessage())
                                     ->danger()
                                     ->send();
+
+                                throw (new Halt())->rollBackDatabaseTransaction(true);
                             }
                         }),
 

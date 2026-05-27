@@ -162,4 +162,17 @@ class SaleInvoice extends Model
     {
         return $query->where('return_status', SaleInvoiceReturnStatus::PartiallyReturned);
     }
+
+    #[Scope]
+    public function hasNotes(Builder $query): Builder
+    {
+        return $query->whereNotNull('notes')->where('notes', '!=', '');
+    }
+
+   #[Scope]
+    public function withoutNotes(Builder $query): Builder
+    {
+        return $query->whereNull('notes')->orWhere('notes', '');
+    }
+
 }
