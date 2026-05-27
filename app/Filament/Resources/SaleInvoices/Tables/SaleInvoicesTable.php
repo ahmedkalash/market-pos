@@ -17,7 +17,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
-use Filament\Support\Colors\Color;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
@@ -84,9 +84,10 @@ class SaleInvoicesTable
                     ->placeholder('—')
                     ->toggleable(),
 
-                TextColumn::make('total_discount_amount')
-                    ->label(__('sale_invoice.total_discount_amount'))
-                    ->color(Color::Orange)
+                TextColumn::make('grand_total_discount')
+                    ->label(__('sale_invoice.grand_total_discount'))
+                    ->badge()
+                    ->color('danger')
                     ->numeric(decimalPlaces: 2, locale: 'en')
                     ->prefix($currencySymbol.' ')
                     ->sortable()
@@ -94,7 +95,8 @@ class SaleInvoicesTable
 
                 TextColumn::make('total_amount')
                     ->label(__('sale_invoice.total_amount'))
-                    ->color(Color::Blue)
+                    ->badge()
+                    ->color('success')
                     ->numeric(decimalPlaces: 2, locale: 'en')
                     ->prefix($currencySymbol.' ')
                     ->copyable()
@@ -133,6 +135,15 @@ class SaleInvoicesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('store_id')
+                    ->label(__('sale_invoice.store'))
+                    ->relationship('store', lang_suffix('name'))
+                    ->multiple()
+                    ->searchable(['name_en', 'name_ar'])
+                    ->preload()
+                    ->visible(fn (): bool => $user->isCompanyLevel())
+                    ->native(false),
+
                 Filter::make('invoice_number')
                     ->schema([
                         TextInput::make('invoice_number')
@@ -144,57 +155,52 @@ class SaleInvoicesTable
                             fn (Builder $query, $number): Builder => $query->where('invoice_number', 'like', "{$number}%"),
                         );
                     })
-                    ->indicateUsing(function (array $data): ?string {
-                        if (! ($data['invoice_number'] ?? null)) {
-                            return null;
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['invoice_number'] ?? null) {
+                            $indicators[] = Indicator::make(__('sale_invoice.invoice_number').': '.$data['invoice_number'])
+                                ->removeField('invoice_number');
                         }
 
-                        return __('sale_invoice.invoice_number').': '.$data['invoice_number'];
+                        return $indicators;
                     }),
 
                 SelectFilter::make('created_by')
                     ->label(__('sale_invoice.created_by'))
                     ->relationship('createdBy', 'name')
                     ->multiple()
-                    ->searchable(),
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
 
                 SelectFilter::make('finalized_by')
                     ->label(__('sale_invoice.finalized_by'))
                     ->relationship('finalizedBy', 'name')
                     ->multiple()
-                    ->searchable(),
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
 
                 Filter::make('product_barcode')
                     ->schema([
                         TextInput::make('barcode')
                             ->label(__('sale_invoice.product_barcode')),
                     ])
-                    ->query(function (Builder $query, array $data) use ($user): Builder {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
                             $data['barcode'] ?? null,
-                            fn (Builder $query, $barcode): Builder => $query->whereHas(
-                                'items',
-                                fn (Builder $query) => $query->whereIn('product_variant_id', function ($subQuery) use ($barcode, $user) {
-                                    $subQuery->select('product_barcodes.product_variant_id')
-                                        ->from('product_barcodes')
-                                        ->join('product_variants', 'product_variants.id', '=', 'product_barcodes.product_variant_id')
-                                        ->join('products', 'products.id', '=', 'product_variants.product_id')
-                                        ->whereIn('products.store_id', function ($storeSubQuery) use ($user) {
-                                            $storeSubQuery->select('id')
-                                                ->from('stores')
-                                                ->where('company_id', $user->company_id);
-                                        })
-                                        ->where('product_barcodes.barcode', $barcode);
-                                })
-                            ),
+                            fn (Builder $query, $barcode): Builder => $query
+                                ->whereHas('items.variant.barcodes', fn (Builder $barcodeQuery) => $barcodeQuery->where('barcode', $barcode))
                         );
                     })
-                    ->indicateUsing(function (array $data): ?string {
-                        if (! ($data['barcode'] ?? null)) {
-                            return null;
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['barcode'] ?? null) {
+                            $indicators[] = Indicator::make(__('sale_invoice.product_barcode').': '.$data['barcode'])
+                                ->removeField('barcode');
                         }
 
-                        return __('sale_invoice.product_barcode').': '.$data['barcode'];
+                        return $indicators;
                     }),
 
                 TernaryFilter::make('has_notes')
@@ -203,49 +209,122 @@ class SaleInvoicesTable
                     ->trueLabel(__('sale_invoice.with_notes'))
                     ->falseLabel(__('sale_invoice.without_notes'))
                     ->queries(
-                        true: fn (Builder $query) => $query->whereNotNull('notes')->where('notes', '!=', ''),
-                        false: fn (Builder $query) => $query->whereNull('notes')->orWhere('notes', ''),
+                        true: fn (Builder $query) => $query->hasNotes(),
+                        false: fn (Builder $query) => $query->withoutNotes(),
                         blank: fn (Builder $query) => $query,
                     ),
 
                 SelectFilter::make('status')
                     ->label(__('sale_invoice.status'))
                     ->multiple()
-                    ->options([
-                        SaleInvoiceStatus::Draft->value => __('sale_invoice.status_draft'),
-                        SaleInvoiceStatus::Finalized->value => __('sale_invoice.status_finalized'),
-                    ]),
+                    ->options(SaleInvoiceStatus::class)
+                    ->native(false),
 
                 SelectFilter::make('return_status')
                     ->label(__('sale_invoice.return_status'))
                     ->multiple()
-                    ->options([
-                        SaleInvoiceReturnStatus::None->value => __('sale_invoice.return_status_none'),
-                        SaleInvoiceReturnStatus::PartiallyReturned->value => __('sale_invoice.return_status_partially_returned'),
-                        SaleInvoiceReturnStatus::FullyReturned->value => __('sale_invoice.return_status_fully_returned'),
-                    ]),
+                    ->options(SaleInvoiceReturnStatus::class)
+                    ->native(false),
 
                 SelectFilter::make('payment_method')
                     ->label(__('sale_invoice.payment_method'))
                     ->multiple()
-                    ->options([
-                        PaymentMethod::Cash->value => __('sale_invoice.payment_method_cash'),
-                        PaymentMethod::Card->value => __('sale_invoice.payment_method_card'),
-                        PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
-                    ]),
-
-                SelectFilter::make('store_id')
-                    ->label(__('sale_invoice.store'))
-                    ->relationship('store', lang_suffix('name'))
-                    ->multiple()
-                    ->searchable(['name_en', 'name_ar'])
-                    ->preload()
-                    ->visible(fn (): bool => $user->isCompanyLevel()),
+                    ->options(PaymentMethod::class)
+                    ->native(false),
 
                 SelectFilter::make('customer_id')
                     ->label(__('customer.model_label'))
                     ->relationship('customer', 'name')
-                    ->searchable(),
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
+
+                Filter::make('customer_phone')
+                    ->schema([
+                        TextInput::make('phone')
+                            ->label(__('customer.phone'))
+                            ->tel(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['phone'] ?? null,
+                            fn (Builder $query, $phone): Builder => $query->whereHas(
+                                'customer',
+                                fn (Builder $customerQuery) => $customerQuery->where('phone', 'like', "{$phone}%")
+                            )
+                        );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['phone'] ?? null) {
+                            $indicators[] = Indicator::make(__('customer.phone').': '.$data['phone'])
+                                ->removeField('phone');
+                        }
+
+                        return $indicators;
+                    }),
+
+                Filter::make('product_name')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(__('product.model_label')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when($data['name'] ?? null,
+                            fn (Builder $query, $name): Builder => $query->whereHas(
+                                'items.variant', fn (Builder $variantQuery) => $variantQuery
+                                    ->whereNameLike($name)
+                                    ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->whereNameLike($name))
+                            )
+                        );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['name'] ?? null) {
+                            $indicators[] = Indicator::make(__('product.model_label').': '.$data['name'])
+                                ->removeField('name');
+                        }
+
+                        return $indicators;
+                    }),
+
+                Filter::make('grand_total_discount')
+                    ->columnSpan(2)
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('min_discount')
+                                    ->label(__('sale_invoice.discount_min'))
+                                    ->numeric(),
+                                TextInput::make('max_discount')
+                                    ->label(__('sale_invoice.discount_max'))
+                                    ->numeric(),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['min_discount'],
+                                fn (Builder $query, $amount): Builder => $query->where('grand_total_discount', '>=', $amount),
+                            )
+                            ->when(
+                                $data['max_discount'],
+                                fn (Builder $query, $amount): Builder => $query->where('grand_total_discount', '<=', $amount),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['min_discount'] ?? null) {
+                            $indicators[] = Indicator::make(__('sale_invoice.discount_min').': '.$data['min_discount'])
+                                ->removeField('min_discount');
+                        }
+                        if ($data['max_discount'] ?? null) {
+                            $indicators[] = Indicator::make(__('sale_invoice.discount_max').': '.$data['max_discount'])
+                                ->removeField('max_discount');
+                        }
+
+                        return $indicators;
+                    }),
 
                 Filter::make('total_amount')
                     ->columnSpan(2)
@@ -262,12 +341,10 @@ class SaleInvoicesTable
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['min_amount'],
+                            ->when($data['min_amount'],
                                 fn (Builder $query, $amount): Builder => $query->where('total_amount', '>=', $amount),
                             )
-                            ->when(
-                                $data['max_amount'],
+                            ->when($data['max_amount'],
                                 fn (Builder $query, $amount): Builder => $query->where('total_amount', '<=', $amount),
                             );
                     })
@@ -293,21 +370,23 @@ class SaleInvoicesTable
                                 DatePicker::make('created_from')
                                     ->native(false)
                                     ->locale(app()->getLocale())
-                                    ->label(__('sale_invoice.created_from')),
+                                    ->label(__('sale_invoice.created_from'))
+                                    ->format('Y-m-d')
+                                    ->displayFormat('Y-m-d'),
                                 DatePicker::make('created_until')
                                     ->native(false)
                                     ->locale(app()->getLocale())
-                                    ->label(__('sale_invoice.created_until')),
+                                    ->label(__('sale_invoice.created_until'))
+                                    ->format('Y-m-d')
+                                    ->displayFormat('Y-m-d'),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['created_from'],
+                            ->when($data['created_from'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
-                            ->when(
-                                $data['created_until'],
+                            ->when($data['created_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
@@ -333,21 +412,23 @@ class SaleInvoicesTable
                                 DatePicker::make('finalized_from')
                                     ->native(false)
                                     ->locale(app()->getLocale())
-                                    ->label(__('sale_invoice.finalized_from')),
+                                    ->label(__('sale_invoice.finalized_from'))
+                                    ->format('Y-m-d')
+                                    ->displayFormat('Y-m-d'),
                                 DatePicker::make('finalized_until')
                                     ->native(false)
                                     ->locale(app()->getLocale())
-                                    ->label(__('sale_invoice.finalized_until')),
+                                    ->label(__('sale_invoice.finalized_until'))
+                                    ->format('Y-m-d')
+                                    ->displayFormat('Y-m-d'),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['finalized_from'],
+                            ->when($data['finalized_from'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('finalized_at', '>=', $date),
                             )
-                            ->when(
-                                $data['finalized_until'],
+                            ->when($data['finalized_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('finalized_at', '<=', $date),
                             );
                     })
@@ -374,6 +455,7 @@ class SaleInvoicesTable
                         ->label(__('sale_invoice.finalize'))
                         ->modalHeading(__('sale_invoice.finalize'))
                         ->modalDescription(__('sale_invoice.finalize_confirmation'))
+                        ->successNotificationTitle(__('sale_invoice.finalized_success'))
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
@@ -382,17 +464,14 @@ class SaleInvoicesTable
                         ->action(function (SaleInvoice $record) {
                             try {
                                 SaleInvoiceService::make()->finalize($record);
-
-                                Notification::make()
-                                    ->title(__('sale_invoice.finalized_success'))
-                                    ->success()
-                                    ->send();
                             } catch (\Throwable $e) {
                                 Notification::make()
                                     ->title(__('sale_invoice.finalize_failed'))
                                     ->body($e->getMessage())
                                     ->danger()
                                     ->send();
+
+                                throw (new Halt())->rollBackDatabaseTransaction(true);
                             }
                         }),
 
