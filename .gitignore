@@ -25,6 +25,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /.z/
+!/.z/srs.md
 /.agents/
 /.claude/
 /.gemini/

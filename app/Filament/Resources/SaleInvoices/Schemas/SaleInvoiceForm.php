@@ -50,6 +50,7 @@ class SaleInvoiceForm
                         ->schema([
                             TextEntry::make('draft_warning')
                                 ->hiddenLabel()
+                                ->color('warning')
                                 ->state(new HtmlString('<div class="text-warning-600 bg-warning-50 p-3 rounded-lg dark:text-warning-400 dark:bg-warning-400/10 text-sm font-medium">'.__('sale_invoice.draft_prices_warning').'</div>'))
                                 ->hidden(fn (?Model $record, string $operation) => $operation === 'create' || $record?->isFinalized())
                                 ->columnSpanFull(),
@@ -718,10 +719,12 @@ class SaleInvoiceForm
                                                 $destination = ShippingDestination::query()->find($state);
                                                 if ($destination) {
                                                     $set('shipping_cost', (float) $destination->cost);
+                                                    $set('shipping_address', $destination->name);
                                                     static::recalculateTotals($get, $set);
                                                 }
                                             } else {
                                                 $set('shipping_cost', 0);
+                                                $set('shipping_address', '');
                                                 static::recalculateTotals($get, $set);
                                             }
                                         }),
