@@ -732,6 +732,7 @@ class SaleInvoiceForm
                                     TextInput::make('shipping_cost')
                                         ->label(__('shipping.shipping_cost'))
                                         ->numeric()
+                                        ->required(fn (Get $get) => filled($get('shipping_destination_id')))
                                         ->default(0)
                                         ->minValue(0)
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
