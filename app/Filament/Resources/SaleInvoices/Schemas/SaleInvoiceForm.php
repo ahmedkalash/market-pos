@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\SaleInvoices\Schemas;
 
+use \App\Filament\Resources\ShippingDestinations\ShippingDestinationResource;
 use App\Enums\DiscountType;
 use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
 use App\Models\ShippingDestination;
-use App\Models\Store;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
@@ -709,6 +709,10 @@ class SaleInvoiceForm
                                         ->relationship('shippingDestination', 'name', fn (Builder $query) => $query->active())
                                         ->searchable()
                                         ->preload()
+                                        ->createOptionForm([
+                                            Grid::make(2)
+                                                ->schema(ShippingDestinationResource::getFormSchema())
+                                            ])
                                         ->live()
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
@@ -738,10 +742,9 @@ class SaleInvoiceForm
 
                                     Textarea::make('shipping_address')
                                         ->label(__('shipping.shipping_address'))
-                                        ->rows(2)
-                                        ->columnSpanFull(),
+                                        ->rows(2),
                                 ])
-                                ->columns(2)
+                                ->columns(3)
                                 ->compact(),
 
                             Section::make()

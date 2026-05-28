@@ -592,6 +592,8 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
       - **Decimal Support:** Add an `allow_decimals` toggle. If enabled, allow the user to specify the `allowed_decimals` count (e.g., 2 for Meters, 3 for Grams). This ensures a clean UX (preventing cashiers from selling "1.5 Pieces") while cleanly handling weight/length measurements.
       - **Base Units & Conversions (V2):** Allow defining base units (e.g., Piece) and related composite units (e.g., Carton = 24 Pieces, Box = 12 Pieces) for advanced purchasing and inventory breakdown.
       - **Active/Inactive Status:** A toggle to disable unused units from appearing in dropdowns without deleting them and breaking historical records.
+- [ ] **Hide Tax-Related UI Elements (Temporary):**
+      - Temporarily disable and hide all tax-related fields, columns, and settings across the entire application (e.g., Tax Classes on Products, Tax breakdowns on invoices). This will prevent user confusion and conflicts until the full tax engine is ready for deployment in later phases.
 ---
 
 ## 10. Out of Scope for v1.0

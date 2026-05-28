@@ -45,38 +45,43 @@ class ShippingDestinationResource extends Resource
         return __('shipping.destinations');
     }
 
-    public static function form(Schema $schema): Schema
+    public static function getFormSchema(): array
     {
         /** @var User $user */
         $user = Auth::user();
 
+        return [
+            Select::make('store_id')
+                ->label(__('app.store'))
+                ->relationship('store', lang_suffix('name'))
+                ->required()
+                ->searchable(['name_en', 'name_ar'])
+                ->preload()
+                ->visible(fn () => $user?->isCompanyLevel()),
+            Hidden::make('store_id')
+                ->default($user->store_id)
+                ->visible(fn () => $user?->isStoreLevel()),
+            TextInput::make('name')
+                ->label(__('shipping.destination_name'))
+                ->required()
+                ->maxLength(255),
+            TextInput::make('cost')
+                ->label(__('shipping.shipping_cost'))
+                ->required()
+                ->numeric()
+                ->default(0)
+                ->minValue(0)
+                ->prefix($user->company->currency_symbol ?? 'ج.م'),
+            Toggle::make('is_active')
+                ->label(__('shipping.is_active'))
+                ->default(true),
+        ];
+    }
+
+    public static function form(Schema $schema): Schema
+    {
         return $schema
-            ->components([
-                Select::make('store_id')
-                    ->label(__('app.store'))
-                    ->relationship('store', lang_suffix('name'))
-                    ->required()
-                    ->searchable(['name_en', 'name_ar'])
-                    ->preload()
-                    ->visible(fn () => $user?->isCompanyLevel()),
-                Hidden::make('store_id')
-                    ->default($user->store_id)
-                    ->visible(fn () => $user?->isStoreLevel()),
-                TextInput::make('name')
-                    ->label(__('shipping.destination_name'))
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('cost')
-                    ->label(__('shipping.shipping_cost'))
-                    ->required()
-                    ->numeric()
-                    ->default(0)
-                    ->minValue(0)
-                    ->prefix($user->company->currency_symbol ?? 'ج.م'),
-                Toggle::make('is_active')
-                    ->label(__('shipping.is_active'))
-                    ->default(true),
-            ]);
+            ->components(self::getFormSchema());
     }
 
     public static function table(Table $table): Table
