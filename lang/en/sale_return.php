@@ -34,4 +34,13 @@ return [
     'unit_price_tooltip' => 'The original price of this unit as it was sold in the original invoice, before any discounts.',
     'customer_helper' => 'The customer from the original sale invoice. This is set automatically.',
     'store_helper' => 'The store where the original sale invoice was issued. This is set automatically.',
+    'invoice_found_success' => 'Invoice found and loaded successfully.',
+    'invoice_not_found' => 'Invoice not found or not returnable.',
+    'items_refund_helper' => 'Total refund value of returned items.',
+    'extra_items_helper' => 'Total adjustments (additions minus subtractions).',
+    'total_refund_helper' => 'Grand total to refund to the customer.',
+    'recalculate_failed' => 'Recalculation Failed',
+    'finalize_failed' => 'Finalization Failed',
+    'save_as_draft' => 'Save as Draft',
+    'create_and_finalize' => 'Create & Finalize',
 ];

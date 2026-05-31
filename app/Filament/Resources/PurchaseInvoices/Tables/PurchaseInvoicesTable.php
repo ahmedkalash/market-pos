@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Tables;
 
-use \Filament\Support\Exceptions\Halt;
 use App\Enums\InvoiceReturnStatus;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
@@ -19,6 +18,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Support\Colors\Color;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
@@ -311,9 +311,11 @@ class PurchaseInvoicesTable
                                 DatePicker::make('received_from')
                                     ->native(false)
                                     ->locale(app()->getLocale())
+                                    ->displayFormat('d/m/Y')
                                     ->label(__('purchase_invoice.received_from')),
                                 DatePicker::make('received_until')
                                     ->native(false)
+                                    ->displayFormat('d/m/Y')
                                     ->locale(app()->getLocale())
                                     ->label(__('purchase_invoice.received_until')),
                             ]),
@@ -448,7 +450,7 @@ class PurchaseInvoicesTable
                                     ->danger()
                                     ->send();
 
-                                throw (new Halt())->rollBackDatabaseTransaction(true);
+                                throw (new Halt)->rollBackDatabaseTransaction(true);
                             }
                         }),
 

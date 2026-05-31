@@ -5,6 +5,7 @@ namespace App\Filament\Resources\SaleInvoices\Tables;
 use App\Enums\PaymentMethod;
 use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
+use App\Filament\Resources\SaleReturnInvoices\SaleReturnInvoiceResource;
 use App\Models\SaleInvoice;
 use App\Models\User;
 use App\Services\SaleInvoiceService;
@@ -471,12 +472,19 @@ class SaleInvoicesTable
                                     ->danger()
                                     ->send();
 
-                                throw (new Halt())->rollBackDatabaseTransaction(true);
+                                throw (new Halt)->rollBackDatabaseTransaction(true);
                             }
                         }),
 
                     ViewAction::make()
                         ->authorize('view_sale_invoice'),
+
+                    Action::make('create_return')
+                        ->label(__('app.create_return'))
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->color('warning')
+                        ->url(fn (SaleInvoice $record): string => SaleReturnInvoiceResource::getUrl('create', ['original_invoice_id' => $record->id]))
+                        ->visible(fn (SaleInvoice $record): bool => $record->isFinalized()),
                     EditAction::make()
                         ->authorize('update_sale_invoice')
                         ->visible(fn (SaleInvoice $record): bool => ! $record->isFinalized()),

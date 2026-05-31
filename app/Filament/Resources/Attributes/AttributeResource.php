@@ -10,6 +10,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -98,6 +99,9 @@ class AttributeResource extends Resource
                     ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn () => $user->isCompanyLevel()),
+                Hidden::make('store_id')
+                    ->default(fn () => $user->store_id)
+                    ->visible(fn () => $user->isStoreLevel()),
 
                 TextInput::make('name_en')
                     ->label(__('product.name_english'))

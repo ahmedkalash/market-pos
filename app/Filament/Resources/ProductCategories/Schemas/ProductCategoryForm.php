@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ProductCategories\Schemas;
 
 use App\Models\User;
 use Auth;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
@@ -34,6 +35,9 @@ class ProductCategoryForm
                                 ->searchable(['name_en', 'name_ar'])
                                 ->preload()
                                 ->visible(fn () => $user->isCompanyLevel()),
+                            Hidden::make('store_id')
+                                ->default(fn () => $user->store_id)
+                                ->visible(fn () => $user->isStoreLevel()),
                             TextInput::make('name_en')
                                 ->label(__('product_category.name_en'))
                                 ->required()

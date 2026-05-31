@@ -208,4 +208,5 @@ return [
     'create_return' => 'إنشاء مرتجع',
     'search_by_product' => 'البحث باسم المنتج أو الباركود',
     'search_by_product_placeholder' => 'اكتب للبحث...',
+    'finalize' => 'اعتماد',
 ];

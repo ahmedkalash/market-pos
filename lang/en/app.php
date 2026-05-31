@@ -207,4 +207,5 @@ return [
     'create_return' => 'Create Return',
     'search_by_product' => 'Search by Product Name or Barcode',
     'search_by_product_placeholder' => 'Type to search...',
+    'finalize' => 'Finalize',
 ];

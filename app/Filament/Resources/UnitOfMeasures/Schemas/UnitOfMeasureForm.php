@@ -4,6 +4,7 @@ namespace App\Filament\Resources\UnitOfMeasures\Schemas;
 
 use App\Models\User;
 use Auth;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -24,6 +25,9 @@ class UnitOfMeasureForm
                     ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn () => $user->isCompanyLevel()),
+                Hidden::make('store_id')
+                    ->default(fn () => $user->store_id)
+                    ->visible(fn () => $user->isStoreLevel()),
                 TextInput::make('name_ar')
                     ->label(__('unit_of_measure.name_ar'))
                     ->required()

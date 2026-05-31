@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PurchaseReturns\Tables;
 
-use \Filament\Support\Exceptions\Halt;
 use App\Enums\PurchaseReturnStatus;
 use App\Models\PurchaseReturn;
 use App\Models\User;
@@ -16,6 +15,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Support\Colors\Color;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
@@ -160,8 +160,16 @@ class PurchaseReturnsTable
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DatePicker::make('returned_from')->label(__('purchase_return.returned_at').' ('.__('app.from').')')->native(false)->locale(app()->getLocale()),
-                                DatePicker::make('returned_until')->label(__('purchase_return.returned_at').' ('.__('app.until').')')->native(false)->locale(app()->getLocale()),
+                                DatePicker::make('returned_from')
+                                    ->label(__('purchase_return.returned_at').' ('.__('app.from').')')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->locale(app()->getLocale()),
+                                DatePicker::make('returned_until')
+                                    ->label(__('purchase_return.returned_at').' ('.__('app.until').')')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->locale(app()->getLocale()),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -194,8 +202,16 @@ class PurchaseReturnsTable
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DatePicker::make('created_from')->label(__('app.created_at').' ('.__('app.from').')')->native(false)->locale(app()->getLocale()),
-                                DatePicker::make('created_until')->label(__('app.created_at').' ('.__('app.until').')')->native(false)->locale(app()->getLocale()),
+                                DatePicker::make('created_from')
+                                    ->label(__('app.created_at').' ('.__('app.from').')')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->locale(app()->getLocale()),
+                                DatePicker::make('created_until')
+                                    ->label(__('app.created_at').' ('.__('app.until').')')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->locale(app()->getLocale()),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -228,8 +244,16 @@ class PurchaseReturnsTable
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                DatePicker::make('finalized_from')->label(__('purchase_return.finalized_at').' ('.__('app.from').')')->native(false)->locale(app()->getLocale()),
-                                DatePicker::make('finalized_until')->label(__('purchase_return.finalized_at').' ('.__('app.until').')')->native(false)->locale(app()->getLocale()),
+                                DatePicker::make('finalized_from')
+                                    ->label(__('purchase_return.finalized_at').' ('.__('app.from').')')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->locale(app()->getLocale()),
+                                DatePicker::make('finalized_until')
+                                    ->label(__('purchase_return.finalized_at').' ('.__('app.until').')')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->locale(app()->getLocale()),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -282,7 +306,7 @@ class PurchaseReturnsTable
                                     ->danger()
                                     ->send();
 
-                                throw (new Halt())->rollBackDatabaseTransaction(true);
+                                throw (new Halt)->rollBackDatabaseTransaction(true);
                             }
                         }),
                     ViewAction::make()
