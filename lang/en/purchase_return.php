@@ -48,6 +48,12 @@ return [
     'invoice_found_success' => 'Invoice found successfully. You may now scan items.',
     'invoice_search_helper' => 'Type the exact invoice number and click the search button or any empty space.',
     'search' => 'Search',
+
+    'returned_at_helper' => 'The date and time this return was processed.',
+    'return_reason_helper' => 'Primary reason for the return (e.g., Defective, Exchange).',
+    'notes_helper' => 'Any additional details or context about this return.',
+    'qty_tooltip' => 'The number of units being returned.',
+    'item_notes_tooltip' => 'Notes specific to this returned item.',
     'max_suffix' => 'Max:',
 
     // Finalization
@@ -75,4 +81,7 @@ return [
     'line_total_tooltip' => 'Calculated automatically based on quantity.',
     'notes_tooltip' => 'Optional: Reason for return or item condition.',
     'grand_total' => 'Grand Total',
+    'search_by_product' => 'Search by Product / Barcode',
+    'search_by_product_placeholder' => 'Search by product name or barcode...',
+    'search_by_product_helper' => 'You can search by typing the product name or scanning the barcode here.',
 ];

@@ -164,5 +164,23 @@ return [
             'delete_any_customer',
         ],
 
+        'Sale Returns' => [
+            'view_any_sale_return',
+            'view_sale_return',
+            'create_sale_return',
+            'update_sale_return',
+            'delete_sale_return',
+            'delete_any_sale_return',
+            'finalize_sale_return',
+            'override_sale_return_refund_amount',
+        ],
+        'Invoice Extra Item Presets' => [
+            'view_any_invoice_extra_item_preset',
+            'view_invoice_extra_item_preset',
+            'create_invoice_extra_item_preset',
+            'update_invoice_extra_item_preset',
+            'delete_invoice_extra_item_preset',
+            'delete_any_invoice_extra_item_preset',
+        ],
     ],
 ];

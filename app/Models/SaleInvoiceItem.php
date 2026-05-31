@@ -7,6 +7,7 @@ use App\Enums\PriceType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SaleInvoiceItem extends Model
 {
@@ -62,5 +63,39 @@ class SaleInvoiceItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    /**
+     * @return HasMany<SaleReturnInvoiceItem, $this>
+     */
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(SaleReturnInvoiceItem::class, 'original_item_id');
+    }
+
+    /**
+     * Gets the total quantity that has been finalized for return.
+     */
+    public function getFinalizedReturnedQuantity(?int $excludeReturnItemId = null): float
+    {
+        $query = $this->returnItems()
+            ->whereHas('saleReturnInvoice', fn ($q) => $q->finalized());
+
+        if ($excludeReturnItemId) {
+            $query->where('id', '!=', $excludeReturnItemId);
+        }
+
+        return (float) $query->sum('quantity');
+    }
+
+    /**
+     * Gets the remaining quantity that can still be returned against this invoice line.
+     * Note: Unlike Purchase Returns, Sale Returns are not constrained by current physical stock.
+     */
+    public function getRemainingReturnableQuantity(?int $excludeReturnItemId = null): float
+    {
+        $returned = $this->getFinalizedReturnedQuantity($excludeReturnItemId);
+
+        return max(0.0, (float) $this->quantity - $returned);
     }
 }

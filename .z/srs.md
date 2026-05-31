@@ -489,7 +489,8 @@ settings
 - [x] Purchase Invoices (Direct Receiving — existing variants only)
 - [x] Purchase Invoices Return
 - [ ] **TODO: Apply race condition fixes to Purchase Invoices & Returns:** Wrap forms in a fieldset with `wire:loading.attr="disabled"` and apply `->live(debounce: 1000)` to all live fields to prevent overlapping requests (identical to Sale Invoice fixes). 
-
+- [TODO] Use a single `Select` component for adding items (searchable by barcode or product name natively) to keep the UI simple. product name natively).
+- [TODO] Added custom invoice items/fees support with prorated refund calculations.
 
 ### Phase 4.1 — Sales & Returns Invoices
 - [x] Sale Invoices basic CRUD
@@ -540,9 +541,9 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ]- implement Audit Logs / Transfer History for moving users between stores
 - [ ] phone login and notifications
 - [ ] soft deletes
-- [ ] **Inline product/variant creation during Purchase Invoice (V2):** A "Create New Product" modal button directly inside the invoice line-item repeater. Architecture is already prepared — the `finalize()` service only receives a `product_variant_id` so no service changes are needed, only a UI addition.
 - [ ] **delete store process: handle what should happen when deleting a store from a company**
 - [ ] **delete user process: handle what should happen when deleting a user from a company or a store**
+- [ ] **delete product process: handle what should happen when deleting a product**
 - [ ] metadata for ETA E-invoicing (V2/Regional)
 - [ ] ability to scan barcodes vai camera 
 - [ ] `variant_price_tiers` table: Support for multiple price tiers per variant (e.g., VIP price, special contract price). Prerequisite for PROMO-008 (Multiple price lists configurable per customer type).
@@ -594,6 +595,20 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
       - **Active/Inactive Status:** A toggle to disable unused units from appearing in dropdowns without deleting them and breaking historical records.
 - [ ] **Hide Tax-Related UI Elements (Temporary):**
       - Temporarily disable and hide all tax-related fields, columns, and settings across the entire application (e.g., Tax Classes on Products, Tax breakdowns on invoices). This will prevent user confusion and conflicts until the full tax engine is ready for deployment in later phases.
+- [ ] **Edit Finalized Invoices (Non-Financial Data):**
+      - Allow authorized users to edit non-financial and non-inventory data on finalized invoices (Purchase, Sale, and Returns) without needing to process a refund or alter quantities.
+      - Editable fields may include notes, customer, shipping destination, shipping cost, and vendor.
+      - **Security:** This feature MUST be protected by custom granular permissions so the admin can strictly control which users are allowed to make these post-finalization changes.
+      - **Audit Trail:** Any change made to an already finalized invoice (even if non-financial) must be immutably logged in the `finalized_invoices_audit_logs` table with a clear description of what was modified.
+      - **Financial Consistency:** If a financial field like `shipping_cost` is edited, the system MUST trigger `recalculateTotals()` on the invoice so that `total_amount` stays consistent with the updated data.
+- [ ] **Non-Inventory / Service Products (V2):**
+      - Add support for service-based businesses by allowing the creation of non-inventory products or service products (e.g., labor fees, repair fees, delivery services).
+      - These items will bypass inventory deduction logic in the `InventoryService` while still acting as standard invoice line items with proper taxation and pricing support.
+- [ ] **Optimize Repeater Grid Space in all Invoice Forms:**
+      - Like what we did in `SaleReturnInvoiceForm`, completely remove the `product_name` text input from the repeater item schemas in `SaleInvoiceForm`, `PurchaseInvoiceForm`, and `PurchaseReturnInvoiceForm` to free up significant grid space.
+      - Instead of a text input, dynamically resolve the product and variant name directly from the database using the `$state['product_variant_id']` inside the repeater's `itemLabel()` closure, using a static cache to prevent N+1 queries. Display the resolved Product Name beautifully alongside the barcode badges in the repeater header.
+
+ 
 ---
 
 ## 10. Out of Scope for v1.0

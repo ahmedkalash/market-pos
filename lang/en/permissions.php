@@ -112,6 +112,22 @@ return [
     'delete_customer' => 'Delete Customer',
     'delete_any_customer' => 'Delete Multiple Customers',
 
+    'view_any_sale_return' => 'View All Sale Returns',
+    'view_sale_return' => 'View Sale Return',
+    'create_sale_return' => 'Create Sale Return',
+    'update_sale_return' => 'Update Sale Return',
+    'delete_sale_return' => 'Delete Sale Return',
+    'delete_any_sale_return' => 'Delete Multiple Sale Returns',
+    'finalize_sale_return' => 'Finalize Sale Return',
+    'override_sale_return_refund_amount' => 'Override Sale Return Refund Amount',
+
+    'view_any_invoice_extra_item_preset' => 'View All Invoice Extra Item Presets',
+    'view_invoice_extra_item_preset' => 'View Invoice Extra Item Preset',
+    'create_invoice_extra_item_preset' => 'Create Invoice Extra Item Preset',
+    'update_invoice_extra_item_preset' => 'Update Invoice Extra Item Preset',
+    'delete_invoice_extra_item_preset' => 'Delete Invoice Extra Item Preset',
+    'delete_any_invoice_extra_item_preset' => 'Delete Multiple Invoice Extra Item Presets',
+
     // Module Headers
     'users' => 'Users',
     'roles' => 'Roles',
@@ -130,5 +146,7 @@ return [
     'purchase invoices' => 'Purchase Invoices',
     'purchase returns' => 'Purchase Returns',
     'sale invoices' => 'Sale Invoices',
+    'sale returns' => 'Sale Returns',
     'customers' => 'Customers',
+    'invoice extra item presets' => 'Invoice Extra Item Presets',
 ];

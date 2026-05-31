@@ -169,10 +169,17 @@ class SaleInvoice extends Model
         return $query->whereNotNull('notes')->where('notes', '!=', '');
     }
 
-   #[Scope]
+    #[Scope]
     public function withoutNotes(Builder $query): Builder
     {
         return $query->whereNull('notes')->orWhere('notes', '');
     }
 
+    /**
+     * @return HasMany<SaleReturnInvoice, $this>
+     */
+    public function saleReturns(): HasMany
+    {
+        return $this->hasMany(SaleReturnInvoice::class, 'original_invoice_id');
+    }
 }

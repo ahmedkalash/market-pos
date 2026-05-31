@@ -112,6 +112,22 @@ return [
     'delete_customer' => 'حذف عميل',
     'delete_any_customer' => 'حذف عدة عملاء',
 
+    'view_any_sale_return' => 'عرض كل مرتجعات البيع',
+    'view_sale_return' => 'عرض مرتجع البيع',
+    'create_sale_return' => 'إضافة مرتجع بيع',
+    'update_sale_return' => 'تعديل مرتجع بيع',
+    'delete_sale_return' => 'حذف مرتجع بيع',
+    'delete_any_sale_return' => 'حذف عدة مرتجعات بيع',
+    'finalize_sale_return' => 'اعتماد مرتجع البيع',
+    'override_sale_return_refund_amount' => 'تجاوز مبلغ استرداد مرتجع البيع',
+
+    'view_any_invoice_extra_item_preset' => 'عرض كل قوالب بنود الفواتير الإضافية',
+    'view_invoice_extra_item_preset' => 'عرض قالب بند الفاتورة الإضافي',
+    'create_invoice_extra_item_preset' => 'إضافة قالب بند فاتورة إضافي',
+    'update_invoice_extra_item_preset' => 'تعديل قالب بند فاتورة إضافي',
+    'delete_invoice_extra_item_preset' => 'حذف قالب بند فاتورة إضافي',
+    'delete_any_invoice_extra_item_preset' => 'حذف عدة قوالب بنود فواتير إضافية',
+
     // Module Headers
     'users' => 'المستخدمين',
     'roles' => 'الأدوار والصلاحيات',
@@ -130,5 +146,7 @@ return [
     'purchase invoices' => 'فواتير الشراء',
     'purchase returns' => 'مرتجعات الشراء',
     'sale invoices' => 'فواتير البيع',
+    'sale returns' => 'مرتجعات البيع',
     'customers' => 'العملاء',
+    'invoice extra item presets' => 'قوالب بنود الفواتير الإضافية',
 ];
