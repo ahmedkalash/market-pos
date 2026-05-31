@@ -59,8 +59,8 @@ class InvoiceExtraItemPresetResource extends Resource
     {
         return [
             'index' => ListInvoiceExtraItemPresets::route('/'),
-//            'create' => CreateInvoiceExtraItemPreset::route('/create'),
-//            'edit' => EditInvoiceExtraItemPreset::route('/{record}/edit'),
+            //            'create' => CreateInvoiceExtraItemPreset::route('/create'),
+            //            'edit' => EditInvoiceExtraItemPreset::route('/{record}/edit'),
         ];
     }
 }

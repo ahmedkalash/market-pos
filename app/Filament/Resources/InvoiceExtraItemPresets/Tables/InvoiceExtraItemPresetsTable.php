@@ -33,7 +33,7 @@ class InvoiceExtraItemPresetsTable
                 TextColumn::make('amount')
                     ->label(__('app.amount'))
                     ->numeric()
-                    ->suffix(' ' . $user->company->currency_symbol ?? 'ج.م')
+                    ->suffix(' '.$user->company->currency_symbol ?? 'ج.م')
                     ->badge()
                     ->color('info')
                     ->sortable(),
@@ -76,7 +76,7 @@ class InvoiceExtraItemPresetsTable
                 ActionGroup::make([
                     EditAction::make(),
                     DeleteAction::make(),
-                ])
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

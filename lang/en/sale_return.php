@@ -32,4 +32,6 @@ return [
     'barcode' => 'Barcode',
     'pricing_breakdown' => 'Breakdown: :price (Price) - :unit_disc (Item Disc) - :global_disc (Global Disc) = :net Net',
     'unit_price_tooltip' => 'The original price of this unit as it was sold in the original invoice, before any discounts.',
+    'customer_helper' => 'The customer from the original sale invoice. This is set automatically.',
+    'store_helper' => 'The store where the original sale invoice was issued. This is set automatically.',
 ];

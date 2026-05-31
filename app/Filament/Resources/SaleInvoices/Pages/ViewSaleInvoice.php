@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SaleInvoices\Pages;
 
 use App\Filament\Resources\SaleInvoices\SaleInvoiceResource;
+use App\Filament\Resources\SaleReturnInvoices\SaleReturnInvoiceResource;
 use App\Models\SaleInvoice;
 use App\Services\SaleInvoiceService;
 use Filament\Actions\Action;
@@ -62,6 +63,13 @@ class ViewSaleInvoice extends ViewRecord
             DeleteAction::make()
                 ->authorize('delete_sale_invoice')
                 ->visible(fn (SaleInvoice $record): bool => $record->isDraft()),
+
+            Action::make('create_return')
+                ->label(__('app.create_return'))
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('warning')
+                ->url(fn (SaleInvoice $record): string => SaleReturnInvoiceResource::getUrl('create', ['original_invoice_id' => $record->id]))
+                ->visible(fn (SaleInvoice $record): bool => $record->isFinalized()),
         ];
     }
 }
