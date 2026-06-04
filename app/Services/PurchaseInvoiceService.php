@@ -103,13 +103,13 @@ class PurchaseInvoiceService
      */
     public function finalize(PurchaseInvoice $invoice): void
     {
-        if ($invoice->items()->count() === 0) {
-            throw new \RuntimeException(__('purchase_invoice.no_items'));
-        }
-
         DB::transaction(function () use ($invoice) {
             /** @var PurchaseInvoice $invoice */
             $invoice = PurchaseInvoice::query()->where('id', $invoice->id)->lockForUpdate()->firstOrFail();
+            // todo: check if we need to lock the invoice items also to avoid concurrency issues like phantom reads or no consestant reads
+            if ($invoice->items()->count() === 0) {
+                throw new \RuntimeException(__('purchase_invoice.no_items'));
+            }
 
             // Guard: re-check status inside the lock to prevent double-finalization
             if ($invoice->isFinalized()) {

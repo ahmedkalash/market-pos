@@ -24,6 +24,10 @@ class CreatePurchaseReturn extends CreateRecord
         return [
             Action::make('createAndFinalize')
                 ->label(__('purchase_return.create_and_finalize'))
+                ->requiresConfirmation()
+                ->modalHeading(__('purchase_return.finalize_confirm_title'))
+                ->modalDescription(__('purchase_return.finalize_confirm_body'))
+                ->successNotificationTitle(__('purchase_return.finalize_success'))
                 ->authorize(['create_purchase_return', 'finalize_purchase_return'])
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
@@ -40,7 +44,7 @@ class CreatePurchaseReturn extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

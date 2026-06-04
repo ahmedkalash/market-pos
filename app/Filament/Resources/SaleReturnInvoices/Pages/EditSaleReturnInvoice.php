@@ -2,66 +2,52 @@
 
 namespace App\Filament\Resources\SaleReturnInvoices\Pages;
 
-use App\Enums\SequenceType;
 use App\Filament\Resources\SaleReturnInvoices\SaleReturnInvoiceResource;
 use App\Models\SaleReturnInvoice;
-use App\Models\User;
 use App\Services\SaleInvoiceService;
-use App\Services\SequenceService;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
+use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Exceptions\Halt;
-use Illuminate\Support\Facades\Auth;
 
-/** @property SaleReturnInvoice|null $record */
-class CreateSaleReturnInvoice extends CreateRecord
+class EditSaleReturnInvoice extends EditRecord
 {
     protected static string $resource = SaleReturnInvoiceResource::class;
 
     public bool $shouldFinalize = false;
 
-    protected function getFormActions(): array
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+
+        abort_if($this->record->isFinalized(), 403, __('sale_return.cannot_edit_finalized'));
+    }
+
+    protected function getHeaderActions(): array
     {
         return [
-            Action::make('createAndFinalize')
-                ->label(__('sale_return.create_and_finalize'))
+            Action::make('finalize')
+                ->label(__('app.finalize'))
+                ->color('success')
+                ->icon('heroicon-o-check-circle')
                 ->requiresConfirmation()
                 ->modalHeading(__('sale_return.finalize_confirm_title'))
                 ->modalDescription(__('sale_return.finalize_confirm_body'))
                 ->successNotificationTitle(__('sale_return.finalize_success'))
-                ->authorize(['create_sale_return_invoice', 'finalize_sale_return_invoice']) // Assuming similar permissions pattern, Filament uses standard policy methods implicitly but here we can rely on standard policies or just authorize
-                ->icon('heroicon-o-check-badge')
-                ->color('success')
+                ->authorize('finalize_sale_return')
                 ->action(function () {
                     $this->shouldFinalize = true;
-                    $this->create();
+                    $this->save();
                 }),
-            $this->getCreateFormAction()
-                ->label(__('sale_return.save_as_draft')),
-            $this->getCancelFormAction(),
+            DeleteAction::make()
+                ->authorize('delete_sale_return'),
         ];
     }
 
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('view', ['record' => $this->record]);
-    }
-
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        $data['created_by'] = $user->id;
-
-        // Generate concurrency-safe return number
-        $data['return_number'] = SequenceService::make()->next(
-            companyId: $user->company_id,
-            type: SequenceType::SaleReturn,
-        );
-
-        return $data;
     }
 
     /**
@@ -90,13 +76,13 @@ class CreateSaleReturnInvoice extends CreateRecord
     /**
      * @throws Halt
      */
-    protected function afterCreate(): void
+    protected function afterSave(): void
     {
-        /** @var SaleReturnInvoice $return */
-        $return = $this->record;
+        /** @var SaleReturnInvoice $record */
+        $record = $this->record;
 
         try {
-            SaleInvoiceService::make()->recalculateReturnTotals($return);
+            SaleInvoiceService::make()->recalculateReturnTotals($record);
         } catch (\Throwable $e) {
             Notification::make()
                 ->title(__('sale_return.recalculate_failed'))
@@ -104,15 +90,15 @@ class CreateSaleReturnInvoice extends CreateRecord
                 ->danger()
                 ->send();
 
-            $this->record = null;
             $this->halt(true);
         }
 
         if ($this->shouldFinalize) {
             $this->shouldFinalize = false;
 
+            $this->authorize('finalize_sale_return');
             try {
-                SaleInvoiceService::make()->finalizeReturn($return);
+                SaleInvoiceService::make()->finalizeReturn($record);
             } catch (\Throwable $e) {
                 Notification::make()
                     ->title(__('sale_return.finalize_failed'))
@@ -120,7 +106,6 @@ class CreateSaleReturnInvoice extends CreateRecord
                     ->danger()
                     ->send();
 
-                $this->record = null;
                 $this->halt(true);
             }
         }

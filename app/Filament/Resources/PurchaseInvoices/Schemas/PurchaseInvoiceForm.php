@@ -56,6 +56,7 @@ class PurchaseInvoiceForm
                     DatePicker::make('received_at')
                         ->label(__('purchase_invoice.received_at'))
                         ->required()
+                        ->displayFormat('d/m/Y')
                         ->default(now()->toDateString())
                         ->maxDate(now()),
 
@@ -174,52 +175,50 @@ class PurchaseInvoiceForm
                         ->relationship()
                         ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
                             $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
-                            $locale = app()->getLocale();
 
                             if ($variant) {
-                                $productName = $variant->product?->{lang_suffix('name')} ?? '';
-                                $variantName = $variant->{lang_suffix('name')} ?? '';
-                                $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
-                                $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
+                                $data['product_name'] = $variant->full_qualified_name;
+                                $data['barcodes'] = $variant->getAllBarcodesAsArray();
                             }
 
                             return $data;
                         })
                         ->itemLabel(function (array $state): ?HtmlString {
-                            $barcodes = $state['barcodes'] ?? [];
+                            $productName = '';
+                            $barcodes = [];
+
+                            if (! empty($state['product_variant_id'])) {
+                                static $variantCache = [];
+                                $vid = $state['product_variant_id'];
+
+                                if (! isset($variantCache[$vid])) {
+                                    $variantCache[$vid] = ProductVariant::with(['product', 'barcodes'])->find($vid);
+                                }
+
+                                $variant = $variantCache[$vid];
+                                if ($variant) {
+                                    $productName = $variant->full_qualified_name;
+                                    $barcodes = $variant->getAllBarcodesAsArray();
+                                }
+                            }
+
+                            $productHtml = "<span class='font-medium text-gray-950 dark:text-white' style='margin-inline-end: 1rem;'>".e($productName).'</span>';
 
                             if (empty($barcodes)) {
-                                return null;
+                                return new HtmlString("<div class='flex items-center'>{$productHtml}</div>");
                             }
 
                             $badges = collect($barcodes)->map(function ($barcode) {
-                                return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>{$barcode}</span>";
+                                return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>".e($barcode).'</span>';
                             })->implode('');
 
-                            return new HtmlString("<div class='flex items-center'>".__('purchase_invoice.barcode').': '.$badges.'</div>');
+                            return new HtmlString("<div class='flex items-center'>{$productHtml}<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('purchase_invoice.barcode').":</span>{$badges}</div>");
                         })
                         ->hiddenLabel()
                         ->compact()
                         ->schema([
                             Hidden::make('product_variant_id')
                                 ->required(),
-
-                            TextInput::make('product_name')
-                                ->label(__('purchase_invoice.product_name'))
-                                ->dehydrated(false)
-                                ->disabled()
-                                ->readOnly()
-                                ->afterStateHydrated(function ($state, Set $set, Get $get): void {
-                                    // On edit: populate product name from the existing variant
-                                    $variantId = $get('product_variant_id');
-                                    if (! $state && $variantId) {
-                                        $variant = ProductVariant::with('product')->find($variantId);
-                                        if ($variant) {
-                                            $set('product_name', "{$variant->product->name_ar} | {$variant->product->name_en}");
-                                        }
-                                    }
-                                })
-                                ->columnSpan(2),
 
                             TextInput::make('quantity')
                                 ->label(__('purchase_invoice.quantity'))
@@ -235,7 +234,7 @@ class PurchaseInvoiceForm
                                     self::recalculateLine($get, $set);
                                     self::calcTotalAmount($get, $set, '../../');
                                 })
-                                ->columnSpan(1),
+                                ->columnSpan(4),
 
                             //  (ex. Tax)
                             TextInput::make('unit_cost')
@@ -252,7 +251,7 @@ class PurchaseInvoiceForm
                                     self::recalculateLine($get, $set);
                                     self::calcTotalAmount($get, $set, '../../');
                                 })
-                                ->columnSpan(2),
+                                ->columnSpan(4),
 
                             // TAX FEATURE POSTPONED
                             //                            TextInput::make('tax_rate')
@@ -285,15 +284,15 @@ class PurchaseInvoiceForm
                                 ->readOnly()
                                 ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.line_total_tooltip'))
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                ->columnSpan(2),
+                                ->columnSpan(4),
 
                             Textarea::make('notes')
                                 ->label(__('purchase_invoice.item_notes'))
                                 ->maxLength(255)
                                 ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.notes_tooltip'))
-                                ->columnSpan(2),
+                                ->columnSpan(12),
                         ])
-                        ->columns(8)
+                        ->columns(12)
                         ->addable(false)
                         ->reorderable(false)
                         ->cloneable(false)

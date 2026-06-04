@@ -89,13 +89,21 @@ class SaleInvoiceItem extends Model
     }
 
     /**
+     * Gets the remaining quota based strictly on the invoice.
+     */
+    public function getInvoiceReturnableQuantity(?int $excludeReturnItemId = null): float
+    {
+        $returned = $this->getFinalizedReturnedQuantity($excludeReturnItemId);
+
+        return max(0.0, (float) $this->quantity - $returned);
+    }
+
+    /**
      * Gets the remaining quantity that can still be returned against this invoice line.
      * Note: Unlike Purchase Returns, Sale Returns are not constrained by current physical stock.
      */
     public function getRemainingReturnableQuantity(?int $excludeReturnItemId = null): float
     {
-        $returned = $this->getFinalizedReturnedQuantity($excludeReturnItemId);
-
-        return max(0.0, (float) $this->quantity - $returned);
+        return $this->getInvoiceReturnableQuantity($excludeReturnItemId);
     }
 }

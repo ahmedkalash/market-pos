@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\SaleInvoices\Schemas;
 
-use \App\Filament\Resources\ShippingDestinations\ShippingDestinationResource;
 use App\Enums\DiscountType;
 use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
+use App\Filament\Resources\ShippingDestinations\ShippingDestinationResource;
 use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
 use App\Models\ShippingDestination;
@@ -43,10 +43,14 @@ class SaleInvoiceForm
                 ->extraAttributes([
                     'wire:loading.attr' => 'disabled',
                     'class' => 'contents',
-                ])->columnSpanFull()
+                ])
+                ->columnSpanFull()
                 ->schema([
                     Section::make(__('sale_invoice.sale_invoice'))
+                        ->compact()
                         ->icon('heroicon-o-document-arrow-up')
+                        ->columnSpanFull()
+                        ->columns(4)
                         ->schema([
                             TextEntry::make('draft_warning')
                                 ->hiddenLabel()
@@ -86,6 +90,7 @@ class SaleInvoiceForm
                                             ->maxLength(255),
                                     ]),
                                 ]),
+
                             Select::make('payment_method')
                                 ->label(__('sale_invoice.payment_method'))
                                 ->options([
@@ -94,18 +99,14 @@ class SaleInvoiceForm
                                     PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
                                 ])
                                 ->required(),
-                        ])->columns(2),
 
-                    Section::make(__('sale_invoice.notes'))
-                        ->icon('heroicon-o-chat-bubble-left-ellipsis')
-                        ->schema([
                             Textarea::make('notes')
                                 ->label(__('sale_invoice.notes'))
-                                ->rows(2)
-                                ->columnSpanFull(),
+                                ->rows(1),
                         ]),
 
                     Section::make(__('sale_invoice.items'))
+                        ->compact()
                         ->icon('heroicon-o-shopping-cart')
                         ->columnSpanFull()
                         ->schema([
@@ -219,26 +220,43 @@ class SaleInvoiceForm
                                     $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
 
                                     if ($variant) {
-                                        $productName = $variant->product?->{lang_suffix('name')} ?? '';
-                                        $variantName = $variant->{lang_suffix('name')} ?? '';
-                                        $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
-                                        $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
+                                        $data['product_name'] = $variant->full_qualified_name;
+                                        $data['barcodes'] = $variant->getAllBarcodesAsArray();
                                     }
 
                                     return $data;
                                 })
                                 ->itemLabel(function (array $state): ?HtmlString {
-                                    $barcodes = $state['barcodes'] ?? [];
+                                    $productName = '';
+                                    $barcodes = [];
+
+                                    if (! empty($state['product_variant_id'])) {
+                                        // todo static $variantCache = [] in  will leak between requests under Octane consider using non-static property
+                                        static $variantCache = [];
+                                        $vid = $state['product_variant_id'];
+
+                                        if (! isset($variantCache[$vid])) {
+                                            $variantCache[$vid] = ProductVariant::with(['product', 'barcodes'])->find($vid);
+                                        }
+
+                                        $variant = $variantCache[$vid];
+                                        if ($variant) {
+                                            $productName = $variant->full_qualified_name;
+                                            $barcodes = $variant->getAllBarcodesAsArray();
+                                        }
+                                    }
+
+                                    $productHtml = "<span class='font-medium text-gray-950 dark:text-white' style='margin-inline-end: 1rem;'>".e($productName).'</span>';
 
                                     if (empty($barcodes)) {
-                                        return null;
+                                        return new HtmlString("<div class='flex items-center'>{$productHtml}</div>");
                                     }
 
                                     $badges = collect($barcodes)->map(function ($barcode) {
-                                        return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>{$barcode}</span>";
+                                        return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>".e($barcode).'</span>';
                                     })->implode('');
 
-                                    return new HtmlString("<div class='flex items-center'>".__('sale_invoice.barcode').': '.$badges.'</div>');
+                                    return new HtmlString("<div class='flex items-center'>{$productHtml}<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_invoice.barcode').":</span>{$badges}</div>");
                                 })
                                 ->hiddenLabel()
                                 ->compact()
@@ -248,13 +266,6 @@ class SaleInvoiceForm
 
                                     Hidden::make('subtotal')
                                         ->default(0),
-
-                                    TextInput::make('product_name')
-                                        ->label(__('sale_invoice.product_name'))
-                                        ->dehydrated(false)
-                                        ->disabled()
-                                        ->readOnly()
-                                        ->columnSpan(3),
 
                                     Select::make('price_type')
                                         ->label(__('sale_invoice.price_type'))
@@ -287,7 +298,7 @@ class SaleInvoiceForm
                                             self::recalculateLine($get, $set);
                                             self::recalculateTotals($get, $set, '../../');
                                         })
-                                        ->columnSpan(2),
+                                        ->columnSpan(3),
 
                                     TextInput::make('quantity')
                                         ->label(__('sale_invoice.quantity'))
@@ -407,7 +418,7 @@ class SaleInvoiceForm
                                             self::recalculateLine($get, $set);
                                             self::recalculateTotals($get, $set, '../../');
                                         })
-                                        ->columnSpan(2),
+                                        ->columnSpan(3),
 
                                     TextInput::make('subtotal')
                                         ->label(__('sale_invoice.subtotal'))
@@ -543,7 +554,7 @@ class SaleInvoiceForm
                                                 };
                                             },
                                         ])
-                                        ->columnSpan(4),
+                                        ->columnSpan(3),
 
                                     TextInput::make('line_total_discount')
                                         ->label(__('sale_invoice.line_total_discount'))
@@ -568,9 +579,10 @@ class SaleInvoiceForm
                                         ->label(__('sale_invoice.item_notes'))
                                         ->maxLength(255)
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_invoice.notes_tooltip'))
-                                        ->columnSpan(13),
+                                        ->rows(1)
+                                        ->columnSpan(12),
                                 ])
-                                ->columns(13)
+                                ->columns(12)
                                 ->addable(false)
                                 ->reorderable(false)
                                 ->cloneable(false)
@@ -580,6 +592,7 @@ class SaleInvoiceForm
                                 ),
 
                             Section::make(__('sale_invoice.invoice_discount'))
+                                ->columnSpan(1)
                                 ->icon('heroicon-o-receipt-percent')
                                 ->schema([
                                     Select::make('discount_type')
@@ -702,6 +715,7 @@ class SaleInvoiceForm
                                 ->compact(),
 
                             Section::make(__('shipping.shipping_and_delivery'))
+                                ->columnSpan(1)
                                 ->icon('heroicon-o-truck')
                                 ->schema([
                                     Select::make('shipping_destination_id')
@@ -711,8 +725,8 @@ class SaleInvoiceForm
                                         ->preload()
                                         ->createOptionForm([
                                             Grid::make(2)
-                                                ->schema(ShippingDestinationResource::getFormSchema())
-                                            ])
+                                                ->schema(ShippingDestinationResource::getFormSchema()),
+                                        ])
                                         ->live()
                                         ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                             if ($state) {
@@ -747,40 +761,45 @@ class SaleInvoiceForm
                                 ])
                                 ->columns(3)
                                 ->compact(),
+                        ]),
 
-                            Section::make()
+                    Section::make(__('app.summary'))
+                        ->compact()
+                        ->columnSpanFull()
+                        ->icon('heroicon-o-calculator')
+                        ->schema([
+                            Grid::make(3)
+                                ->columnSpanFull()
                                 ->schema([
-                                    Grid::make(3)->schema([
-                                        TextInput::make('subtotal')
-                                            ->label(__('sale_invoice.subtotal_amount'))
-                                            ->readOnly()
-                                            ->dehydrated()
-                                            ->numeric()
-                                            ->extraInputAttributes(['class' => 'text-lg font-semibold'])
-                                            ->helperText(__('sale_invoice.subtotal_amount_helper'))
-                                            ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                                    TextInput::make('subtotal')
+                                        ->label(__('sale_invoice.subtotal_amount'))
+                                        ->readOnly()
+                                        ->dehydrated()
+                                        ->numeric()
+                                        ->extraInputAttributes(['class' => 'text-lg font-semibold'])
+                                        ->helperText(__('sale_invoice.subtotal_amount_helper'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
 
-                                        TextInput::make('grand_total_discount')
-                                            ->label(__('sale_invoice.grand_total_discount'))
-                                            ->readOnly()
-                                            ->dehydrated()
-                                            ->numeric()
-                                            ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
-                                            ->helperText(__('sale_invoice.grand_total_discount_helper'))
-                                            ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                                    TextInput::make('grand_total_discount')
+                                        ->label(__('sale_invoice.grand_total_discount'))
+                                        ->readOnly()
+                                        ->dehydrated()
+                                        ->numeric()
+                                        ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
+                                        ->helperText(__('sale_invoice.grand_total_discount_helper'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
 
-                                        TextInput::make('total_amount')
-                                            ->label(__('sale_invoice.total_amount'))
-                                            ->readOnly()
-                                            ->dehydrated()
-                                            ->numeric()
-                                            ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
-                                            ->helperText(__('sale_invoice.total_amount_helper'))
-                                            ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                            ->afterStateHydrated(function (Get $get, Set $set) {
-                                                static::recalculateTotals($get, $set);
-                                            }),
-                                    ]),
+                                    TextInput::make('total_amount')
+                                        ->label(__('sale_invoice.total_amount'))
+                                        ->readOnly()
+                                        ->dehydrated()
+                                        ->numeric()
+                                        ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
+                                        ->helperText(__('sale_invoice.total_amount_helper'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->afterStateHydrated(function (Get $get, Set $set) {
+                                            static::recalculateTotals($get, $set);
+                                        }),
                                 ]),
                         ]),
                 ]),

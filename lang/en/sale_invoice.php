@@ -41,6 +41,7 @@ return [
     'total_amount' => 'Grand Total',
     'finalize_confirm_title' => 'Finalize Sale Invoice?',
     'finalize_confirm_body' => 'This will deduct stock for all items and lock the invoice permanently. This cannot be undone.',
+    'finalize_success' => 'Sale invoice finalized successfully.',
     'already_finalized' => 'This invoice has already been finalized.',
     'no_items' => 'Please add at least one item before finalizing.',
     'item_notes' => 'Line Notes',

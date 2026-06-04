@@ -608,8 +608,11 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
       - Like what we did in `SaleReturnInvoiceForm`, completely remove the `product_name` text input from the repeater item schemas in `SaleInvoiceForm`, `PurchaseInvoiceForm`, and `PurchaseReturnInvoiceForm` to free up significant grid space.
       - Instead of a text input, render the Product Name and Barcodes directly in the repeater's `itemLabel()` header.
       - **Implementation Detail:** Read the `product_name` and `barcodes` directly from the `$state` array (which should be hydrated beforehand) to completely avoid N+1 database queries. Use Filament's native `Blade::render('<x-filament::badge ...>')` method to draw them beautifully and efficiently as UI badges without using heavy PHP components or writing raw HTML strings.
-
-
+- [ ] - use field set and disable all form on wire load event to prevent overwriting
+        the form data in the browser by the one coming back from the server in all invoices forms
+- [ ] -  static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
+- [ ] -  static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
+- [ ] - for item lable of a repeater consder displaying product name and barcodes via the badge() fnuction in all anvoices
 
 
 

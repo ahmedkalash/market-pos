@@ -23,6 +23,10 @@ class CreateSaleInvoice extends CreateRecord
         return [
             Action::make('createAndFinalize')
                 ->label(__('sale_invoice.create_and_finalize'))
+                ->requiresConfirmation()
+                ->modalHeading(__('sale_invoice.finalize_confirm_title'))
+                ->modalDescription(__('sale_invoice.finalize_confirm_body'))
+                ->successNotificationTitle(__('sale_invoice.finalize_success'))
                 ->authorize('finalize_sale_invoice')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
@@ -39,7 +43,7 @@ class CreateSaleInvoice extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     /**

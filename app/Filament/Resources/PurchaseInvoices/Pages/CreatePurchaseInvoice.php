@@ -23,6 +23,10 @@ class CreatePurchaseInvoice extends CreateRecord
         return [
             Action::make('createAndFinalize')
                 ->label(__('purchase_invoice.create_and_finalize'))
+                ->requiresConfirmation()
+                ->modalHeading(__('purchase_invoice.finalize_confirm_title') ?? __('purchase_invoice.finalize'))
+                ->modalDescription(__('purchase_invoice.finalize_confirmation'))
+                ->successNotificationTitle(__('purchase_invoice.finalized_success'))
                 ->authorize('finalize_purchase_invoice')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
@@ -39,7 +43,7 @@ class CreatePurchaseInvoice extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('edit', ['record' => $this->record]);
+        return $this->getResource()::getUrl('view', ['record' => $this->record]);
     }
 
     /**
