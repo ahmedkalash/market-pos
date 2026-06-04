@@ -13,7 +13,7 @@ return new class extends Migration
 
             // Tenant scope
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('store_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('store_id')->constrained()->cascadeOnDelete();
 
             $table->string('name');
             $table->enum('action_type', ['addition', 'subtraction']);

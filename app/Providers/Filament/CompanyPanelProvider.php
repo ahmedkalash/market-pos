@@ -32,8 +32,8 @@ class CompanyPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
-            ->id('company')
-            ->path('company')
+            ->id('app')
+            ->path('app')
             ->login(Login::class)
             ->spa()
             ->databaseTransactions()

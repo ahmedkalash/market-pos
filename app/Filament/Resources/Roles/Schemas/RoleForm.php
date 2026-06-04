@@ -8,6 +8,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Size;
 use Illuminate\Validation\Rules\Unique;
 use Spatie\Permission\Models\Role;
 
@@ -64,7 +65,7 @@ class RoleForm
                     ->description(__('app.assign_permissions_to_role'))
                     ->schema([
                         // Display permissions in a 3-column responsive grid.
-                        Grid::make(3)
+                        Grid::make(4)
                             ->schema(static::getPermissionCheckboxes()),
                     ]),
             ])
@@ -100,10 +101,11 @@ class RoleForm
                 $translatedModule = $moduleName;
             }
 
+            $labelHtml = badge($translatedModule, ['color' => 'success', 'size' => Size::ExtraLarge], true);
+
             // Create an individual CheckboxList for each module to prevent multi-column overlap issues.
             $components[] = CheckboxList::make('permissions_'.str($moduleName)->snake())
-                ->label($translatedModule)
-                ->belowLabel('-------------')
+                ->label($labelHtml)
                 ->options($options)
                 ->columns(1)
                 ->bulkToggleable();

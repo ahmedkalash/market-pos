@@ -119,7 +119,7 @@ return [
     'delete_sale_return' => 'حذف مرتجع بيع',
     'delete_any_sale_return' => 'حذف عدة مرتجعات بيع',
     'finalize_sale_return' => 'اعتماد مرتجع البيع',
-    'override_sale_return_refund_amount' => 'تجاوز مبلغ استرداد مرتجع البيع',
+    'override_sale_return_refund_amount' => 'تعديل مبلغ استرداد مرتجع البيع يدويا',
 
     'view_any_invoice_extra_item_preset' => 'عرض كل قوالب بنود الفواتير الإضافية',
     'view_invoice_extra_item_preset' => 'عرض قالب بند الفاتورة الإضافي',

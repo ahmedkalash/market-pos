@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\InvoiceExtraItemPresets\Schemas;
 
 use App\Enums\ExtraItemActionType;
+use App\Enums\InvoiceType;
 use App\Models\User;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -23,6 +25,7 @@ class InvoiceExtraItemPresetForm
             ->components([
                 Section::make(__('app.details'))
                     ->schema([
+                        static::getStoreIDInput($user),
                         TextInput::make('name')
                             ->label(__('app.name'))
                             ->required()
@@ -39,15 +42,11 @@ class InvoiceExtraItemPresetForm
                             ->minValue(0),
                         Select::make('invoice_type')
                             ->label(__('extra_item.invoice_type'))
-                            ->options([
-                                'sale_invoice' => __('app.sale_invoice'),
-                                'sale_return' => __('app.sale_return'),
-                                'purchase_invoice' => __('app.purchase_invoice'),
-                                'purchase_return' => __('app.purchase_return'),
-                            ])
+                            ->options(InvoiceType::class)
                             ->required(),
                         Toggle::make('is_refundable')
                             ->label(__('extra_item.is_refundable'))
+                            ->helperText(__('extra_item.is_refundable_helper'))
                             ->default(false),
                         Toggle::make('is_active')
                             ->label(__('app.is_active'))
@@ -60,5 +59,20 @@ class InvoiceExtraItemPresetForm
                     ->columns(2)
                     ->columnSpanFull(),
             ]);
+    }
+
+    protected static function getStoreIDInput(User $user)
+    {
+        if ($user->isStoreLevel()) {
+            return Hidden::make('store_id')
+                ->required()
+                ->default($user->store_id);
+       }
+        return Select::make('store_id')
+            ->label(__('app.store'))
+            ->relationship('store', lang_suffix('name'))
+            ->preload()
+            ->required()
+            ->helperText(__('sale_return.store_helper'));
     }
 }

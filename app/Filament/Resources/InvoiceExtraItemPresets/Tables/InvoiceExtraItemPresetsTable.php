@@ -23,6 +23,11 @@ class InvoiceExtraItemPresetsTable
 
         return $table
             ->columns([
+                TextColumn::make('store.name')
+                    ->label(__('app.store'))
+                    ->searchable()
+                    ->sortable()
+                    ->hidden($user->isStoreLevel()),
                 TextColumn::make('name')
                     ->label(__('app.name'))
                     ->searchable()
@@ -39,19 +44,7 @@ class InvoiceExtraItemPresetsTable
                     ->sortable(),
                 TextColumn::make('invoice_type')
                     ->label(__('extra_item.invoice_type'))
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'sale_invoice' => __('app.sale_invoice'),
-                        'sale_return' => __('app.sale_return'),
-                        'purchase_invoice' => __('app.purchase_invoice'),
-                        'purchase_return' => __('app.purchase_return'),
-                        default => $state,
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'sale_invoice', 'sale_return' => 'primary',
-                        'purchase_invoice', 'purchase_return' => 'warning',
-                        default => 'gray',
-                    }),
+                    ->badge(),
                 IconColumn::make('is_refundable')
                     ->label(__('extra_item.is_refundable'))
                     ->boolean(),

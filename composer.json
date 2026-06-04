@@ -6,7 +6,7 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "bezhansalleh/filament-language-switch": "^5.0@beta",
         "filament/filament": "4.*",
         "filament/spatie-laravel-media-library-plugin": "^4.10",
@@ -34,7 +34,8 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/Helpers/main.php"
+            "app/Helpers/main.php",
+            "app/Filament/Helpers/main.php"
         ]
     },
     "autoload-dev": {

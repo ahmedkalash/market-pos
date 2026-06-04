@@ -604,11 +604,22 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] **Non-Inventory / Service Products (V2):**
       - Add support for service-based businesses by allowing the creation of non-inventory products or service products (e.g., labor fees, repair fees, delivery services).
       - These items will bypass inventory deduction logic in the `InventoryService` while still acting as standard invoice line items with proper taxation and pricing support.
-- [ ] **Optimize Repeater Grid Space in all Invoice Forms:**
+- [ ] **Optimize Repeater Grid Space & UI in all Invoice Forms:**
       - Like what we did in `SaleReturnInvoiceForm`, completely remove the `product_name` text input from the repeater item schemas in `SaleInvoiceForm`, `PurchaseInvoiceForm`, and `PurchaseReturnInvoiceForm` to free up significant grid space.
-      - Instead of a text input, dynamically resolve the product and variant name directly from the database using the `$state['product_variant_id']` inside the repeater's `itemLabel()` closure, using a static cache to prevent N+1 queries. Display the resolved Product Name beautifully alongside the barcode badges in the repeater header.
+      - Instead of a text input, render the Product Name and Barcodes directly in the repeater's `itemLabel()` header.
+      - **Implementation Detail:** Read the `product_name` and `barcodes` directly from the `$state` array (which should be hydrated beforehand) to completely avoid N+1 database queries. Use Filament's native `Blade::render('<x-filament::badge ...>')` method to draw them beautifully and efficiently as UI badges without using heavy PHP components or writing raw HTML strings.
 
- 
+
+
+
+
+### Performance & Database Optimization
+- [ ] **Optimize `max_returnable` Calculation in Returns (N+1 Prevention):**
+      - In `SaleReturnInvoiceForm`, the `max_returnable` is currently calculated dynamically by querying the database for the original `SaleInvoiceItem` inside a repeater loop, causing N+1 queries.
+      - **Solution:** Instead of saving `max_returnable` to the database (which risks stale data and race conditions if multiple returns are made), implement a static array cache inside the form to eager-load and store the original items in memory during request execution.
+
+
+
 ---
 
 ## 10. Out of Scope for v1.0

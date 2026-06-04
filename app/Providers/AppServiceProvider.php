@@ -12,6 +12,9 @@ use App\Observers\ProductVariantObserver;
 use App\Observers\UserObserver;
 use BezhanSalleh\LanguageSwitch\Enums\TriggerStyle;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
@@ -43,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerDynamicPermissionsGate();
 
+        $this->configureFilamentComponentsDefaults();
+
         Livewire::addPersistentMiddleware([
             ApplyTenantScopes::class,
             AppLocale::class,
@@ -54,6 +59,21 @@ class AppServiceProvider extends ServiceProvider
                 ->locales(['en', 'ar'])
                 ->nativeLabel()
                 ->trigger(TriggerStyle::IconLabel, icon: Heroicon::Language);
+        });
+    }
+
+    private function configureFilamentComponentsDefaults(): void
+    {
+        Select::configureUsing(function (Select $component) {
+            $component->native(false);
+        });
+
+        DatePicker::configureUsing(function (DatePicker $component) {
+            $component->native(false);
+        });
+
+        DateTimePicker::configureUsing(function (DateTimePicker $component) {
+            $component->native(false);
         });
     }
 

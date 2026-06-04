@@ -111,7 +111,7 @@ return [
     'total_amount_helper' => 'المبلغ النهائي المستحق الدفع من قبل العميل بعد تطبيق جميع الخصومات. (يشمل تكلفة الشحن إن وجدت)',
     'percentage_exceeds_100' => 'نسبة الخصم لا يمكن أن تتجاوز 100%.',
     'discount_exceeds_unit_price' => 'الخصم الثابت لا يمكن أن يتجاوز سعر الوحدة (:max).',
-    'max_allowed_discount' => 'الحد الأقصى: :max',
+    'max_allowed_discount' => 'الأقصى: :max',
     'grand_total_discount_exceeds_total' => 'إجمالي الخصم لا يمكن أن يتجاوز إجمالي مبلغ الفاتورة.',
     'invoice_below_minimum_after_global' => 'الخصم الإجمالي يخفض إجمالي الفاتورة عن الحد الأدنى المسموح به (:min).',
     'invoice_discount_breaches_minimum_total' => 'خصم الفاتورة الإجمالي يخفض إجمالي المبلغ عن الحد الأدنى المسموح به.',

@@ -10,6 +10,7 @@ return [
     'email' => 'Email',
     'phone' => 'Phone',
     'address' => 'Address',
+    'add_more' => 'Add more',
     'tax_settings' => 'Tax Settings',
     'tax_registration_number_t_r_n' => 'Tax Registration Number (TRN)',
     'v_a_t_rate' => 'VAT Rate (%)',
@@ -208,4 +209,5 @@ return [
     'search_by_product' => 'Search by Product Name or Barcode',
     'search_by_product_placeholder' => 'Type to search...',
     'finalize' => 'Finalize',
+    'unknown_product' => 'Unknown Product',
 ];

@@ -43,4 +43,5 @@ return [
     'finalize_failed' => 'Finalization Failed',
     'save_as_draft' => 'Save as Draft',
     'create_and_finalize' => 'Create & Finalize',
+    'quantity_tooltip' => 'Cannot exceed the remaining returnable quantity in the original invoice.',
 ];

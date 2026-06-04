@@ -58,7 +58,7 @@ class UsersTable
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => __('roles.'.$state)),
 
-                TextColumn::make('store.name_en')
+                TextColumn::make('store.name')
                     ->label(__('app.store'))
                     ->placeholder(__('app.all_stores'))
                     ->badge()

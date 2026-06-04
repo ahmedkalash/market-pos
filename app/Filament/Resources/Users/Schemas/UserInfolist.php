@@ -54,7 +54,7 @@ class UserInfolist
                             ->state(fn (User $record): ?string => $record->getRoleNames()->first())
                             ->formatStateUsing(fn (?string $state): string => $state ? __('roles.'.$state) : '—'),
 
-                        TextEntry::make('store.name_en')
+                        TextEntry::make('store.name')
                             ->label(__('app.assigned_store'))
                             ->placeholder(__('app.all_stores'))
                             ->visible(fn (): bool => ! $authUser->isStoreLevel()),

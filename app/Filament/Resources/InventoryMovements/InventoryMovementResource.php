@@ -80,7 +80,7 @@ class InventoryMovementResource extends Resource
                     ->dateTime('d-m-Y')
                     ->sortable(),
 
-                TextColumn::make('store.name_en')
+                TextColumn::make('store.name')
                     ->label(__('inventory.store'))
                     ->visible(fn () => $user->isCompanyLevel() || $user->isSuperAdmin())
                     ->searchable()

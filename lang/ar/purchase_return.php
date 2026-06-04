@@ -70,7 +70,7 @@ return [
     'return_status_none' => 'لا يوجد إرجاع',
     'return_status_partially_returned' => 'إرجاع جزئي',
     'return_status_fully_returned' => 'إرجاع كامل',
-    'item_already_added' => 'تمت اضافه البند من قبل لفاتورة المرتجع',
+    'item_already_added' => 'البند موجود بالفل في فاتورة المرتجع',
 
     // Tooltips & Helpers
     'store_helper' => 'اختر المستودع الذي سيتم إرجاع المنتجات إليه.',

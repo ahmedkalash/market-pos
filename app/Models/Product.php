@@ -74,4 +74,9 @@ class Product extends Model
         return $query->where('name_en', 'like', "%{$name}%")
             ->orWhere('name_ar', 'like', "%{$name}%");
     }
+
+    public function getNameAttribute(): string
+    {
+        return $this->{lang_suffix('name')};
+    }
 }

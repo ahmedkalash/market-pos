@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PriceType;
 use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -160,5 +161,39 @@ class ProductVariant extends Model
     {
         return $query->where('name_en', 'like', "%{$name}%")
             ->orWhere('name_ar', 'like', "%{$name}%");
+    }
+
+    /**
+     * Get the full qualified variant name like: "{$productName} - {$variantName}".
+     */
+    protected function fullQualifiedName(): Attribute
+    {
+        $productName = $this->product?->name ?? __('app.unknown_product');
+        $variantName = $this->name ?? __('app.unknown_product');
+        $fullName = "{$productName} - {$variantName}";
+
+        return Attribute::make(
+            get: fn () => $fullName,
+        );
+    }
+
+    /**
+     * Get all barcodes associated with this variant as a delimited string.
+     *
+     * @param  string  $separator  The string to use to join the barcodes. Defaults to ', '.
+     */
+    public function getAllBarcodesAsString(string $separator = ', '): string
+    {
+        return $this->barcodes->pluck('barcode')->implode($separator);
+    }
+
+    /**
+     * Get all barcodes associated with this variant as an array.
+     *
+     * @return array<int, string>
+     */
+    public function getAllBarcodesAsArray(): array
+    {
+        return $this->barcodes->pluck('barcode')->toArray();
     }
 }

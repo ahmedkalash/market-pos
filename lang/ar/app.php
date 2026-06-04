@@ -10,6 +10,7 @@ return [
     'email' => 'البريد الإلكتروني',
     'phone' => 'رقم الهاتف',
     'address' => 'العنوان',
+    'add_more' => 'إضافة المزيد',
     'tax_settings' => 'إعدادات الضريبة',
     'tax_registration_number_t_r_n' => 'الرقم الضريبي',
     'v_a_t_rate' => 'نسبة الضريبة (%)',
@@ -197,7 +198,7 @@ return [
     'unit_price' => 'سعر الوحدة',
     'extra_items' => 'بنود إضافية',
     'summary' => 'الملخص',
-    'items_refund_total' => 'إجمالي استرداد العناصر',
+    'items_refund_total' => 'إجمالي استرداد البنود الاساسيه',
     'extra_items_total' => 'إجمالي البنود الإضافية',
     'total_refund_amount' => 'إجمالي مبلغ الاسترداد',
     'return_number' => 'رقم المرتجع',
@@ -209,4 +210,5 @@ return [
     'search_by_product' => 'البحث باسم المنتج أو الباركود',
     'search_by_product_placeholder' => 'اكتب للبحث...',
     'finalize' => 'اعتماد',
+    'unknown_product' => 'منتج غير معروف',
 ];
