@@ -35,8 +35,6 @@ class InventoryMovement extends Model
         'notes',
         'reference_type',
         'reference_id',
-        'unit_cost',
-        'total_cost',
         'created_at',
     ];
 
@@ -50,8 +48,6 @@ class InventoryMovement extends Model
             'direction' => MovementDirection::class,
             'reason' => AdjustmentReason::class,
             'quantity' => 'decimal:4',
-            'unit_cost' => 'decimal:4',
-            'total_cost' => 'decimal:4',
             'created_at' => 'datetime',
         ];
     }

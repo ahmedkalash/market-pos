@@ -119,4 +119,14 @@ class SaleReturnInvoice extends Model
     {
         return $query->where('status', SaleReturnStatus::Draft);
     }
+
+    /**
+     * Calculate the total sum of extra items, factoring in their addition/deduction types.
+     */
+    public function calculateExtraItemsTotal(): float
+    {
+        $this->loadMissing('extraItems');
+
+        return (float) $this->extraItems->sum('signed_amount');
+    }
 }

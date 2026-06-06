@@ -106,18 +106,6 @@ class InventoryMovementResource extends Resource
                     ->icon(fn (InventoryMovement $record): string => $record->direction === MovementDirection::In ? 'heroicon-m-plus-circle' : 'heroicon-m-minus-circle')
                     ->sortable(),
 
-                TextColumn::make('unit_cost')
-                    ->label(__('inventory.unit_cost'))
-                    ->headerTooltip(__('inventory.unit_cost_tooltip'))
-                    ->money('EGP')
-                    ->toggleable(),
-
-                TextColumn::make('total_cost')
-                    ->label(__('inventory.total_cost'))
-                    ->headerTooltip(__('inventory.total_cost_tooltip'))
-                    ->money('EGP')
-                    ->color(fn (InventoryMovement $record): string => $record->direction === MovementDirection::In ? 'success' : 'danger'),
-
                 TextColumn::make('reason')
                     ->label(__('inventory.reason'))
                     ->formatStateUsing(fn (?AdjustmentReason $state): ?string => $state ? __('inventory.'.$state->value) : null)

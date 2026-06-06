@@ -85,7 +85,7 @@ class SaleReturnInvoiceResourceTest extends TestCase
                         'quantity' => 1,
                         'unit_price' => 100,
                         'unit_discount_amount' => 0,
-                        'prorated_global_discount' => 0,
+                        'unit_prorated_global_discount' => 0,
                         'effective_unit_refund' => 100,
                         'item_refund_total' => 100,
                         'line_total' => 100,

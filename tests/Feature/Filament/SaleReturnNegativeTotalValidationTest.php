@@ -25,10 +25,15 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Company $company;
+
     protected Store $store;
+
     protected SaleInvoice $invoice;
+
     protected SaleInvoiceItem $invoiceItem;
+
     protected ProductVariant $variant;
 
     protected function setUp(): void
@@ -84,7 +89,7 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
                     'quantity' => 1,
                     'unit_price' => 100,
                     'unit_discount_amount' => 0,
-                    'prorated_global_discount' => 0,
+                    'unit_prorated_global_discount' => 0,
                     'effective_unit_refund' => $itemRefundTotal,
                     'item_refund_total' => $itemRefundTotal,
                     'line_total' => $itemRefundTotal,
@@ -178,7 +183,7 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
                 'amount' => 120, // 150 - 120 = 30. Valid because of the addition, though it exceeds the base 100
             ],
         ];
-        $formData['total_refund_amount'] = 30; 
+        $formData['total_refund_amount'] = 30;
 
         Livewire::test(CreateSaleReturnInvoice::class)
             ->set('data.invoice_number_input', $this->invoice->invoice_number)

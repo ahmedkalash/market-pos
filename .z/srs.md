@@ -613,9 +613,7 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] -  static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
 - [ ] -  static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
 - [ ] - for item lable of a repeater consder displaying product name and barcodes via the badge() fnuction in all anvoices
-
-
-
+- [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
 ### Performance & Database Optimization
 - [ ] **Optimize `max_returnable` Calculation in Returns (N+1 Prevention):**
       - In `SaleReturnInvoiceForm`, the `max_returnable` is currently calculated dynamically by querying the database for the original `SaleInvoiceItem` inside a repeater loop, causing N+1 queries.

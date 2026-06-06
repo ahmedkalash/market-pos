@@ -18,7 +18,7 @@ class SaleReturnInvoiceItem extends Model
         'quantity',
         'unit_price',
         'unit_discount_amount',
-        'prorated_global_discount',
+        'unit_prorated_global_discount',
         'effective_unit_refund',
         'item_refund_total',
         'notes',
@@ -33,7 +33,7 @@ class SaleReturnInvoiceItem extends Model
             'quantity' => 'decimal:3',
             'unit_price' => 'decimal:4',
             'unit_discount_amount' => 'decimal:4',
-            'prorated_global_discount' => 'decimal:4',
+            'unit_prorated_global_discount' => 'decimal:4',
             'effective_unit_refund' => 'decimal:4',
             'item_refund_total' => 'decimal:2',
         ];

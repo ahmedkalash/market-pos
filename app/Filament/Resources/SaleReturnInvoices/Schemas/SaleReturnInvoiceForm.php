@@ -25,7 +25,6 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -86,7 +85,7 @@ class SaleReturnInvoiceForm
                                 $set('items', []); // clear items
                                 $set('extraItems', []); // clear extra items
                                 self::clearOriginalInvoiceMetadata($set);
-                                self::calcTotalAmount($get, $set);
+                                self::calcTotalAmount($get, $set, $livewire);
 
                                 if ($state) {
                                     $invoice = SaleInvoice::query()
@@ -188,7 +187,7 @@ class SaleReturnInvoiceForm
                             ->label(__('sale_return.return_all_items'))
                             ->icon('heroicon-o-bars-arrow-down')
                             ->color('primary')
-                            ->action(function (Get $get, Set $set) {
+                            ->action(function (Get $get, Set $set, $livewire) {
                                 $invoiceId = $get('original_invoice_id');
                                 if (! $invoiceId) {
                                     return;
@@ -201,7 +200,7 @@ class SaleReturnInvoiceForm
 
                                 $items = static::getAllInvoiceItemsForReturn($invoice);
                                 $set('items', $items);
-                                static::calcTotalAmount($get, $set);
+                                static::calcTotalAmount($get, $set, $livewire);
                             })
                             ->visible(
                                 fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
@@ -279,7 +278,7 @@ class SaleReturnInvoiceForm
                             ->hiddenLabel()
                             ->compact()
                             ->itemLabel(function ($state): ?HtmlString {
-                                $productName = e($state['product_name']);
+                                $productName = e($state['product_name'] ?? __('sale_return.unknown_product'));
                                 $barcodes = $state['barcodes'] ?? [];
                                 $productHtml = badge($productName, ['color' => 'primary', 'size' => 'xl']);
 
@@ -294,17 +293,18 @@ class SaleReturnInvoiceForm
                                 return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>$badgesHtml</div>");
                             })
                             ->deleteAction(
-                                fn (Action $action) => $action->after(function (Get $get, Set $set) {
-                                    self::calcTotalAmount($get, $set);
+                                fn (Action $action) => $action->after(function (Get $get, Set $set, $livewire) {
+                                    self::calcTotalAmount($get, $set, $livewire);
                                 })
                             )
                             ->columnSpanFull()
                             ->schema([
                                 Hidden::make('original_item_id')->required(),
                                 Hidden::make('product_variant_id')->required(),
-                                Hidden::make('max_returnable'),
-                                Hidden::make('unit_discount_amount')->default(0)->dehydrated(),
-                                Hidden::make('prorated_global_discount')->default(0)->dehydrated(),
+                                Hidden::make('max_returnable')->dehydrated(false),
+                                Hidden::make('unit_discount_amount')->default(0),
+                                Hidden::make('unit_prorated_global_discount')->default(0),
+                                Hidden::make('unit_price')->required(),
 
                                 TextInput::make('quantity')
                                     ->label(__('app.quantity'))
@@ -328,27 +328,17 @@ class SaleReturnInvoiceForm
                                     ->hint(fn (Get $get) => __('sale_return.max_suffix').' '.$get('max_returnable'))
                                     ->columnSpan(2),
 
-                                TextInput::make('unit_price')
-                                    ->label(__('app.unit_price'))
-                                    ->helperText(__('sale_return.unit_price_tooltip'))
-                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                    ->numeric()
-                                    ->disabled()
-                                    ->dehydrated()
-                                    ->columnSpan(2)
-                                    ->required(),
-
                                 TextInput::make('effective_unit_refund')
                                     ->label(__('sale_return.effective_unit_refund'))
+                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
                                     ->helperText(function (Get $get) {
                                         return __('sale_return.pricing_breakdown', [
-                                            'price' => number_format((float) $get('unit_price'), 2),
-                                            'unit_disc' => number_format((float) $get('unit_discount_amount'), 2),
-                                            'global_disc' => number_format((float) $get('prorated_global_discount'), 2),
-                                            'net' => number_format((float) $get('effective_unit_refund'), 2),
+                                            'price' => number_format($unit_price = (float) $get('unit_price'), 2),
+                                            'unit_disc' => number_format($unit_discount_amount = (float) $get('unit_discount_amount'), 2),
+                                            'global_disc' => number_format($unit_prorated_global_discount = (float) $get('unit_prorated_global_discount'), 2),
+                                            'net' => number_format($unit_price - $unit_discount_amount - $unit_prorated_global_discount, 2),
                                         ]);
                                     })
-                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
                                     ->numeric()
                                     ->disabled(fn () => ! $user?->can('override_sale_return_refund_amount'))
                                     ->dehydrated()
@@ -357,7 +347,7 @@ class SaleReturnInvoiceForm
                                         self::calculateLine($get, $set);
                                         self::calcTotalAmount($get, $set, $livewire, '../../');
                                     })
-                                    ->columnSpan(3),
+                                    ->columnSpan(5),
 
                                 TextInput::make('item_refund_total')
                                     ->label(__('sale_return.item_refund_total'))
@@ -406,7 +396,7 @@ class SaleReturnInvoiceForm
                                             $preset = $extraItemPresetCache->get((int) $state);
                                             if ($preset) {
                                                 $set('name', $preset->name);
-                                                $set('action_type', $preset->action_type->value);
+                                                $set('action_type', $preset->action_type);
                                                 $set('amount', $preset->amount);
                                             }
                                         }
@@ -534,15 +524,15 @@ class SaleReturnInvoiceForm
             'quantity' => 1,
             'max_returnable' => $maxReturnable,
             'unit_price' => (float) $originalItem->unit_price,
-            'unit_discount_amount' => (float) $originalItem->unit_discount_amount,
-            'prorated_global_discount' => (float) $refundBreakdown['prorated_global_discount'],
+            'unit_discount_amount' => (float) $originalItem->monetary_unit_discount_amount,
+            'unit_prorated_global_discount' => (float) $refundBreakdown['unit_prorated_global_discount'],
             'effective_unit_refund' => (float) $refundBreakdown['effective_unit_refund'],
             'item_refund_total' => round(1 * $refundBreakdown['effective_unit_refund'], 2),
             'notes' => null,
         ];
 
         $set('items', $items);
-        self::calcTotalAmount($get, $set);
+        self::calcTotalAmount($get, $set, $livewire);
         $livewire->dispatch('play-sound-success');
         $livewire->dispatch('focus-barcode');
     }
@@ -585,17 +575,9 @@ class SaleReturnInvoiceForm
      */
     protected static function getOriginalInvoiceIdFromRequest(): ?int
     {
-        $validator = Validator::make(request()->query(), [
-            'original_invoice_id' => ['nullable', 'integer'],
-        ]);
+        $id = request()->integer('original_invoice_id');
 
-        if ($validator->fails()) {
-            return null;
-        }
-
-        $id = request()->query('original_invoice_id');
-
-        return $id !== null ? (int) $id : null;
+        return $id !== 0 ? $id : null;
     }
 
     /**
@@ -654,8 +636,8 @@ class SaleReturnInvoiceForm
                     'max_returnable' => $maxReturnable,
                     'quantity' => $maxReturnable,
                     'unit_price' => (float) $originalItem->unit_price,
-                    'unit_discount_amount' => (float) $originalItem->unit_discount_amount,
-                    'prorated_global_discount' => (float) $refundBreakdown['prorated_global_discount'],
+                    'unit_discount_amount' => (float) $originalItem->monetary_unit_discount_amount,
+                    'unit_prorated_global_discount' => (float) $refundBreakdown['unit_prorated_global_discount'],
                     'effective_unit_refund' => (float) $refundBreakdown['effective_unit_refund'],
                     'item_refund_total' => round($maxReturnable * $refundBreakdown['effective_unit_refund'], 2),
                     'notes' => null,
@@ -687,9 +669,9 @@ class SaleReturnInvoiceForm
             $amount = (float) ($extra['amount'] ?? 0.0);
             $actionType = $extra['action_type'] ?? null;
 
-            if ($actionType === 'addition') {
+            if ($actionType === ExtraItemActionType::Addition->value) {
                 return $amount;
-            } elseif ($actionType === 'subtraction') {
+            } elseif ($actionType === ExtraItemActionType::Subtraction->value) {
                 return -$amount;
             } else {
                 return 0.0;

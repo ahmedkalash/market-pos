@@ -61,6 +61,7 @@ class PurchaseInvoiceService
      */
     public function recalculateTotals(PurchaseInvoice $invoice): void
     {
+        // TODO wrap inside a transaction
         $invoice->load('items.variant.product.taxClass');
 
         $totalBeforeTax = 0;
@@ -140,7 +141,6 @@ class PurchaseInvoiceService
                     quantity: (float) $item->quantity,
                     notes: "PI #{$invoice->invoice_number}",
                     reference: $invoice,
-                    unitCost: (float) $item->unit_cost,
                 );
             }
 
@@ -163,6 +163,8 @@ class PurchaseInvoiceService
      */
     public function recalculateReturnTotals(PurchaseReturn $return): void
     {
+        // TODO wrap inside a transaction
+
         $return->load('items.variant.product.taxClass');
 
         $totalBeforeTax = 0;
@@ -256,7 +258,6 @@ class PurchaseInvoiceService
                     quantity: (float) $item->quantity,
                     notes: "PR #{$return->return_number}",
                     reference: $return,
-                    unitCost: (float) $item->unit_cost,
                 );
             }
 

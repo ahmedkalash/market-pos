@@ -182,4 +182,16 @@ class SaleInvoice extends Model
     {
         return $this->hasMany(SaleReturnInvoice::class, 'original_invoice_id');
     }
+
+    public function subtotalsAfterItemDiscountSum(): float
+    {
+        $this->loadMissing('items');
+
+        $subtotalsAfterItemDiscountSum = 0.0;
+        foreach ($this->items as $item) {
+            $subtotalsAfterItemDiscountSum += $item->subtotalAfterItemDiscount();
+        }
+
+        return $subtotalsAfterItemDiscountSum;
+    }
 }

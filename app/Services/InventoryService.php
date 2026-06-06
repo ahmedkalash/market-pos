@@ -43,9 +43,8 @@ class InventoryService
         ?AdjustmentReason $reason = null,
         ?string $notes = null,
         ?Model $reference = null,
-        ?float $unitCost = null,
     ): InventoryMovement {
-        return DB::transaction(function () use ($variant, $type, $quantity, $reason, $notes, $reference, $unitCost) {
+        return DB::transaction(function () use ($variant, $type, $quantity, $reason, $notes, $reference) {
             // Pessimistic lock: prevent concurrent reads of stale quantity
             /** @var ProductVariant $lockedVariant */
             $lockedVariant = ProductVariant::query()
@@ -64,15 +63,7 @@ class InventoryService
                 );
             }
 
-            // Resolve store_id and cost basis from the variant.
-            // Caller may pass an explicit unitCost (e.g. from a purchase invoice line).
-            // Falls back to the variant's stored purchase_price for all other callers.
             $storeId = $lockedVariant->product->store_id;
-            $resolvedUnitCost = $unitCost ?? (float) $lockedVariant->purchase_price;
-
-            // total_cost is signed (Positive for additions, Negative for subtractions).
-            $multiplier = ($direction === MovementDirection::In) ? 1 : -1;
-            $totalCost = abs($quantity) * $resolvedUnitCost * $multiplier;
 
             // 1. Insert immutable movement record
             $movement = InventoryMovement::create([
@@ -82,8 +73,6 @@ class InventoryService
                 'type' => $type,
                 'quantity' => abs($quantity),
                 'direction' => $direction,
-                'unit_cost' => $resolvedUnitCost,
-                'total_cost' => $totalCost,
                 'reason' => $reason,
                 'notes' => $notes,
                 'reference_type' => $reference?->getMorphClass(),

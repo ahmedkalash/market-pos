@@ -4,12 +4,17 @@ namespace App\Services;
 
 use App\Enums\DiscountType;
 use App\Enums\MovementType;
+use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
+use App\Enums\SaleReturnStatus;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
+use App\Models\SaleReturnInvoice;
+use App\Models\SaleReturnInvoiceItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Handles the full transactional lifecycle of Sale Invoices.
@@ -42,7 +47,7 @@ class SaleInvoiceService
      *  3. Aggregates all line subtotals and tax amounts into the invoice-level
      *     total_before_tax, total_tax_amount, and total_amount fields.
      *
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function recalculateTotals(SaleInvoice $invoice): void
     {
@@ -92,43 +97,11 @@ class SaleInvoiceService
      */
     private function prepareInvoiceForCalculation(SaleInvoice $invoice): SaleInvoice
     {
-        $lockedInvoice = SaleInvoice::query()->where('id', $invoice->id)->lockForUpdate()->firstOrFail();
+        $lockedInvoice = SaleInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
         $lockedInvoice->load(['items' => fn ($query) => $query->lockForUpdate()]);
         $lockedInvoice->load('items.variant.product.taxClass');
 
         return $lockedInvoice;
-    }
-
-    /**
-     * Calculate the absolute monetary unit discount value for a given line item.
-     */
-    private function calculateUnitDiscountValue(SaleInvoiceItem $item): float
-    {
-        if (! $item->discount_type || $item->unit_discount_amount <= 0) {
-            return 0.0;
-        }
-
-        $unitDiscountAmount = (float) $item->unit_discount_amount;
-        $unitPrice = (float) $item->unit_price;
-
-        return $item->discount_type === DiscountType::Fixed
-            ? $unitDiscountAmount
-            : $unitPrice * ($unitDiscountAmount / 100);
-    }
-
-    /**
-     * Calculate the capped line total discount for a given line item.
-     */
-    private function calculateLineTotalDiscount(SaleInvoiceItem $item): float
-    {
-        $unitDiscountValue = $this->calculateUnitDiscountValue($item);
-        $quantity = (float) $item->quantity;
-        $unitPrice = (float) $item->unit_price;
-        $itemSubtotalBeforeDiscount = $unitPrice * $quantity;
-
-        $lineTotalDiscount = $unitDiscountValue * $quantity;
-
-        return min($lineTotalDiscount, $itemSubtotalBeforeDiscount);
     }
 
     /**
@@ -154,7 +127,7 @@ class SaleInvoiceService
             $isNegotiable = $variant->isPriceNegotiable($item->price_type);
             $minPrice = $variant->getMinimumAllowedPrice($item->price_type);
 
-            $unitDiscountValue = $this->calculateUnitDiscountValue($item);
+            $unitDiscountValue = $item->monetary_unit_discount_amount;
 
             if ($unitDiscountValue > 0 && ! $isNegotiable) {
                 throw new \RuntimeException(__('sale_invoice.item_not_negotiable', ['item' => $variant->name()]));
@@ -166,7 +139,7 @@ class SaleInvoiceService
                 throw new \RuntimeException(__('sale_invoice.item_below_minimum', ['item' => $variant->name(), 'min' => $minPrice]));
             }
 
-            $lineTotalDiscount = $this->calculateLineTotalDiscount($item);
+            $lineTotalDiscount = $item->lineTotalDiscount();
             $itemSubtotalBeforeDiscount = $unitPrice * $quantity;
             $itemSubtotalAfterItemDiscount = $itemSubtotalBeforeDiscount - $lineTotalDiscount;
 
@@ -235,7 +208,7 @@ class SaleInvoiceService
     /**
      * Finalize a sale invoice — deduct stock and lock the record.
      *
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function finalize(SaleInvoice $invoice): void
     {
@@ -281,7 +254,6 @@ class SaleInvoiceService
                     quantity: (float) $item->quantity, // The amount being sold (deducted)
                     notes: "SI #{$invoice->invoice_number}", // Reference note for the movement
                     reference: $invoice, // Polymorphic relation link to this invoice
-                    unitCost: (float) $item->unit_price, // The price the item was sold at
                 );
             }
 
@@ -292,5 +264,230 @@ class SaleInvoiceService
                 'finalized_by' => Auth::id(), // Record the user who finalized it
             ]);
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Sale Return Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Calculates the exact refund breakdown for a single item being returned.
+     *
+     * This function determines how much of the invoice's global discount was applied
+     * to this specific item and calculates the actual
+     * monetary amount to refund per unit (effective_unit_refund).
+     *
+     * @param  SaleInvoiceItem  $originalItem  The original invoice item being returned
+     * @return array{unit_prorated_global_discount: float, effective_unit_refund: float}
+     */
+    public function calculateRefundBreakdown(SaleInvoiceItem $originalItem): array
+    {
+        // Retrieve the parent invoice of the item
+        $originalInvoice = $originalItem->invoice;
+
+        // Fallback: If no invoice is attached, return defaults using the raw unit price
+        if (! $originalInvoice) {
+            return [
+                'unit_prorated_global_discount' => 0.0,
+                'effective_unit_refund' => (float) $originalItem->unit_price,
+            ];
+        }
+
+        // Ensure all items on the invoice are loaded so we can calculate total weights
+        $originalInvoice->loadMissing('items');
+
+        // Note: The 'subtotal' column on SaleInvoiceItem is the gross amount BEFORE item discounts.
+        // To get the true value of the items after item-level discounts, we MUST subtract
+        // 'line_total_discount' from 'subtotal'. This is mathematically correct.
+        $subtotalsAfterItemDiscountSum = $originalInvoice->subtotalsAfterItemDiscountSum();
+
+        // Fetch the global discount applied to the entire invoice
+        $globalDiscount = (float) $originalInvoice->global_discount_amount;
+
+        // Calculate the specific item's value after its own line discount is applied
+        $itemSubtotalAfterItemDiscount = (float) $originalItem->subtotal - (float) $originalItem->line_total_discount;
+        $originalQuantity = (float) $originalItem->quantity;
+
+        // Calculate how much of the global discount belongs to this specific item line
+        $proratedGlobalDiscount = 0.0;
+        if ($subtotalsAfterItemDiscountSum > 0) {
+            // Find the percentage (weight) of this item's value relative to the whole invoice
+            $weight = $itemSubtotalAfterItemDiscount / $subtotalsAfterItemDiscountSum;
+
+            // Multiply the total global discount by this item's weight to get its prorated share
+            $proratedGlobalDiscount = $weight * $globalDiscount;
+        }
+
+        // The effective total refund for the entire line is its discounted subtotal minus its share of the global discount
+        $effectiveLineRefund = $itemSubtotalAfterItemDiscount - $proratedGlobalDiscount;
+
+        // Divide by the original quantity to get the final refund amounts for a single unit
+        $unitProratedGlobalDiscount = $originalQuantity > 0 ? ($proratedGlobalDiscount / $originalQuantity) : 0;
+        $effectiveUnitRefund = $originalQuantity > 0 ? ($effectiveLineRefund / $originalQuantity) : 0;
+
+        // Return the final values rounded to 4 decimal places for precision
+        return [
+            'unit_prorated_global_discount' => round($unitProratedGlobalDiscount, 4),
+            'effective_unit_refund' => round($effectiveUnitRefund, 4),
+        ];
+    }
+
+    /**
+     * Recalculate and persist all financial totals on a Draft SaleReturnInvoice.
+     * Called from Filament afterCreate/afterSave hooks.
+     *
+     * @throws Throwable
+     */
+    public function recalculateReturnTotals(SaleReturnInvoice $return): void
+    {
+        DB::transaction(function () use ($return) {
+            // Lock the return row to serialize concurrent saves on the same draft.
+            // Items and extraItems don't need separate locks — the parent lock
+            // prevents any concurrent recalculation from interleaving.
+            $return = SaleReturnInvoice::lockForUpdate()->findOrFail($return->id);
+
+            $return->load(['items', 'extraItems']);
+
+            $itemsRefundTotal = 0.0;
+
+            foreach ($return->items as $returnItem) {
+                $itemRefundTotal = round((float) $returnItem->effective_unit_refund * (float) $returnItem->quantity, 2);
+
+                $returnItem->update([
+                    'item_refund_total' => $itemRefundTotal,
+                ]);
+
+                $itemsRefundTotal += $itemRefundTotal;
+            }
+
+            $extraItemsTotal = $return->calculateExtraItemsTotal();
+
+            $totalRefundAmount = round($itemsRefundTotal + $extraItemsTotal, 2);
+
+            $return->update([
+                'items_refund_total' => round($itemsRefundTotal, 2),
+                'extra_items_total' => round($extraItemsTotal, 2),
+                'total_refund_amount' => $totalRefundAmount,
+            ]);
+        });
+    }
+
+    /**
+     * Finalize a sale return.
+     *
+     * @throws Throwable
+     */
+    public function finalizeReturn(SaleReturnInvoice $return, ?int $userId = null): void
+    {
+        DB::transaction(function () use ($return, $userId) {
+            /** @var SaleReturnInvoice $return */
+            $return = SaleReturnInvoice::lockForUpdate()->findOrFail($return->id);
+
+            if ($return->isFinalized()) {
+                return; // Idempotent — no-op if already finalized
+            }
+            if ($return->items()->count() === 0 && $return->extraItems()->count() === 0) {
+                throw new \RuntimeException(__('sale_return.no_items_or_extras'));
+            }
+
+            if ($return->original_invoice_id) {
+                // Lock the original invoice to serialize any concurrent returns for this invoice
+                SaleInvoice::lockForUpdate()->findOrFail($return->original_invoice_id);
+            }
+
+            $return->load('items.variant.product', 'originalInvoice.items', 'extraItems');
+
+            foreach ($return->items as $item) {
+                /** @var ProductVariant $variant */
+                $variant = $item->variant;
+
+                // Guard: variant must belong to the return's store
+                if ((int) $variant->product->store_id !== (int) $return->store_id) {
+                    throw new \RuntimeException(
+                        "Variant [{$variant->id}] does not belong to store [{$return->store_id}]."
+                    );
+                }
+
+                $this->validateReturnLineQuantity($item);
+
+                // Record StockIn movement — goods physically return to the store
+                InventoryService::make()->recordMovement(
+                    variant: $variant,
+                    type: MovementType::SaleReturn,
+                    quantity: (float) $item->quantity,
+                    notes: "SR #{$return->return_number}",
+                    reference: $return,
+                );
+            }
+
+            $return->update([
+                'status' => SaleReturnStatus::Finalized,
+                'finalized_at' => now(),
+                'finalized_by' => $userId ?? Auth::id(),
+            ]);
+
+            if ($return->original_invoice_id) {
+                $this->syncInvoiceReturnStatus($return->originalInvoice);
+            }
+        });
+
+        // We will dispatch an event if needed in the future, e.g. SaleReturnFinalized
+        // event(new SaleReturnFinalized($return));
+    }
+
+    private function syncInvoiceReturnStatus(SaleInvoice $invoice): void
+    {
+        $invoice->load('items');
+
+        $isFullyReturned = true;
+        $hasAnyReturn = false;
+
+        foreach ($invoice->items as $originalItem) {
+            $returnedQty = $originalItem->getFinalizedReturnedQuantity();
+            $originalQty = (float) $originalItem->quantity;
+
+            if ($returnedQty > 0) {
+                $hasAnyReturn = true;
+            }
+
+            if ($returnedQty < $originalQty) {
+                $isFullyReturned = false;
+            }
+        }
+
+        $returnStatus = match (true) {
+            // The only scenario where $isFullyReturned is true but $hasAnyReturn is false is
+            // if the foreach loop never executes — i.e., the invoice has zero items.
+            $isFullyReturned && $hasAnyReturn => SaleInvoiceReturnStatus::FullyReturned,
+            $hasAnyReturn => SaleInvoiceReturnStatus::PartiallyReturned,
+            default => SaleInvoiceReturnStatus::None,
+        };
+
+        $invoice->update(['return_status' => $returnStatus]);
+    }
+
+    /**
+     * Validate that the return quantity on a line does not exceed the
+     * remaining returnable quantity (original qty − already finalized return qty).
+     *
+     * @throws \RuntimeException
+     */
+    private function validateReturnLineQuantity(SaleReturnInvoiceItem $item): void
+    {
+        $originalItem = $item->originalItem;
+
+        if (! $originalItem) {
+            return; // Cannot validate without the original — skip
+        }
+
+        $remainingReturnable = $originalItem->getRemainingReturnableQuantity($item->id);
+
+        if ((float) $item->quantity > $remainingReturnable) {
+            throw new \RuntimeException(
+                __('sale_return.exceeds_returnable_quantity', [
+                    'max' => $remainingReturnable,
+                ])
+            );
+        }
     }
 }

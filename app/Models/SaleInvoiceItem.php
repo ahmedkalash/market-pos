@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DiscountType;
 use App\Enums\PriceType;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -105,5 +106,62 @@ class SaleInvoiceItem extends Model
     public function getRemainingReturnableQuantity(?int $excludeReturnItemId = null): float
     {
         return $this->getInvoiceReturnableQuantity($excludeReturnItemId);
+    }
+
+    public function subtotalAfterItemDiscount(): float
+    {
+        $netUnitPriceAfterDiscount = (float) $this->unit_price - (float) $this->monetary_unit_discount_amount;
+
+        return round($netUnitPriceAfterDiscount * (float) $this->quantity, 2);
+    }
+
+    protected function subtotalBeforeItemDiscount(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                return (float) $this->unit_price * (float) $this->quantity;
+            }
+        );
+    }
+
+    /**
+     * Calculate the capped line total discount for this item.
+     *
+     * We use the `min()` function here as a critical safety mechanism to protect
+     * against negative subtotals. If a user accidentally applies a discount amount
+     * that is higher than the actual price of the item, the `min()` function
+     * ensures the total discount applied will never exceed the subtotal itself.
+     * This prevents the item's final price from dropping below exactly 0.00.
+     */
+    public function lineTotalDiscount(): float
+    {
+        $lineTotalDiscount = $this->monetary_unit_discount_amount * (float) $this->quantity;
+
+        return min($lineTotalDiscount, $this->subtotalBeforeItemDiscount);
+    }
+
+    /**
+     * Get the absolute monetary discount amount per unit using a bottom-up approach.
+     * This avoids precision loss and   side-effects from dividing the line total by quantity.
+     */
+    protected function monetaryUnitDiscountAmount(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                if (! $this->discount_type || $this->unit_discount_amount <= 0) {
+                    return 0.0;
+                }
+
+                if ($this->discount_type === DiscountType::Fixed) {
+                    return round((float) $this->unit_discount_amount, 2);
+                }
+
+                if ($this->discount_type === DiscountType::Percentage) {
+                    return round((float) $this->unit_price * ((float) $this->unit_discount_amount / 100.0), 2);
+                }
+
+                return 0.0;
+            }
+        );
     }
 }

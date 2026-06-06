@@ -27,7 +27,7 @@ class SaleReturnInvoiceItemFactory extends Factory
             'quantity' => $this->faker->randomFloat(3, 1, 10),
             'unit_price' => $this->faker->randomFloat(4, 10, 100),
             'unit_discount_amount' => 0,
-            'prorated_global_discount' => 0,
+            'unit_prorated_global_discount' => 0,
             'effective_unit_refund' => $this->faker->randomFloat(4, 10, 100),
             'item_refund_total' => $this->faker->randomFloat(2, 10, 1000),
             'notes' => $this->faker->optional()->sentence(),
