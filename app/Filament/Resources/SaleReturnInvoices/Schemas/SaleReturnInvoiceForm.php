@@ -81,6 +81,7 @@ class SaleReturnInvoiceForm
                                 return self::getCachedOriginalInvoice($invoiceId)?->invoice_number;
                             })
                             ->live(onBlur: true)
+                            ->stateBindingModifiers(['blur', 'trim'])
                             ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
                                 $set('items', []); // clear items
                                 $set('extraItems', []); // clear extra items
@@ -209,7 +210,6 @@ class SaleReturnInvoiceForm
                     ])
                     ->schema([
                         Select::make('product_search')
-                            ->native(false)
                             ->allowHtml()
                             ->label(__('sale_return.search_by_product'))
                             ->placeholder(__('sale_return.search_by_product_placeholder'))
@@ -229,14 +229,13 @@ class SaleReturnInvoiceForm
                                     ->get();
 
                                 return $items->mapWithKeys(function (SaleInvoiceItem $item) {
-                                    $fullName = $item->variant->full_qualified_name;
+                                    $fullName = badge($item->variant->full_qualified_name);
                                     $barcodes = $item->variant->getAllBarcodesAsString();
-                                    $barcodeText = $barcodes ? " [{$barcodes}]" : '';
+                                    $barcodeText = $barcodes ? badge($barcodes) : '';
                                     $max = $item->getRemainingReturnableQuantity();
-                                    $safeName = e($fullName);
-                                    $maxLabel = __('sale_return.max_suffix');
+                                    $maxLabel = badge(__('sale_return.max_suffix').$max);
 
-                                    return [$item->id => "<span dir='auto'>({$safeName})</span> <span dir='auto'>{$barcodeText}</span> <span dir='auto'>({$maxLabel} {$max})</span>"];
+                                    return [$item->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodeText $maxLabel</div>"];
                                 })->toArray();
                             })
                             ->searchable()
@@ -278,16 +277,15 @@ class SaleReturnInvoiceForm
                             ->hiddenLabel()
                             ->compact()
                             ->itemLabel(function ($state): ?HtmlString {
-                                $productName = e($state['product_name'] ?? __('sale_return.unknown_product'));
                                 $barcodes = $state['barcodes'] ?? [];
-                                $productHtml = badge($productName, ['color' => 'primary', 'size' => 'xl']);
+                                $productHtml = badge(e($state['product_name'] ?? __('sale_return.unknown_product')));
 
                                 if (empty($barcodes)) {
                                     return new HtmlString("<div class='flex items-center'>$productHtml</div>");
                                 }
 
                                 $badgesHtml = collect($barcodes)->map(function ($barcode) {
-                                    return badge(e($barcode), ['color' => 'primary', 'size' => 'xl']);
+                                    return badge(e($barcode));
                                 })->implode(' ');
 
                                 return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>$badgesHtml</div>");
@@ -575,9 +573,7 @@ class SaleReturnInvoiceForm
      */
     protected static function getOriginalInvoiceIdFromRequest(): ?int
     {
-        $id = request()->integer('original_invoice_id');
-
-        return $id !== 0 ? $id : null;
+        return request()->integer('original_invoice_id') ?: null;
     }
 
     /**

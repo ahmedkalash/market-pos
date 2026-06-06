@@ -538,6 +538,9 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 
 ### Phase 8 - todo
 - [ ] Activity logs
+- [ ] **Purchase Returns Unit Cost Override:** Allow users with a specific custom permission to override the `unit_cost` when returning items in a Purchase Return.
+      - Add this custom permission to the company permissions.
+      - Handle any side effects (e.g., recalculating totals, accounting for discrepancies) and further required actions.
 - [ ]- implement Audit Logs / Transfer History for moving users between stores
 - [ ] phone login and notifications
 - [ ] soft deletes

@@ -24,7 +24,7 @@ return [
     'extra_name_tooltip' => 'اسم التسوية الإضافية.',
     'extra_amount_tooltip' => 'قيمة التسوية الإضافية (أدخل قيمة موجبة دائمًا).',
     'extra_notes_tooltip' => 'ملاحظات خاصة بهذه التسوية.',
-    'return_all_items' => 'إرجاع كل البنود',
+    'return_all_items' => 'إرجاع كل البنود المتبقية في الفاتورة',
     'max_suffix' => 'الأقصى:',
     'no_remaining_quantity' => 'لا توجد كمية قابلة للإرجاع متبقية لهذا البند.',
     'item_already_added' => 'البند موجود بالفل في فاتورة المرتجع',

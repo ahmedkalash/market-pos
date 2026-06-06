@@ -43,7 +43,6 @@ class PurchaseInvoiceForm
                     Select::make('store_id')
                         ->label(__('purchase_invoice.store'))
                         ->relationship('store', lang_suffix('name'))
-                        ->default(fn (): ?int => $user->store_id)
                         ->required()
                         ->searchable(['name_en', 'name_ar'])
                         ->live()

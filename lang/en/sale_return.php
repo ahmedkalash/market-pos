@@ -24,7 +24,7 @@ return [
     'extra_name_tooltip' => 'Name of the adjustment.',
     'extra_amount_tooltip' => 'Value of the adjustment (always enter a positive number).',
     'extra_notes_tooltip' => 'Notes for this specific adjustment.',
-    'return_all_items' => 'Return All Items',
+    'return_all_items' => 'Return All Remaining Items',
     'max_suffix' => 'Max:',
     'no_remaining_quantity' => 'No remaining returnable quantity for this item.',
     'item_already_added' => 'Item has already been added to the return.',

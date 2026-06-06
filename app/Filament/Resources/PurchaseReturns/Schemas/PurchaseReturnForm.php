@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PurchaseReturns\Schemas;
 
-use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
@@ -16,6 +15,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -32,366 +32,299 @@ class PurchaseReturnForm
         $user = Auth::user()->load('company');
 
         return $schema->components([
-            Section::make(__('purchase_return.purchase_return'))
-                ->icon('heroicon-o-arrow-uturn-left')
-                ->schema([
-                    TextInput::make('invoice_number_input')
-                        ->label(__('purchase_return.original_invoice_id'))
-                        ->required()
-                        ->default(function () {
-                            $invoiceId = request()->query('original_invoice_id');
-
-                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->invoice_number : null;
-                        })
-                        ->live(onBlur: true)
-                        ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
-                            $set('items', []); // clear items
-                            static::calcTotalAmount($get, $set);
-                            $set('original_invoice_id', null);
-                            $set('vendor_id', null);
-                            $set('store_id', null);
-
-                            if ($state) {
-                                $invoice = PurchaseInvoice::query()
-                                    ->returnable()
-                                    ->where('invoice_number', $state)
-                                    ->first();
-
-                                if ($invoice) {
-                                    $set('original_invoice_id', $invoice->id);
-                                    $set('vendor_id', $invoice->vendor_id);
-                                    $set('store_id', $invoice->store_id);
-                                    Notification::make()->success()->title(__('purchase_return.invoice_found_success'))->send();
-                                    $livewire->dispatch('play-sound-success');
-                                } else {
-                                    Notification::make()->warning()->title(__('purchase_return.invoice_not_found'))->send();
-                                    $livewire->dispatch('play-sound-error');
-                                }
-                            }
-                        })
-                        ->formatStateUsing(fn ($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
-                        ->dehydrated(false)
-                        ->helperText(__('purchase_return.invoice_search_helper'))
-                        ->prefixAction(
-                            Action::make('search')
-                                ->icon('heroicon-m-magnifying-glass')
-                                ->label(__('purchase_return.search'))
-                        )
-                        ->columnSpanFull(),
-
-                    Hidden::make('original_invoice_id')
-                        ->default(request()->query('original_invoice_id'))
-                        ->required(),
-
-                    Select::make('vendor_id')
-                        ->label(__('purchase_return.vendor'))
-                        ->relationship('vendor', 'name')
-                        ->default(function () {
-                            $invoiceId = request()->query('original_invoice_id');
-
-                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->vendor_id : null;
-                        })
-                        ->disabled()
-                        ->dehydrated()
-                        ->required(),
-
-                    Select::make('store_id')
-                        ->label(__('purchase_return.store'))
-                        ->relationship('store', lang_suffix('name'))
-                        ->searchable(['name_en', 'name_ar'])
-                        ->preload()
-                        ->default(function () {
-                            $invoiceId = request()->query('original_invoice_id');
-
-                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->store_id : null;
-                        })
-                        ->disabled()
-                        ->dehydrated()
-                        ->required()
-                        ->helperText(__('purchase_return.store_helper'))
-                        ->visible(fn () => $user->isCompanyLevel()),
-
-                    Hidden::make('store_id')
-                        ->default(function () {
-                            $invoiceId = request()->query('original_invoice_id');
-
-                            return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->store_id : null;
-                        })
-                        ->disabled()
-                        ->dehydrated()
-                        ->visible(fn () => $user->isStoreLevel()),
-
-                    DatePicker::make('returned_at')
-                        ->label(__('purchase_return.returned_at'))
-                        ->required()
-                        ->default(now()->toDateString())
-                        ->maxDate(now()),
-
-                    // TextInput::make('vendor_credit_ref')
-                    //     ->label(__('purchase_return.vendor_credit_ref'))
-                    //     ->maxLength(100)
-                    //     ->placeholder('CN-2024-0099'),
-
-                    Textarea::make('return_reason')
-                        ->label(__('purchase_return.return_reason'))
-                        ->required()
-                        ->rows(2),
-                ])->columns(2),
-
-            Section::make(__('purchase_return.notes'))
-                ->icon('heroicon-o-chat-bubble-left-ellipsis')
-                ->schema([
-                    Textarea::make('notes')
-                        ->label(__('purchase_return.notes'))
-                        ->rows(4)
-                        ->columnSpanFull(),
-                ]),
-
-            Section::make(__('purchase_return.items'))
-                ->icon('heroicon-o-arrow-uturn-left')
-                ->columnSpanFull()
-                ->headerActions([
-                    Action::make('add_all_items')
-                        ->label(__('purchase_return.return_all_items'))
-                        ->icon('heroicon-o-bars-arrow-down')
-                        ->color('primary')
-                        ->action(function (Get $get, Set $set) {
-                            $invoiceId = $get('original_invoice_id');
-                            if (! $invoiceId) {
-                                return;
-                            }
-
-                            $invoice = PurchaseInvoice::with(['items.variant.product', 'items.variant.barcodes'])->find($invoiceId);
-                            if (! $invoice) {
-                                return;
-                            }
-
-                            $items = static::getAllInvoiceItemsForReturn($invoice);
-                            $set('items', $items);
-                            static::calcTotalAmount($get, $set);
-                        })
-                        ->visible(
-                            fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
-                                ! ($livewire instanceof ViewRecord)
-                        ),
+            Fieldset::make('global_disable')
+                ->hiddenLabel()
+                ->extraAttributes([
+                    'wire:loading.attr' => 'disabled',
+                    'class' => 'contents',
                 ])
+                ->columnSpanFull()
                 ->schema([
-                    TextInput::make('barcode_scanner')
-                        ->label(__('purchase_return.barcode_scanner'))
-                        ->placeholder(__('purchase_return.scan_barcode'))
-                        ->helperText(__('purchase_return.barcode_scanner_helper'))
-                        ->autofocus()
-                        ->extraInputAttributes([
-                            'x-on:focus-barcode.window' => 'setTimeout(() => $el.focus(), 10)',
-                        ])
-                        ->live(onBlur: true)
-                        ->prefixAction(
-                            Action::make('search')
-                                ->icon('heroicon-m-magnifying-glass')
-                                ->label(__('purchase_return.search'))
-                        )
-                        ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
-                            if (! $state) {
-                                return;
-                            }
-                            $set('barcode_scanner', null);
-
-                            $invoiceId = $get('original_invoice_id');
-                            if (! $invoiceId) {
-                                Notification::make()->warning()->title(__('purchase_return.select_original_invoice_first'))->send();
-                                $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
-
-                                return;
-                            }
-
-                            $barcodeRecord = ProductBarcode::query()->where('barcode', $state)->first();
-                            if (! $barcodeRecord) {
-                                Notification::make()->warning()->title(__('purchase_return.barcode_not_found'))->send();
-                                $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
-
-                                return;
-                            }
-
-                            $originalItem = PurchaseInvoiceItem::with(['variant.product', 'variant.barcodes'])
-                                ->where('purchase_invoice_id', $invoiceId)
-                                ->where('product_variant_id', $barcodeRecord->product_variant_id)
-                                ->first();
-
-                            if (! $originalItem) {
-                                Notification::make()->warning()->title(__('purchase_return.product_not_in_invoice'))->send();
-                                $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
-
-                                return;
-                            }
-
-                            $maxReturnable = $originalItem->getRemainingReturnableQuantity();
-                            if ($maxReturnable <= 0) {
-                                Notification::make()->warning()->title(__('purchase_return.no_remaining_quantity'))->send();
-                                $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
-
-                                return;
-                            }
-
-                            $items = $get('items') ?? [];
-                            $key = 'item_'.$originalItem->id;
-
-                            // Check for duplicate items in existing lines (works for UUID keys and scanned item keys)
-                            $alreadyExists = collect($items)->contains(
-                                fn ($item) => ((int) ($item['original_item_id'] ?? 0)) === (int) $originalItem->id
-                            );
-
-                            if ($alreadyExists) {
-                                Notification::make()->warning()->title(__('purchase_return.item_already_added'))->send();
-                                $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
-
-                                return;
-                            }
-
-                            $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
-
-                            $productName = $originalItem->variant->product->{lang_suffix('name')};
-                            $variantName = $originalItem->variant->{lang_suffix('name')};
-                            $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
-
-                            $items[$key] = [
-                                'original_item_id' => $originalItem->id,
-                                'product_variant_id' => $originalItem->product_variant_id,
-                                'barcodes' => $barcodes,
-                                'product_name' => $fullName,
-                                'quantity' => 1,
-                                'unit_cost' => (float) $originalItem->unit_cost,
-                                'line_total' => round(1 * (float) $originalItem->unit_cost, 2),
-                                'max_returnable' => $maxReturnable,
-                                'notes' => null,
-                            ];
-
-                            $set('items', $items);
-                            static::calcTotalAmount($get, $set);
-                            $livewire->dispatch('play-sound-success');
-                            $livewire->dispatch('focus-barcode');
-                        })
-                        ->visible(
-                            fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
-                                ! ($livewire instanceof ViewRecord)
-                        ),
-
-                    Repeater::make('items')
-                        ->relationship('items')
-                        ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
-                            $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
-                            $locale = app()->getLocale();
-
-                            if ($variant) {
-                                $productName = $variant->product?->{lang_suffix('name')} ?? '';
-                                $variantName = $variant->{lang_suffix('name')} ?? '';
-                                $data['product_name'] = $variantName ? "{$productName} - {$variantName}" : $productName;
-                                $data['barcodes'] = $variant->barcodes->pluck('barcode')->toArray();
-                            }
-
-                            $originalItem = PurchaseInvoiceItem::query()->find($data['original_item_id']);
-                            if ($originalItem) {
-                                $data['max_returnable'] = $originalItem->getRemainingReturnableQuantity($record->id);
-                            }
-
-                            return $data;
-                        })
-                        ->hiddenLabel()
+                    Section::make(__('purchase_return.purchase_return'))
                         ->compact()
-                        ->deleteAction(
-                            fn (Action $action) => $action->after(function (Get $get, Set $set) {
-                                static::calcTotalAmount($get, $set);
-                            })
-                        )
-                        ->itemLabel(function (array $state): ?HtmlString {
-                            $barcodes = $state['barcodes'] ?? [];
-
-                            if (empty($barcodes)) {
-                                return null;
-                            }
-
-                            $badges = collect($barcodes)->map(function ($barcode) {
-                                return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>{$barcode}</span>";
-                            })->implode('');
-
-                            return new HtmlString("<div class='flex items-center'>".__('purchase_invoice.barcode').': '.$badges.'</div>');
-                        })
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->columnSpanFull()
+                        ->columns(4)
                         ->schema([
-                            Hidden::make('original_item_id')->required(),
-                            Hidden::make('product_variant_id')->required(),
-                            Hidden::make('max_returnable'),
+                            Hidden::make('original_invoice_id')
+                                // TODO: Refactor this to use a centralized getOriginalInvoiceIdFromRequest method like SaleReturnInvoiceForm
+                                ->default(request()->query('original_invoice_id'))
+                                ->required(),
 
-                            TextInput::make('product_name')
-                                ->label(__('purchase_return.product_name'))
-                                ->dehydrated(false)
-                                ->disabled()
-                                ->columnSpan(3),
-
-                            TextInput::make('quantity')
-                                ->label(__('purchase_return.quantity'))
-                                ->numeric()
+                            TextInput::make('invoice_number_input')
+                                ->label(__('purchase_return.original_invoice_id'))
                                 ->required()
-                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
-                                ->minValue(0.001)
-                                ->step(0.001)
-                                ->live(debounce: '500ms')
-                                ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                    $max = (float) $get('max_returnable');
-                                    if ((float) $state > $max) {
-                                        $set('quantity', $max);
-                                        Notification::make()->warning()->title(__('purchase_return.quantity_adjusted'))->send();
-                                    }
-                                    self::recalculateLine($get, $set);
+                                ->default(function () {
+                                    // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
+                                    $invoiceId = request()->query('original_invoice_id');
 
-                                    static::calcTotalAmount($get, $set, '../../');
+                                    return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->invoice_number : null;
                                 })
-                                ->suffix(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
-                                ->columnSpan(3),
+                                ->live(onBlur: true)
+                                ->stateBindingModifiers(['blur', 'trim'])
+                                ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
+                                    $set('items', []); // clear items
+                                    self::clearOriginalInvoiceMetadata($set);
+                                    static::calcTotalAmount($get, $set);
 
-                            TextInput::make('unit_cost')
-                                ->label(__('purchase_return.unit_cost'))
-                                ->numeric()
+                                    if ($state) {
+                                        $invoice = PurchaseInvoice::query()
+                                            ->returnable()
+                                            ->where('invoice_number', $state)
+                                            ->first();
+
+                                        if ($invoice) {
+                                            self::hydrateOriginalInvoiceMetadata($set, $invoice);
+                                            Notification::make()->success()->title(__('purchase_return.invoice_found_success'))->send();
+                                            $livewire->dispatch('play-sound-success');
+                                        } else {
+                                            Notification::make()->warning()->title(__('purchase_return.invoice_not_found'))->send();
+                                            $livewire->dispatch('play-sound-error');
+                                        }
+                                    }
+                                })
+                                ->formatStateUsing(fn ($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
+                                ->dehydrated(false)
+                                ->helperText(__('purchase_return.invoice_search_helper'))
+                                ->prefixAction(
+                                    Action::make('search')
+                                        ->icon('heroicon-m-magnifying-glass')
+                                        ->label(__('purchase_return.search'))
+                                )
+                                ->columnSpan(1),
+
+                            Select::make('vendor_id')
+                                ->label(__('purchase_return.vendor'))
+                                ->relationship('vendor', 'name')
+                                ->default(function () {
+                                    // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
+                                    $invoiceId = request()->query('original_invoice_id');
+
+                                    return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->vendor_id : null;
+                                })
                                 ->required()
-                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.unit_cost_tooltip'))
-                                ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->disabled()
                                 ->dehydrated()
-                                ->columnSpan(2),
+                                ->columnSpan(1),
 
-                            TextInput::make('line_total')
-                                ->label(__('purchase_return.line_total'))
-                                ->numeric()
-                                ->readOnly()
-                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.line_total_tooltip'))
-                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                            static::getStoreSelectComponent($user),
+
+                            DatePicker::make('returned_at')
+                                ->label(__('purchase_return.returned_at'))
+                                ->helperText(__('purchase_return.returned_at_helper'))
+                                ->required()
+                                ->displayFormat('d/m/Y')
+                                ->default(now())
+                                ->maxDate(now())
+                                ->columnSpan(1),
+
+                            Textarea::make('return_reason')
+                                ->label(__('purchase_return.return_reason'))
+                                ->helperText(__('purchase_return.return_reason_helper'))
+                                ->required()
+                                ->rows(1)
                                 ->columnSpan(2),
 
                             Textarea::make('notes')
-                                ->label(__('purchase_return.item_notes'))
-                                ->maxLength(255)
-                                ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.notes_tooltip'))
+                                ->label(__('purchase_return.notes'))
+                                ->helperText(__('purchase_return.notes_helper'))
+                                ->rows(1)
                                 ->columnSpan(2),
-                        ])
-                        ->columns(12)
-                        ->addable(false)
-                        ->reorderable(false)
-                        ->cloneable(false)
-                        ->defaultItems(0),
+                        ]),
 
-                    TextInput::make('total_amount')
-                        ->label(__('purchase_return.grand_total'))
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->extraInputAttributes(['class' => 'text-xl font-bold'])
-                        ->prefix($user->company->currency_symbol ?? 'ج.م')
-                        ->afterStateHydrated(function (Get $get, Set $set) {
-                            static::calcTotalAmount($get, $set);
-                        })
-                        ->columnSpanFull(),
+                    Section::make(__('purchase_return.items'))
+                        ->compact()
+                        ->icon('heroicon-o-arrow-uturn-left')
+                        ->columnSpanFull()
+                        ->headerActions([
+                            Action::make('add_all_items')
+                                ->label(__('purchase_return.return_all_items'))
+                                ->icon('heroicon-o-bars-arrow-down')
+                                ->color('primary')
+                                ->action(function (Get $get, Set $set) {
+                                    $invoiceId = $get('original_invoice_id');
+                                    if (! $invoiceId) {
+                                        return;
+                                    }
+
+                                    $invoice = PurchaseInvoice::with(['items.variant.product', 'items.variant.barcodes'])->find($invoiceId);
+                                    if (! $invoice) {
+                                        return;
+                                    }
+
+                                    $items = static::getAllInvoiceItemsForReturn($invoice);
+                                    $set('items', $items);
+                                    static::calcTotalAmount($get, $set);
+                                })
+                                ->visible(
+                                    fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                                        ! ($livewire instanceof ViewRecord)
+                                ),
+                        ])
+                        ->schema([
+                            Select::make('product_search')
+                                ->allowHtml()
+                                ->label(__('purchase_return.search_by_product'))
+                                ->placeholder(__('purchase_return.search_by_product_placeholder'))
+                                ->helperText(__('purchase_return.search_by_product_helper'))
+                                ->visible(
+                                    fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                                        ! ($livewire instanceof ViewRecord)
+                                )
+                                ->options(function (Get $get) {
+                                    $invoiceId = $get('original_invoice_id');
+                                    if (! $invoiceId) {
+                                        return [];
+                                    }
+
+                                    $items = PurchaseInvoiceItem::with(['variant.product', 'variant.barcodes'])
+                                        ->where('purchase_invoice_id', $invoiceId)
+                                        ->get();
+
+                                    return $items->mapWithKeys(function (PurchaseInvoiceItem $item) {
+                                        $fullName = badge($item->variant->full_qualified_name);
+                                        $barcodes = $item->variant->getAllBarcodesAsString();
+                                        $barcodeText = $barcodes ? badge($barcodes) : '';
+                                        $max = $item->getRemainingReturnableQuantity();
+                                        $maxLabel = badge(__('sale_return.max_suffix').$max);
+
+                                        return [$item->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodeText $maxLabel</div>"];
+                                    })->toArray();
+                                })
+                                ->searchable()
+                                ->live()
+                                ->preload()
+                                ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
+                                    if (! $state) {
+                                        return;
+                                    }
+                                    $set('product_search', null);
+
+                                    $originalItem = PurchaseInvoiceItem::with(['variant.product', 'variant.barcodes'])->find($state);
+                                    if (! $originalItem) {
+                                        return;
+                                    }
+
+                                    static::addOriginalItemToReturn($originalItem, $get, $set, $livewire);
+                                }),
+
+                            Repeater::make('items')
+                                ->relationship('items')
+                                ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
+                                    $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
+
+                                    if ($variant) {
+                                        $data['product_name'] = $variant->full_qualified_name;
+                                        $data['barcodes'] = $variant->getAllBarcodesAsArray();
+                                    }
+
+                                    $originalItem = PurchaseInvoiceItem::query()->find($data['original_item_id']);
+                                    if ($originalItem) {
+                                        $data['max_returnable'] = $originalItem->getRemainingReturnableQuantity($record->id);
+                                    }
+
+                                    return $data;
+                                })
+                                ->hiddenLabel()
+                                ->compact()
+                                ->deleteAction(
+                                    fn (Action $action) => $action->after(function (Get $get, Set $set) {
+                                        static::calcTotalAmount($get, $set);
+                                    })
+                                )
+                                ->itemLabel(function (array $state): ?HtmlString {
+                                    $barcodes = $state['barcodes'] ?? [];
+                                    $productHtml = badge(e($state['product_name'] ?? __('sale_return.unknown_product')));
+
+                                    if (empty($barcodes)) {
+                                        return new HtmlString("<div class='flex items-center'>$productHtml</div>");
+                                    }
+
+                                    $badgesHtml = collect($barcodes)->map(function ($barcode) {
+                                        return badge(e($barcode));
+
+                                    })->implode(' ');
+
+                                    return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>{$badgesHtml}</div>");
+                                })
+                                ->schema([
+                                    Hidden::make('original_item_id')->required(),
+                                    Hidden::make('product_variant_id')->required(),
+                                    Hidden::make('max_returnable')->dehydrated(false),
+
+                                    TextInput::make('quantity')
+                                        ->label(__('purchase_return.quantity'))
+                                        ->numeric()
+                                        ->required()
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
+                                        ->minValue(0.001)
+                                        ->step(1)
+                                        ->live(debounce: 1000)
+                                        ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                            $max = (float) $get('max_returnable');
+                                            if ((float) $state > $max) {
+                                                $set('quantity', $max);
+                                                Notification::make()->warning()->title(__('purchase_return.quantity_adjusted'))->send();
+                                            }
+                                            self::recalculateLine($get, $set);
+
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        })
+                                        ->suffix(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
+                                        ->columnSpan(1),
+
+                                    // TODO: Add custom permission 'override_purchase_return_unit_cost' to Company permissions.
+                                    //       Allow users with this permission to edit this field and handle side effects.
+                                    TextInput::make('unit_cost')
+                                        ->label(__('purchase_return.unit_cost'))
+                                        ->numeric()
+                                        ->required()
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.unit_cost_tooltip'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->columnSpan(1),
+
+                                    TextInput::make('line_total')
+                                        ->label(__('purchase_return.line_total'))
+                                        ->numeric()
+                                        ->readOnly()
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.line_total_tooltip'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->columnSpan(1),
+
+                                    Textarea::make('notes')
+                                        ->label(__('purchase_return.item_notes'))
+                                        ->maxLength(255)
+                                        ->rows(1)
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.notes_tooltip'))
+                                        ->columnSpan(1),
+
+                                ])
+                                ->columns(4)
+                                ->addable(false)
+                                ->reorderable(false)
+                                ->cloneable(false)
+                                ->defaultItems(0),
+                        ]),
+
+                    Section::make(__('app.summary'))
+                        ->compact()
+                        ->icon('heroicon-o-calculator')
+                        ->columnSpanFull()
+                        ->schema([
+                            TextInput::make('total_amount')
+                                ->label(__('purchase_return.grand_total'))
+                                ->disabled()
+                                ->dehydrated()
+                                ->extraInputAttributes(['class' => 'text-xl font-bold'])
+                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                ->afterStateHydrated(function (Get $get, Set $set) {
+                                    static::calcTotalAmount($get, $set);
+                                })
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(3),
                 ]),
         ]);
     }
@@ -418,16 +351,12 @@ class PurchaseReturnForm
             if ($maxReturnable > 0) {
                 $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
                 $key = 'item_'.$originalItem->id;
-                $locale = app()->getLocale();
-                $productName = $originalItem->variant->product->{lang_suffix('name')};
-                $variantName = $originalItem->variant->{lang_suffix('name')};
-                $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
 
                 $items[$key] = [
                     'original_item_id' => $originalItem->id,
                     'product_variant_id' => $originalItem->product_variant_id,
                     'barcodes' => $barcodes,
-                    'product_name' => $fullName,
+                    'product_name' => $originalItem->variant->full_qualified_name,
                     'max_returnable' => $maxReturnable,
                     'quantity' => $maxReturnable,
                     'unit_cost' => (float) $originalItem->unit_cost,
@@ -440,10 +369,114 @@ class PurchaseReturnForm
         return $items;
     }
 
+    protected static function addOriginalItemToReturn(PurchaseInvoiceItem $originalItem, Get $get, Set $set, $livewire): void
+    {
+        $maxReturnable = $originalItem->getRemainingReturnableQuantity();
+        if ($maxReturnable <= 0) {
+            Notification::make()
+                ->warning()
+                ->title(__('purchase_return.no_remaining_quantity'))
+                ->body(__('purchase_return.no_remaining_quantity_body'))
+                ->send();
+            $livewire->dispatch('play-sound-error');
+            $livewire->dispatch('focus-barcode');
+
+            return;
+        }
+
+        $items = $get('items') ?? [];
+        $key = 'item_'.$originalItem->id;
+
+        // Check for duplicate items in existing lines
+        $alreadyExists = collect($items)->contains(
+            fn ($item) => ((int) ($item['original_item_id'] ?? 0)) === (int) $originalItem->id
+        );
+
+        if ($alreadyExists) {
+            Notification::make()->warning()->title(__('purchase_return.item_already_added'))->send();
+            $livewire->dispatch('play-sound-error');
+            $livewire->dispatch('focus-barcode');
+
+            return;
+        }
+
+        $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
+
+        $items[$key] = [
+            'original_item_id' => $originalItem->id,
+            'product_variant_id' => $originalItem->product_variant_id,
+            'barcodes' => $barcodes,
+            'product_name' => $originalItem->variant->full_qualified_name,
+            'quantity' => 1,
+            'unit_cost' => (float) $originalItem->unit_cost,
+            'line_total' => round(1 * (float) $originalItem->unit_cost, 2),
+            'max_returnable' => $maxReturnable,
+            'notes' => null,
+        ];
+
+        $set('items', $items);
+        static::calcTotalAmount($get, $set);
+        $livewire->dispatch('play-sound-success');
+        $livewire->dispatch('focus-barcode');
+    }
+
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
         $total = collect($items)->sum('line_total');
         $set($prefix.'total_amount', round($total, 2));
+    }
+
+    /**
+     * Clear the original invoice metadata from the form state.
+     *
+     * This is typically called when the user clears the invoice search input or enters an invalid invoice number,
+     * ensuring that no stale data remains.
+     *
+     * @param  Set  $set  The Filament form state setter.
+     */
+    private static function clearOriginalInvoiceMetadata(Set $set): void
+    {
+        self::hydrateOriginalInvoiceMetadata($set, null);
+    }
+
+    /**
+     * Hydrate the form state with metadata from the selected original purchase invoice.
+     *
+     * Extracts relevant fields (e.g., vendor_id, store_id, original_invoice_id) from the original
+     * PurchaseInvoice model and populates the corresponding form fields.
+     *
+     * @param  Set  $set  The Filament form state setter.
+     * @param  PurchaseInvoice|null  $invoice  The original purchase invoice model, or null to clear metadata.
+     */
+    protected static function hydrateOriginalInvoiceMetadata(Set $set, ?PurchaseInvoice $invoice): void
+    {
+        $set('original_invoice_id', $invoice?->id);
+        $set('vendor_id', $invoice?->vendor_id);
+        $set('store_id', $invoice?->store_id);
+    }
+
+    private static function getStoreSelectComponent(User $user)
+    {
+        if ($user->isStoreLevel()) {
+            return Hidden::make('store_id')
+                ->default(fn () => $user->store_id);
+        }
+        return Select::make('store_id')
+            ->label(__('purchase_return.store'))
+            ->relationship('store', lang_suffix('name'))
+            ->searchable(['name_en', 'name_ar'])
+            ->preload()
+            ->default(function () {
+                // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
+                $invoiceId = request()->query('original_invoice_id');
+
+                return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->store_id : null;
+            })
+            ->required()
+            ->disabled()
+            ->dehydrated()
+            ->helperText(__('purchase_return.store_helper'))
+            ->columnSpan(1);
     }
 }

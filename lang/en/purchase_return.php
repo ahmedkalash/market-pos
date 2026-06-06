@@ -41,6 +41,7 @@ return [
     'barcode_not_found' => 'Barcode not found in catalog.',
     'product_not_in_invoice' => 'This product does not exist in the selected invoice.',
     'no_remaining_quantity' => 'No remaining quantity to return for this item.',
+    'no_remaining_quantity_body' => 'This is either because it was fully returned previously, or there is currently insufficient physical stock available.',
     'max_returnable_reached' => 'Max returnable quantity reached for this item.',
     'quantity_adjusted' => 'Quantity adjusted to maximum returnable allowed.',
     'no_items_to_return' => 'Cannot create return without items.',
