@@ -47,8 +47,7 @@ class PurchaseReturnForm
                         ->columns(4)
                         ->schema([
                             Hidden::make('original_invoice_id')
-                                // TODO: Refactor this to use a centralized getOriginalInvoiceIdFromRequest method like SaleReturnInvoiceForm
-                                ->default(request()->query('original_invoice_id'))
+                                ->default(static::getOriginalInvoiceIdFromRequest())
                                 ->required(),
 
                             TextInput::make('invoice_number_input')
@@ -56,7 +55,7 @@ class PurchaseReturnForm
                                 ->required()
                                 ->default(function () {
                                     // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
-                                    $invoiceId = request()->query('original_invoice_id');
+                                    $invoiceId = static::getOriginalInvoiceIdFromRequest();
 
                                     return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->invoice_number : null;
                                 })
@@ -98,7 +97,7 @@ class PurchaseReturnForm
                                 ->relationship('vendor', 'name')
                                 ->default(function () {
                                     // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
-                                    $invoiceId = request()->query('original_invoice_id');
+                                    $invoiceId = static::getOriginalInvoiceIdFromRequest();
 
                                     return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->vendor_id : null;
                                 })
@@ -107,7 +106,7 @@ class PurchaseReturnForm
                                 ->dehydrated()
                                 ->columnSpan(1),
 
-                            static::getStoreSelectComponent($user),
+                            static::getStoreIDInput($user),
 
                             DatePicker::make('returned_at')
                                 ->label(__('purchase_return.returned_at'))
@@ -456,7 +455,7 @@ class PurchaseReturnForm
         $set('store_id', $invoice?->store_id);
     }
 
-    private static function getStoreSelectComponent(User $user)
+    private static function getStoreIDInput(User $user)
     {
         if ($user->isStoreLevel()) {
             return Hidden::make('store_id')
@@ -469,7 +468,7 @@ class PurchaseReturnForm
             ->preload()
             ->default(function () {
                 // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
-                $invoiceId = request()->query('original_invoice_id');
+                $invoiceId = static::getOriginalInvoiceIdFromRequest();
 
                 return $invoiceId ? PurchaseInvoice::query()->find($invoiceId)?->store_id : null;
             })
@@ -479,4 +478,17 @@ class PurchaseReturnForm
             ->helperText(__('purchase_return.store_helper'))
             ->columnSpan(1);
     }
+
+    /**
+     * Retrieve and validate the 'original_invoice_id' from the current HTTP request query parameters.
+     *
+     * Used to pre-fill the return form if the user navigates from a specific invoice to create a return.
+     *
+     * @return int|null The validated original invoice ID, or null if missing/invalid.
+     */
+    protected static function getOriginalInvoiceIdFromRequest(): ?int
+    {
+        return request()->integer('original_invoice_id') ?: null;
+    }
+
 }

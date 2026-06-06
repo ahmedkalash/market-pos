@@ -146,11 +146,7 @@ class SaleReturnInvoiceForm
 
                         Hidden::make('store_id')
                             ->required()
-                            ->default(function () {
-                                $invoiceId = self::getOriginalInvoiceIdFromRequest();
-
-                                return self::getCachedOriginalInvoice($invoiceId)?->store_id;
-                            })
+                            ->default(fn () => $user->store_id)
                             ->visible(fn () => $user->isStoreLevel()),
 
                         DatePicker::make('returned_at')
