@@ -19,6 +19,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -58,411 +59,422 @@ class SaleReturnInvoiceForm
 
         return $schema
             ->components([
-                // todo use field set and disable all form on wire load event to prevent overwriting
-                //  the form data in the browser by the one coming back from the server
-                Section::make(__('app.sale_return'))
-                    ->compact()
-                    ->columnSpanFull()
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->columns(4)
-                    ->schema([
-                        TextInput::make('invoice_number_input')
-                            ->label(__('app.original_invoice_id'))
-                            ->helperText(__('sale_return.invoice_search_helper'))
-                            ->prefixAction(
-                                Action::make('search')
-                                    ->icon('heroicon-m-magnifying-glass')
-                                    ->label(__('purchase_return.search'))
-                            )
-                            ->required()
-                            ->default(function () {
-                                $invoiceId = self::getOriginalInvoiceIdFromRequest();
-
-                                return self::getCachedOriginalInvoice($invoiceId)?->invoice_number;
-                            })
-                            ->live(onBlur: true)
-                            ->stateBindingModifiers(['blur', 'trim'])
-                            ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
-                                $set('items', []); // clear items
-                                $set('extraItems', []); // clear extra items
-                                self::clearOriginalInvoiceMetadata($set);
-                                self::calcTotalAmount($get, $set, $livewire);
-
-                                if ($state) {
-                                    $invoice = SaleInvoice::query()
-                                        ->returnable()
-                                        ->where('invoice_number', $state)
-                                        ->first();
-
-                                    if ($invoice) {
-                                        self::hydrateOriginalInvoiceMetadata($set, $invoice);
-                                        Notification::make()->success()->title(__('sale_return.invoice_found_success'))->send();
-                                        $livewire->dispatch('play-sound-success');
-                                    } else {
-                                        Notification::make()->warning()->title(__('sale_return.invoice_not_found'))->send();
-                                        $livewire->dispatch('play-sound-error');
-                                    }
-                                }
-                            })
-                            ->formatStateUsing(fn ($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
-                            ->dehydrated(false)
-                            ->columnSpan(1),
-
-                        Hidden::make('original_invoice_id')
-                            ->default(self::getOriginalInvoiceIdFromRequest())
-                            ->required(),
-
-                        Select::make('customer_id')
-                            ->native(false)
-                            ->columnSpan(1)
-                            ->label(__('app.customer'))
-                            ->relationship('customer', 'name')
-                            ->default(function () {
-                                $invoiceId = self::getOriginalInvoiceIdFromRequest();
-
-                                return self::getCachedOriginalInvoice($invoiceId)?->customer_id;
-                            })
-                            ->required()
-                            ->disabled()
-                            ->dehydrated(true)
-                            ->helperText(__('sale_return.customer_helper')),
-
-                        Select::make('store_id')
-                            ->native(false)
-                            ->columnSpan(1)
-                            ->label(__('app.store'))
-                            ->relationship('store', lang_suffix('name'))
-                            ->preload()
-                            ->default(function () {
-                                $invoiceId = self::getOriginalInvoiceIdFromRequest();
-
-                                return self::getCachedOriginalInvoice($invoiceId)?->store_id;
-                            })
-                            ->required()
-                            ->disabled()
-                            ->dehydrated(true)
-                            ->helperText(__('sale_return.store_helper'))
-                            ->visible(fn () => $user->isCompanyLevel()),
-
-                        Hidden::make('store_id')
-                            ->required()
-                            ->default(fn () => $user->store_id)
-                            ->visible(fn () => $user->isStoreLevel()),
-
-                        DatePicker::make('returned_at')
-                            ->columnSpan(1)
-                            ->label(__('app.returned_at'))
-                            ->helperText(__('sale_return.returned_at_helper'))
-                            ->required()
-                            ->default(now())
-                            ->displayFormat('d/m/Y')
-                            ->maxDate(now())
-                            ->native(false),
-
-                        Textarea::make('return_reason')
-                            ->label(__('app.return_reason'))
-                            ->helperText(__('sale_return.return_reason_helper'))
-                            ->required()
-                            ->rows(1)
-                            ->columnSpan(2),
-
-                        Textarea::make('notes')
-                            ->columnSpan(2)
-                            ->label(__('app.notes'))
-                            ->rows(1)
-                            ->helperText(__('sale_return.notes_helper')),
-
-                    ]),
-
-                Section::make(__('app.items'))
-                    ->compact()
-                    ->icon('heroicon-o-shopping-cart')
-                    ->columnSpanFull()
-                    ->visible(fn (Get $get) => filled($get('original_invoice_id')))
-                    ->headerActions([
-                        Action::make('add_all_items')
-                            ->label(__('sale_return.return_all_items'))
-                            ->icon('heroicon-o-bars-arrow-down')
-                            ->color('primary')
-                            ->action(function (Get $get, Set $set, $livewire) {
-                                $invoiceId = $get('original_invoice_id');
-                                if (! $invoiceId) {
-                                    return;
-                                }
-
-                                $invoice = SaleInvoice::with(['items.variant.product', 'items.variant.barcodes'])->find($invoiceId);
-                                if (! $invoice) {
-                                    return;
-                                }
-
-                                $items = static::getAllInvoiceItemsForReturn($invoice);
-                                $set('items', $items);
-                                static::calcTotalAmount($get, $set, $livewire);
-                            })
-                            ->visible(
-                                fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
-                                    ! ($livewire instanceof ViewRecord)
-                            ),
+                Fieldset::make('global_disable')
+                    ->hiddenLabel()
+                    ->extraAttributes([
+                        'wire:loading.attr' => 'disabled',
+                        'class' => 'contents',
                     ])
+                    ->columnSpanFull()
                     ->schema([
-                        Select::make('product_search')
-                            ->allowHtml()
-                            ->label(__('sale_return.search_by_product'))
-                            ->placeholder(__('sale_return.search_by_product_placeholder'))
-                            ->helperText(__('sale_return.search_by_product_helper'))
-                            ->visible(
-                                fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
-                                    ! ($livewire instanceof ViewRecord)
-                            )
-                            ->options(function (Get $get) {
-                                $invoiceId = $get('original_invoice_id');
-                                if (! $invoiceId) {
-                                    return [];
-                                }
-
-                                $items = SaleInvoiceItem::with(['variant.product', 'variant.barcodes'])
-                                    ->where('sale_invoice_id', $invoiceId)
-                                    ->get();
-
-                                return $items->mapWithKeys(function (SaleInvoiceItem $item) {
-                                    $fullName = badge($item->variant->full_qualified_name);
-                                    $barcodes = $item->variant->getAllBarcodesAsString();
-                                    $barcodeText = $barcodes ? badge($barcodes) : '';
-                                    $max = $item->getRemainingReturnableQuantity();
-                                    $maxLabel = badge(__('sale_return.max_suffix').$max);
-
-                                    return [$item->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodeText $maxLabel</div>"];
-                                })->toArray();
-                            })
-                            ->searchable()
-                            ->live()
-                            ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
-                                if (! $state) {
-                                    return;
-                                }
-                                $set('product_search', null);
-
-                                $originalItem = SaleInvoiceItem::with(['variant.product', 'variant.barcodes'])->find($state);
-                                if (! $originalItem) {
-                                    return;
-                                }
-
-                                static::addOriginalItemToReturn($originalItem, $get, $set, $livewire);
-                            }),
-
-                        Repeater::make('items')
-                            ->relationship('items')
-                            ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
-                                $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
-
-                                if ($variant) {
-                                    $data['product_name'] = $variant->full_qualified_name;
-                                    $data['barcodes'] = $variant->getAllBarcodesAsArray();
-                                }
-
-                                // TODO: Performance Optimization (N+1 Queries)
-                                // To prevent N+1 queries here, do not save `max_returnable` to the DB (it risks stale data/over-returning).
-                                // Instead, implement a static array cache to eager load all original items into memory once, and read from it.
-                                $originalItem = SaleInvoiceItem::query()->find($data['original_item_id']);
-                                if ($originalItem) {
-                                    $data['max_returnable'] = $originalItem->getRemainingReturnableQuantity($record->id);
-                                }
-
-                                return $data;
-                            })
-                            ->hiddenLabel()
+                        // todo use field set and disable all form on wire load event to prevent overwriting
+                        //  the form data in the browser by the one coming back from the server
+                        Section::make(__('app.sale_return'))
                             ->compact()
-                            ->itemLabel(function ($state): ?HtmlString {
-                                $barcodes = $state['barcodes'] ?? [];
-                                $productHtml = badge(e($state['product_name'] ?? __('sale_return.unknown_product')));
-
-                                if (empty($barcodes)) {
-                                    return new HtmlString("<div class='flex items-center'>$productHtml</div>");
-                                }
-
-                                $badgesHtml = collect($barcodes)->map(function ($barcode) {
-                                    return badge(e($barcode));
-                                })->implode(' ');
-
-                                return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>$badgesHtml</div>");
-                            })
-                            ->deleteAction(
-                                fn (Action $action) => $action->after(function (Get $get, Set $set, $livewire) {
-                                    self::calcTotalAmount($get, $set, $livewire);
-                                })
-                            )
                             ->columnSpanFull()
+                            ->icon('heroicon-o-arrow-uturn-left')
+                            ->columns(4)
                             ->schema([
-                                Hidden::make('original_item_id')->required(),
-                                Hidden::make('product_variant_id')->required(),
-                                Hidden::make('max_returnable')->dehydrated(false),
-                                Hidden::make('unit_discount_amount')->default(0),
-                                Hidden::make('unit_prorated_global_discount')->default(0),
-                                Hidden::make('unit_price')->required(),
-
-                                TextInput::make('quantity')
-                                    ->label(__('app.quantity'))
-                                    ->helperText(__('sale_return.qty_tooltip'))
-                                    ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_return.quantity_tooltip'))
-                                    ->numeric()
+                                TextInput::make('invoice_number_input')
+                                    ->label(__('app.original_invoice_id'))
+                                    ->helperText(__('sale_return.invoice_search_helper'))
+                                    ->prefixAction(
+                                        Action::make('search')
+                                            ->icon('heroicon-m-magnifying-glass')
+                                            ->label(__('purchase_return.search'))
+                                    )
                                     ->required()
-                                    ->minValue(0.001)
-                                    ->step(0.001)
-                                    ->live(debounce: 1000)
-                                    ->afterStateUpdated(function (Get $get, Set $set, $state, $livewire) {
-                                        // validate quantity and set it to max_returnable if it exceeds that value.
-                                        $max = (float) $get('max_returnable');
-                                        if ((float) $state > $max) {
-                                            $set('quantity', $max);
-                                            Notification::make()->warning()->title(__('sale_return.exceeds_returnable_quantity', ['max' => $max]))->send();
-                                        }
-                                        self::calculateLine($get, $set);
-                                        self::calcTotalAmount($get, $set, $livewire, '../../');
+                                    ->default(function () {
+                                        $invoiceId = self::getOriginalInvoiceIdFromRequest();
+
+                                        return self::getCachedOriginalInvoice($invoiceId)?->invoice_number;
                                     })
-                                    ->hint(fn (Get $get) => __('sale_return.max_suffix').' '.$get('max_returnable'))
+                                    ->live(onBlur: true)
+                                    ->stateBindingModifiers(['blur', 'trim'])
+                                    ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
+                                        $set('items', []); // clear items
+                                        $set('extraItems', []); // clear extra items
+                                        self::clearOriginalInvoiceMetadata($set);
+                                        self::calcTotalAmount($get, $set, $livewire);
+
+                                        if ($state) {
+                                            $invoice = SaleInvoice::query()
+                                                ->returnable()
+                                                ->where('invoice_number', $state)
+                                                ->first();
+
+                                            if ($invoice) {
+                                                self::hydrateOriginalInvoiceMetadata($set, $invoice);
+                                                Notification::make()->success()->title(__('sale_return.invoice_found_success'))->send();
+                                                $livewire->dispatch('play-sound-success');
+                                            } else {
+                                                Notification::make()->warning()->title(__('sale_return.invoice_not_found'))->send();
+                                                $livewire->dispatch('play-sound-error');
+                                            }
+                                        }
+                                    })
+                                    ->formatStateUsing(fn ($state, $record) => $record ? $record->originalInvoice?->invoice_number : $state)
+                                    ->dehydrated(false)
+                                    ->columnSpan(1),
+
+                                Hidden::make('original_invoice_id')
+                                    ->default(self::getOriginalInvoiceIdFromRequest())
+                                    ->required(),
+
+                                Select::make('customer_id')
+                                    ->native(false)
+                                    ->columnSpan(1)
+                                    ->label(__('app.customer'))
+                                    ->relationship('customer', 'name')
+                                    ->default(function () {
+                                        $invoiceId = self::getOriginalInvoiceIdFromRequest();
+
+                                        return self::getCachedOriginalInvoice($invoiceId)?->customer_id;
+                                    })
+                                    ->required()
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->helperText(__('sale_return.customer_helper')),
+
+                                Select::make('store_id')
+                                    ->native(false)
+                                    ->columnSpan(1)
+                                    ->label(__('app.store'))
+                                    ->relationship('store', lang_suffix('name'))
+                                    ->preload()
+                                    ->default(function () {
+                                        $invoiceId = self::getOriginalInvoiceIdFromRequest();
+
+                                        return self::getCachedOriginalInvoice($invoiceId)?->store_id;
+                                    })
+                                    ->required()
+                                    ->disabled()
+                                    ->dehydrated(fn (string $operation): bool => $operation !== 'edit')
+                                    ->helperText(__('sale_return.store_helper'))
+                                    ->visible(fn () => $user->isCompanyLevel()),
+
+                                Hidden::make('store_id')
+                                    ->required()
+                                    ->default(fn () => $user->store_id)
+                                    ->visible(fn () => $user->isStoreLevel())
+                                    ->disabled()
+                                    ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
+
+                                DatePicker::make('returned_at')
+                                    ->columnSpan(1)
+                                    ->label(__('app.returned_at'))
+                                    ->helperText(__('sale_return.returned_at_helper'))
+                                    ->required()
+                                    ->default(now())
+                                    ->displayFormat('d/m/Y')
+                                    ->maxDate(now())
+                                    ->native(false),
+
+                                Textarea::make('return_reason')
+                                    ->label(__('app.return_reason'))
+                                    ->helperText(__('sale_return.return_reason_helper'))
+                                    ->required()
+                                    ->rows(1)
                                     ->columnSpan(2),
 
-                                TextInput::make('effective_unit_refund')
-                                    ->label(__('sale_return.effective_unit_refund'))
-                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                    ->helperText(function (Get $get) {
-                                        return __('sale_return.pricing_breakdown', [
-                                            'price' => number_format($unit_price = (float) $get('unit_price'), 2),
-                                            'unit_disc' => number_format($unit_discount_amount = (float) $get('unit_discount_amount'), 2),
-                                            'global_disc' => number_format($unit_prorated_global_discount = (float) $get('unit_prorated_global_discount'), 2),
-                                            'net' => number_format($unit_price - $unit_discount_amount - $unit_prorated_global_discount, 2),
-                                        ]);
-                                    })
-                                    ->numeric()
-                                    ->disabled(fn () => ! $user?->can('override_sale_return_refund_amount'))
-                                    ->dehydrated()
-                                    ->live(debounce: 1000)
-                                    ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
-                                        self::calculateLine($get, $set);
-                                        self::calcTotalAmount($get, $set, $livewire, '../../');
-                                    })
-                                    ->columnSpan(5),
+                                Textarea::make('notes')
+                                    ->columnSpan(2)
+                                    ->label(__('app.notes'))
+                                    ->rows(1)
+                                    ->helperText(__('sale_return.notes_helper')),
 
-                                TextInput::make('item_refund_total')
-                                    ->label(__('sale_return.item_refund_total'))
-                                    ->helperText(__('sale_return.line_total_tooltip'))
+                            ]),
+
+                        Section::make(__('app.items'))
+                            ->compact()
+                            ->icon('heroicon-o-shopping-cart')
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get) => filled($get('original_invoice_id')))
+                            ->headerActions([
+                                Action::make('add_all_items')
+                                    ->label(__('sale_return.return_all_items'))
+                                    ->icon('heroicon-o-bars-arrow-down')
+                                    ->color('primary')
+                                    ->action(function (Get $get, Set $set, $livewire) {
+                                        $invoiceId = $get('original_invoice_id');
+                                        if (! $invoiceId) {
+                                            return;
+                                        }
+
+                                        $invoice = SaleInvoice::with(['items.variant.product', 'items.variant.barcodes'])->find($invoiceId);
+                                        if (! $invoice) {
+                                            return;
+                                        }
+
+                                        $items = static::getAllInvoiceItemsForReturn($invoice);
+                                        $set('items', $items);
+                                        static::calcTotalAmount($get, $set, $livewire);
+                                    })
+                                    ->visible(
+                                        fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                                            ! ($livewire instanceof ViewRecord)
+                                    ),
+                            ])
+                            ->schema([
+                                Select::make('product_search')
+                                    ->allowHtml()
+                                    ->label(__('sale_return.search_by_product'))
+                                    ->placeholder(__('sale_return.search_by_product_placeholder'))
+                                    ->helperText(__('sale_return.search_by_product_helper'))
+                                    ->visible(
+                                        fn (Get $get, $livewire) => filled($get('original_invoice_id')) &&
+                                            ! ($livewire instanceof ViewRecord)
+                                    )
+                                    ->options(function (Get $get) {
+                                        $invoiceId = $get('original_invoice_id');
+                                        if (! $invoiceId) {
+                                            return [];
+                                        }
+
+                                        $items = SaleInvoiceItem::with(['variant.product', 'variant.barcodes'])
+                                            ->where('sale_invoice_id', $invoiceId)
+                                            ->get();
+
+                                        return $items->mapWithKeys(function (SaleInvoiceItem $item) {
+                                            $fullName = badge($item->variant->full_qualified_name);
+                                            $barcodeText = ($barcodes = $item->variant->getAllBarcodesAsString()) ? badge($barcodes) : '';
+                                            $max = $item->getRemainingReturnableQuantity();
+                                            $maxLabel = badge(__('sale_return.max_suffix').$max);
+
+                                            return [$item->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodeText $maxLabel</div>"];
+                                        })->toArray();
+                                    })
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
+                                        if (! $state) {
+                                            return;
+                                        }
+                                        $set('product_search', null);
+
+                                        $originalItem = SaleInvoiceItem::with(['variant.product', 'variant.barcodes'])->find($state);
+                                        if (! $originalItem) {
+                                            return;
+                                        }
+
+                                        static::addOriginalItemToReturn($originalItem, $get, $set, $livewire);
+                                    }),
+
+                                Repeater::make('items')
+                                    ->relationship('items')
+                                    ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
+                                        // todo: optimize by eager loading variants for all items in the form instead of querying for each item here
+                                        $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id']);
+
+                                        if ($variant) {
+                                            $data['product_name'] = $variant->full_qualified_name;
+                                            $data['barcodes'] = $variant->getAllBarcodesAsArray();
+                                        }
+
+                                        // TODO: Performance Optimization (N+1 Queries)
+                                        // To prevent N+1 queries here, do not save `max_returnable` to the DB (it risks stale data/over-returning).
+                                        // Instead, implement a static array cache to eager load all original items into memory once, and read from it.
+                                        $originalItem = SaleInvoiceItem::query()->find($data['original_item_id']);
+                                        if ($originalItem) {
+                                            $data['max_returnable'] = $originalItem->getRemainingReturnableQuantity($record->id);
+                                        }
+
+                                        return $data;
+                                    })
+                                    ->hiddenLabel()
+                                    ->compact()
+                                    ->itemLabel(function ($state): ?HtmlString {
+                                        $barcodes = $state['barcodes'] ?? [];
+                                        $productHtml = badge($state['product_name'] ?? __('app.unknown_product'));
+
+                                        if (empty($barcodes)) {
+                                            return new HtmlString("<div class='flex items-center'>$productHtml</div>");
+                                        }
+
+                                        $badgesHtml = collect($barcodes)->map(function ($barcode) {
+                                            return badge($barcode);
+                                        })->implode(' ');
+
+                                        return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>$badgesHtml</div>");
+                                    })
+                                    ->deleteAction(
+                                        fn (Action $action) => $action->after(function (Get $get, Set $set, $livewire) {
+                                            self::calcTotalAmount($get, $set, $livewire);
+                                        })
+                                    )
+                                    ->columnSpanFull()
+                                    ->schema([
+                                        Hidden::make('original_item_id')->required(),
+                                        Hidden::make('product_variant_id')->required(),
+                                        Hidden::make('max_returnable')->dehydrated(false),
+                                        Hidden::make('unit_discount_amount')->default(0),
+                                        Hidden::make('unit_prorated_global_discount')->default(0),
+                                        Hidden::make('unit_price')->required(),
+
+                                        TextInput::make('quantity')
+                                            ->label(__('app.quantity'))
+                                            ->helperText(__('sale_return.qty_tooltip'))
+                                            ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_return.quantity_tooltip'))
+                                            ->numeric()
+                                            ->required()
+                                            ->minValue(0.001)
+                                            ->step(0.001)
+                                            ->live(debounce: 1000)
+                                            ->afterStateUpdated(function (Get $get, Set $set, $state, $livewire) {
+                                                // validate quantity and set it to max_returnable if it exceeds that value.
+                                                $max = (float) $get('max_returnable');
+                                                if ((float) $state > $max) {
+                                                    $set('quantity', $max);
+                                                    Notification::make()->warning()->title(__('sale_return.exceeds_returnable_quantity', ['max' => $max]))->send();
+                                                }
+                                                self::calculateLine($get, $set);
+                                                self::calcTotalAmount($get, $set, $livewire, '../../');
+                                            })
+                                            ->hint(fn (Get $get) => __('sale_return.max_suffix').' '.$get('max_returnable'))
+                                            ->columnSpan(2),
+
+                                        TextInput::make('effective_unit_refund')
+                                            ->label(__('sale_return.effective_unit_refund'))
+                                            ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                            ->helperText(function (Get $get) {
+                                                return __('sale_return.pricing_breakdown', [
+                                                    'price' => number_format($unit_price = (float) $get('unit_price'), 2),
+                                                    'unit_disc' => number_format($unit_discount_amount = (float) $get('unit_discount_amount'), 2),
+                                                    'global_disc' => number_format($unit_prorated_global_discount = (float) $get('unit_prorated_global_discount'), 2),
+                                                    'net' => number_format($unit_price - $unit_discount_amount - $unit_prorated_global_discount, 2),
+                                                ]);
+                                            })
+                                            ->numeric()
+                                            ->disabled(fn () => ! $user?->can('override_sale_return_refund_amount'))
+                                            ->dehydrated()
+                                            ->live(debounce: 1000)
+                                            ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
+                                                self::calculateLine($get, $set);
+                                                self::calcTotalAmount($get, $set, $livewire, '../../');
+                                            })
+                                            ->columnSpan(5),
+
+                                        TextInput::make('item_refund_total')
+                                            ->label(__('sale_return.item_refund_total'))
+                                            ->helperText(__('sale_return.line_total_tooltip'))
+                                            ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                            ->numeric()
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->default(0.0)
+                                            ->columnSpan(3),
+
+                                        Textarea::make('notes')
+                                            ->label(__('app.notes'))
+                                            ->helperText(__('sale_return.item_notes_tooltip'))
+                                            ->rows(1)
+                                            ->columnSpan(2),
+                                    ])
+                                    ->columns(12)
+                                    ->addable(false)
+                                    ->reorderable(false)
+                                    ->cloneable(false)
+                                    ->defaultItems(0),
+                            ]),
+
+                        Section::make(__('app.extra_items'))
+                            ->compact()
+                            ->icon('heroicon-o-plus-circle')
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get) => filled($get('original_invoice_id')))
+                            ->schema([
+                                Repeater::make('extraItems')
+                                    ->compact()
+                                    ->relationship('extraItems')
+                                    ->addActionLabel(__('app.add_more'))
+                                    ->hiddenLabel()
+                                    ->defaultItems(0)
+                                    ->itemLabel(fn (array $state) => $state['name'])
+                                    ->schema([
+                                        Select::make('invoice_extra_item_preset_id')
+                                            ->label(__('app.preset'))
+                                            ->dehydrated(false)
+                                            ->live()
+                                            ->options(fn () => $extraItemPresetCache->get(null, InvoiceType::SaleReturn)->pluck('name', 'id'))
+                                            ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) use ($extraItemPresetCache) {
+                                                if ($state) {
+                                                    $preset = $extraItemPresetCache->get((int) $state);
+                                                    if ($preset) {
+                                                        $set('name', $preset->name);
+                                                        $set('action_type', $preset->action_type);
+                                                        $set('amount', $preset->amount);
+                                                    }
+                                                }
+                                                self::calcTotalAmount($get, $set, $livewire, '../../');
+                                            }),
+                                        TextInput::make('name')
+                                            ->label(__('app.name'))
+                                            ->helperText(__('sale_return.extra_name_tooltip'))
+                                            ->required(),
+                                        Select::make('action_type')
+                                            ->label(__('extra_item.action_type'))
+                                            ->helperText(__('sale_return.extra_type_tooltip'))
+                                            ->options(ExtraItemActionType::class)
+                                            ->required()
+                                            ->live()
+                                            ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
+                                                self::calcTotalAmount($get, $set, $livewire, '../../');
+                                            }),
+                                        TextInput::make('amount')
+                                            ->label(__('app.amount'))
+                                            ->helperText(__('sale_return.extra_amount_tooltip'))
+                                            ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->required()
+                                            ->live(debounce: 1000)
+                                            ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
+                                                self::calcTotalAmount($get, $set, $livewire, '../../');
+                                            }),
+                                    ])
+                                    ->deleteAction(
+                                        fn (Action $action) => $action->after(function (Get $get, Set $set, $livewire) {
+                                            self::calcTotalAmount($get, $set, $livewire);
+                                        })
+                                    )
+                                    ->columns(4),
+                            ]),
+
+                        Section::make(__('app.summary'))
+                            ->compact()
+                            ->icon('heroicon-o-calculator')
+                            ->columnSpanFull()
+                            ->schema([
+                                TextInput::make('items_refund_total')
+                                    ->label(__('app.items_refund_total'))
+                                    ->helperText(__('sale_return.items_refund_helper'))
+                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->minValue(0)
+                                    ->default(0.0),
+                                TextInput::make('extra_items_total')
+                                    ->label(__('app.extra_items_total'))
+                                    ->helperText(__('sale_return.extra_items_helper'))
+                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->default(0.0),
+                                TextInput::make('total_refund_amount')
+                                    ->label(__('app.total_refund_amount'))
+                                    ->helperText(__('sale_return.total_refund_helper'))
                                     ->prefix($user->company->currency_symbol ?? 'ج.م')
                                     ->numeric()
                                     ->disabled()
                                     ->dehydrated()
                                     ->default(0.0)
-                                    ->columnSpan(3),
-
-                                Textarea::make('notes')
-                                    ->label(__('app.notes'))
-                                    ->helperText(__('sale_return.item_notes_tooltip'))
-                                    ->rows(1)
-                                    ->columnSpan(2),
-                            ])
-                            ->columns(12)
-                            ->addable(false)
-                            ->reorderable(false)
-                            ->cloneable(false)
-                            ->defaultItems(0),
-                    ]),
-
-                Section::make(__('app.extra_items'))
-                    ->compact()
-                    ->icon('heroicon-o-plus-circle')
-                    ->columnSpanFull()
-                    ->visible(fn (Get $get) => filled($get('original_invoice_id')))
-                    ->schema([
-                        Repeater::make('extraItems')
-                            ->compact()
-                            ->relationship('extraItems')
-                            ->addActionLabel(__('app.add_more'))
-                            ->hiddenLabel()
-                            ->defaultItems(0)
-                            ->itemLabel(fn (array $state) => $state['name'])
-                            ->schema([
-                                Select::make('invoice_extra_item_preset_id')
-                                    ->label(__('app.preset'))
-                                    ->dehydrated(false)
-                                    ->live()
-                                    ->options(fn () => $extraItemPresetCache->get(null, InvoiceType::SaleReturn)->pluck('name', 'id'))
-                                    ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) use ($extraItemPresetCache) {
-                                        if ($state) {
-                                            $preset = $extraItemPresetCache->get((int) $state);
-                                            if ($preset) {
-                                                $set('name', $preset->name);
-                                                $set('action_type', $preset->action_type);
-                                                $set('amount', $preset->amount);
-                                            }
-                                        }
-                                        self::calcTotalAmount($get, $set, $livewire, '../../');
-                                    }),
-                                TextInput::make('name')
-                                    ->label(__('app.name'))
-                                    ->helperText(__('sale_return.extra_name_tooltip'))
-                                    ->required(),
-                                Select::make('action_type')
-                                    ->label(__('extra_item.action_type'))
-                                    ->helperText(__('sale_return.extra_type_tooltip'))
-                                    ->options(ExtraItemActionType::class)
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
-                                        self::calcTotalAmount($get, $set, $livewire, '../../');
-                                    }),
-                                TextInput::make('amount')
-                                    ->label(__('app.amount'))
-                                    ->helperText(__('sale_return.extra_amount_tooltip'))
-                                    ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                    ->numeric()
                                     ->minValue(0)
-                                    ->required()
-                                    ->live(debounce: 1000)
-                                    ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
-                                        self::calcTotalAmount($get, $set, $livewire, '../../');
-                                    }),
+                                    ->extraInputAttributes(['class' => 'text-xl font-bold']),
                             ])
-                            ->deleteAction(
-                                fn (Action $action) => $action->after(function (Get $get, Set $set, $livewire) {
-                                    self::calcTotalAmount($get, $set, $livewire);
-                                })
-                            )
-                            ->columns(4),
+                            ->columns(3),
                     ]),
-
-                Section::make(__('app.summary'))
-                    ->compact()
-                    ->icon('heroicon-o-calculator')
-                    ->columnSpanFull()
-                    ->schema([
-                        TextInput::make('items_refund_total')
-                            ->label(__('app.items_refund_total'))
-                            ->helperText(__('sale_return.items_refund_helper'))
-                            ->prefix($user->company->currency_symbol ?? 'ج.م')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated()
-                            ->minValue(0)
-                            ->default(0.0),
-                        TextInput::make('extra_items_total')
-                            ->label(__('app.extra_items_total'))
-                            ->helperText(__('sale_return.extra_items_helper'))
-                            ->prefix($user->company->currency_symbol ?? 'ج.م')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated()
-                            ->default(0.0),
-                        TextInput::make('total_refund_amount')
-                            ->label(__('app.total_refund_amount'))
-                            ->helperText(__('sale_return.total_refund_helper'))
-                            ->prefix($user->company->currency_symbol ?? 'ج.م')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated()
-                            ->default(0.0)
-                            ->minValue(0)
-                            ->extraInputAttributes(['class' => 'text-xl font-bold']),
-                    ])
-                    ->columns(3),
             ]);
     }
 

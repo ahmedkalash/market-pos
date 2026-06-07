@@ -116,4 +116,7 @@ return [
     'grand_total_discount_exceeds_total' => 'إجمالي الخصم لا يمكن أن يتجاوز إجمالي مبلغ الفاتورة.',
     'invoice_below_minimum_after_global' => 'الخصم الإجمالي يخفض إجمالي الفاتورة عن الحد الأدنى المسموح به (:min).',
     'invoice_discount_breaches_minimum_total' => 'خصم الفاتورة الإجمالي يخفض إجمالي المبلغ عن الحد الأدنى المسموح به.',
+    'search_by_name' => 'البحث بالاسم',
+    'search_by_name_placeholder' => 'ابحث عن طريق اسم المنتج...',
+    'search_by_name_helper' => 'يتم عرض اول :max  نتيجة فقط. أكتب المزيد من الحروف للحصول علي نتائج اقرب',
 ];

@@ -96,4 +96,7 @@ return [
     'scan_barcode' => 'امسح باركود المنتج...',
     'barcode_scanner_helper' => 'قم بمسح باركود المنتج لإضافته إلى قائمة الفاتورة.',
     'search' => 'بحث',
+    'search_by_name' => 'البحث بالاسم',
+    'search_by_name_placeholder' => 'ابحث عن طريق اسم المنتج...',
+    'search_by_name_helper' => 'يمكنك البحث بكتابة اسم المنتج.',
 ];

@@ -96,4 +96,7 @@ return [
     'scan_barcode' => 'Scan item barcode...',
     'barcode_scanner_helper' => 'Scan a product barcode to quickly add it to the invoice list.',
     'search' => 'Search',
+    'search_by_name' => 'Search by Name',
+    'search_by_name_placeholder' => 'Search by product name...',
+    'search_by_name_helper' => 'You can search by typing the product name here.',
 ];

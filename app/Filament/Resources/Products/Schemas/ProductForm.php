@@ -23,6 +23,7 @@ class ProductForm
             ->components([
                 // Main column (2/3)
                 Section::make(__('product.general_information'))
+                    ->compact()
                     ->schema([
                         TextInput::make('name_ar')
                             ->label(__('product.name_arabic'))
@@ -39,17 +40,18 @@ class ProductForm
                         Textarea::make('description_ar')
                             ->label(__('product.description_ar'))
                             ->helperText(__('product.description_ar_helper'))
-                            ->rows(4),
+                            ->rows(2),
 
                         Textarea::make('description_en')
                             ->label(__('product.description_en'))
                             ->helperText(__('product.description_en_helper'))
-                            ->rows(4),
+                            ->rows(2),
                     ])
                     ->columns(2),
 
                 // Sidebar (1/3)
                 Section::make(__('product.organization'))
+                    ->compact()
                     ->schema([
                         Select::make('store_id')
                             ->label(__('app.store'))
@@ -57,11 +59,15 @@ class ProductForm
                             ->required()
                             ->searchable(['name_en', 'name_ar'])
                             ->preload()
-                            ->visible(fn () => auth()->user()->isCompanyLevel()),
+                            ->visible(fn () => $user->isCompanyLevel())
+                            ->disabled(fn (string $operation): bool => $operation === 'edit')
+                            ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
 
                         Hidden::make('store_id')
                             ->default($user->store_id)
-                            ->visible(fn () => auth()->user()->isStoreLevel()),
+                            ->visible(fn () => $user->isStoreLevel())
+                            ->disabled(fn (string $operation): bool => $operation === 'edit')
+                            ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
                         Select::make('category_id')
                             ->label(__('product_category.category'))
                             ->helperText(__('product_category.category_helper'))

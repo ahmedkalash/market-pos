@@ -143,13 +143,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
 
     public function isSuperAdmin(): bool
     {
-        // super_admin role has company_id = NULL (global role).
-        // Spatie's hasRole() filters by the current team ID, so it would miss NULL.
-        // We qualify the table name to avoid ambiguity in the JOIN with model_has_roles.
-        return $this->roles()
-            ->where('roles.name', Roles::SUPER_ADMIN->value)
-            ->whereNull('roles.company_id')
-            ->exists();
+        return false;
     }
 
     /**

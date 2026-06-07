@@ -617,6 +617,11 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] -  static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
 - [ ] - for item lable of a repeater consder displaying product name and barcodes via the badge() fnuction in all anvoices
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
+- [ ] - Apply the `extraItems` feature (Additions & Subtractions) currently implemented in `SaleReturnInvoiceForm` to all other invoice forms (`SaleInvoiceForm`, `PurchaseInvoiceForm`, `PurchaseReturnInvoiceForm`). This involves adding the `Repeater` for `extraItems`, integrating it with the totals calculation, and ensuring the corresponding database relationships and tables exist.
+- [ ] - some models has an `active` col we should make sure that this toggle correctly used and applied to db queries 
+  
+
+
 ### Performance & Database Optimization
 - [ ] **Optimize `max_returnable` Calculation in Returns (N+1 Prevention):**
       - In `SaleReturnInvoiceForm`, the `max_returnable` is currently calculated dynamically by querying the database for the original `SaleInvoiceItem` inside a repeater loop, causing N+1 queries.

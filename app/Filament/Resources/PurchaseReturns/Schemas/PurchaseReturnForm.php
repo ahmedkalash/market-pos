@@ -233,7 +233,7 @@ class PurchaseReturnForm
                                 )
                                 ->itemLabel(function (array $state): ?HtmlString {
                                     $barcodes = $state['barcodes'] ?? [];
-                                    $productHtml = badge(e($state['product_name'] ?? __('sale_return.unknown_product')));
+                                    $productHtml = badge(e($state['product_name'] ?? __('app.unknown_product')));
 
                                     if (empty($barcodes)) {
                                         return new HtmlString("<div class='flex items-center'>$productHtml</div>");
@@ -459,8 +459,11 @@ class PurchaseReturnForm
     {
         if ($user->isStoreLevel()) {
             return Hidden::make('store_id')
-                ->default(fn () => $user->store_id);
+                ->default(fn () => $user->store_id)
+                ->disabled()
+                ->dehydrated(fn (string $operation): bool => $operation !== 'edit');
         }
+
         return Select::make('store_id')
             ->label(__('purchase_return.store'))
             ->relationship('store', lang_suffix('name'))
@@ -474,7 +477,7 @@ class PurchaseReturnForm
             })
             ->required()
             ->disabled()
-            ->dehydrated()
+            ->dehydrated(fn (string $operation): bool => $operation !== 'edit')
             ->helperText(__('purchase_return.store_helper'))
             ->columnSpan(1);
     }
@@ -490,5 +493,4 @@ class PurchaseReturnForm
     {
         return request()->integer('original_invoice_id') ?: null;
     }
-
 }

@@ -76,13 +76,13 @@ class VariantsRelationManager extends RelationManager
                 Section::make(__('product.variant_details'))
                     ->compact()
                     ->schema([
-                        TextInput::make('name_en')
+                        Textarea::make('name_en')
                             ->label(__('product.variant_name_en'))
                             ->helperText(__('product.variant_name_helper'))
                             ->required()
                             ->maxLength(255),
 
-                        TextInput::make('name_ar')
+                        Textarea::make('name_ar')
                             ->label(__('product.variant_name_ar'))
                             ->helperText(__('product.variant_name_helper'))
                             ->required()
@@ -96,7 +96,8 @@ class VariantsRelationManager extends RelationManager
                             ->searchable(['name_en', 'name_ar'])
                             ->preload(),
 
-                    ])->columns(2),
+                    ])
+                    ->columns(3),
 
                 Section::make(__('product.inventory'))
                     ->compact()
@@ -241,10 +242,11 @@ class VariantsRelationManager extends RelationManager
                                     ->maxLength(255)
                                     ->unique('product_barcodes', 'barcode', ignoreRecord: true),
                             ])
-                            ->grid(1)
+                            ->grid(2)
                             ->addActionLabel(__('product.add_barcode'))
                             ->reorderable(false),
-                    ])->columnSpan(1)
+                    ])
+                    ->columnSpan(1)
                     ->compact(),
 
                 Section::make(__('attribute.attributes').': '.__('product.attribute_values_helper'))
@@ -700,6 +702,9 @@ class VariantsRelationManager extends RelationManager
                     ->modalWidth(Width::SevenExtraLarge)
                     ->label(__('product.add_variant'))
                     ->mutateDataUsing(function (array $data): array {
+                        $data['store_id'] = $this->getOwnerRecord()->store_id;
+                        $data['company_id'] = $this->getOwnerRecord()->company_id;
+
                         $this->tempVariantAttributes = $data['variant_attributes'] ?? [];
                         unset($data['variant_attributes']);
 

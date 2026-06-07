@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,10 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
-    use BelongsToStore, HasFactory;
+    use BelongsToCompany, BelongsToStore, HasFactory;
 
     /** @var list<string> */
     protected $fillable = [
+        'company_id',
         'store_id',
         'category_id',
         'tax_class_id',

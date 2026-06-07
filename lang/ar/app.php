@@ -211,4 +211,5 @@ return [
     'search_by_product_placeholder' => 'اكتب للبحث...',
     'finalize' => 'اعتماد',
     'unknown_product' => 'منتج غير معروف',
+    'success' => 'تم',
 ];

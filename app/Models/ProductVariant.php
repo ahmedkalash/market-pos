@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\PriceType;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToStore;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,10 +15,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductVariant extends Model
 {
-    use HasFactory;
+    use BelongsToCompany, BelongsToStore, HasFactory;
 
     /** @var list<string> */
     protected $fillable = [
+        'company_id',
+        'store_id',
         'product_id',
         'uom_id',
         'name_en',
@@ -161,6 +165,18 @@ class ProductVariant extends Model
     {
         return $query->where('name_en', 'like', "%{$name}%")
             ->orWhere('name_ar', 'like', "%{$name}%");
+    }
+
+    #[Scope]
+    protected function fullNameSearch($query, string $name)
+    {
+        return $query
+            ->where(function ($query) use ($name) {
+                $query->whereNameLike($name)
+                    ->orWhereHas('product', function ($q) use ($name) {
+                        $q->whereNameLike($name);
+                    });
+        });
     }
 
     /**
