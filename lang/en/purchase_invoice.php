@@ -18,6 +18,7 @@ return [
     'status_finalized' => 'Finalized',
     'items' => 'Line Items',
     'item' => 'Line Item',
+    'item_added' => 'Item Added',
     'product_variant' => 'Product / Variant',
     'quantity' => 'Quantity',
     'unit_cost' => 'Unit Cost',

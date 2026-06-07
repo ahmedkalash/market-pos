@@ -18,6 +18,7 @@ return [
     'status_finalized' => 'معتمدة',
     'items' => 'بنود الفاتورة',
     'item' => 'بند فاتورة',
+    'item_added' => 'تم إضافة البند',
     'product_variant' => 'المنتج / النوع',
     'quantity' => 'الكمية',
     'unit_cost' => 'سعر الوحدة',
