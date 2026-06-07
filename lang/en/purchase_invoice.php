@@ -98,5 +98,5 @@ return [
     'search' => 'Search',
     'search_by_name' => 'Search by Name',
     'search_by_name_placeholder' => 'Search by product name...',
-    'search_by_name_helper' => 'You can search by typing the product name here.',
+    'search_by_name_helper' => 'Only the first :max results are displayed. Type more letters for closer results.',
 ];

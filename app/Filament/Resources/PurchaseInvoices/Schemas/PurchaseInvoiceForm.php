@@ -4,7 +4,6 @@ namespace App\Filament\Resources\PurchaseInvoices\Schemas;
 
 use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
-use App\Models\Store;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -41,16 +40,21 @@ class PurchaseInvoiceForm
                         ->nullable(),
 
                     Select::make('store_id')
+                        ->preload()
                         ->label(__('purchase_invoice.store'))
                         ->relationship('store', lang_suffix('name'))
                         ->required()
                         ->searchable(['name_en', 'name_ar'])
                         ->live()
-                        ->visible(fn () => $user->isCompanyLevel()),
+                        ->visible(fn () => $user->isCompanyLevel())
+                        ->disabled(fn (string $operation): bool => $operation === 'edit')
+                        ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
 
                     Hidden::make('store_id')
                         ->default(fn () => $user->store_id)
-                        ->visible(fn () => $user->isStoreLevel()),
+                        ->visible(fn () => $user->isStoreLevel())
+                        ->disabled(fn (string $operation): bool => $operation === 'edit')
+                        ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
 
                     DatePicker::make('received_at')
                         ->label(__('purchase_invoice.received_at'))
@@ -77,11 +81,14 @@ class PurchaseInvoiceForm
             Section::make(__('purchase_invoice.items'))
                 ->icon('heroicon-o-shopping-cart')
                 ->columnSpanFull()
+                ->columns(2)
                 ->schema([
                     TextInput::make('barcode_scanner')
+                        ->columnSpan(1)
                         ->label(__('purchase_invoice.barcode_scanner'))
                         ->placeholder(__('purchase_invoice.scan_barcode'))
                         ->helperText(__('purchase_invoice.barcode_scanner_helper'))
+                        ->hiddenOn('view')
                         ->autofocus()
                         ->extraInputAttributes([
                             'x-on:focus-barcode.window' => 'setTimeout(() => $el.focus(), 10)',
@@ -107,8 +114,6 @@ class PurchaseInvoiceForm
                                 return;
                             }
 
-                            // Check store boundary
-                            $storeId = $get('store_id');
                             $variant = ProductVariant::with(['product.taxClass', 'barcodes'])
                                 ->find($barcodeRecord->product_variant_id);
 
@@ -120,57 +125,63 @@ class PurchaseInvoiceForm
                                 return;
                             }
 
-                            // Validate variant belongs to the selected store
-                            if ($storeId && $variant->product->store_id !== (int) $storeId) {
-                                Notification::make()->warning()->title(__('purchase_invoice.product_wrong_store'))->send();
+                            self::addVariantToInvoice($variant, $get, $set, $livewire);
+
+                        }),
+
+                    Select::make('product_search')
+                        ->columnSpan(1)
+                        ->label(__('purchase_invoice.search_by_name'))
+                        ->placeholder(__('purchase_invoice.search_by_name_placeholder') )
+                        ->helperText(__('purchase_invoice.search_by_name_helper'))
+                        ->helperText(__('purchase_invoice.search_by_name_helper',['max'=>30]))
+                        ->hiddenOn('view')
+                        ->searchable()
+                        ->allowHtml()
+                        ->options([])
+                        ->getSearchResultsUsing(function (string $search, $get) {
+                            if (blank($search)) {
+                                return [];
+                            }
+
+                            return ProductVariant::query()
+                                ->filterByStore($get('store_id'))
+                                ->with('product')
+                                ->fullNameSearch($search)
+                                ->limit(30)
+                                ->get()
+                                ->mapWithKeys(function ($variant) {
+                                    $barcodesText = ($barcodes = $variant->getAllBarcodesAsString()) ? badge($barcodes) : '';
+                                    $fullName = badge($variant->full_qualified_name);
+
+                                    return [$variant->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodesText</div>"];
+                                })
+                                ->toArray();
+                        })
+                        ->live()
+                        ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
+                            if (! $state) {
+                                return;
+                            }
+
+                            // Clear the select field so it can be used again
+                            $set('product_search', null);
+
+                            $variant = ProductVariant::with(['product.taxClass', 'barcodes'])
+                                ->find($state);
+
+                            if (! $variant) {
+                                Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
                                 $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
 
                                 return;
                             }
 
-                            $items = $get('items') ?? [];
-                            $newKey = 'item_'.$variant->id;
-
-                            // Check for duplicate variant in existing items (works for both UUID keys and scanned item keys)
-                            $alreadyExists = collect($items)->contains(
-                                fn ($item) => ((int) ($item['product_variant_id'] ?? 0)) === (int) $variant->id
-                            );
-
-                            if ($alreadyExists) {
-                                Notification::make()->warning()->title(__('purchase_invoice.duplicate_barcode'))->send();
-                                $livewire->dispatch('play-sound-error');
-                                $livewire->dispatch('focus-barcode');
-
-                                return;
-                            }
-
-                            $productName = $variant->product->{lang_suffix('name')} ?? '';
-                            $variantName = $variant->{lang_suffix('name')} ?? '';
-                            $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
-
-                            $barcodes = $variant->barcodes->pluck('barcode')->toArray();
-
-                            $unitCost = (float) $variant->purchase_price;
-
-                            $items[$newKey] = [
-                                'product_variant_id' => $variant->id,
-                                'barcodes' => $barcodes,
-                                'product_name' => $fullName,
-                                'quantity' => 1,
-                                'unit_cost' => $unitCost,
-                                'line_total' => round(1 * $unitCost, 2),
-                                'notes' => null,
-                            ];
-
-                            $set('items', $items);
-                            self::calcTotalAmount($get, $set);
-
-                            $livewire->dispatch('play-sound-success');
-                            $livewire->dispatch('focus-barcode');
+                            self::addVariantToInvoice($variant, $get, $set, $livewire);
                         }),
 
                     Repeater::make('items')
+                        ->columnSpanFull()
                         ->relationship()
                         ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
                             $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
@@ -251,32 +262,6 @@ class PurchaseInvoiceForm
                                     self::calcTotalAmount($get, $set, '../../');
                                 })
                                 ->columnSpan(4),
-
-                            // TAX FEATURE POSTPONED
-                            //                            TextInput::make('tax_rate')
-                            //                                ->label(__('purchase_invoice.tax_rate'))
-                            //                                ->readOnly()
-                            //                                ->suffix('%')
-                            //                                ->hidden() // TAX FEATURE POSTPONED
-                            //                                ->columnSpan(1),
-
-                            // TAX FEATURE POSTPONED
-                            //                            TextInput::make('subtotal')
-                            //                                ->label(__('purchase_invoice.subtotal'))
-                            //                                ->numeric()
-                            //                                ->readOnly()
-                            //                                ->prefix($user->company->currency_symbol ?? 'ج.م')
-                            //                                ->hidden() // TAX FEATURE POSTPONED
-                            //                                ->columnSpan(2),
-
-                            // TAX FEATURE POSTPONED
-                            //                            TextInput::make('tax_amount')
-                            //                                ->label(__('purchase_invoice.tax_amount'))
-                            //                                ->readOnly()
-                            //                                ->prefix($user->company->currency_symbol ?? 'ج.م')
-                            //                                ->hidden() // TAX FEATURE POSTPONED
-                            //                                ->columnSpan(2),
-
                             TextInput::make('line_total')
                                 ->label(__('purchase_invoice.line_total'))
                                 ->numeric()
@@ -301,6 +286,7 @@ class PurchaseInvoiceForm
                         ),
 
                     TextInput::make('total_amount')
+                        ->columnSpanFull()
                         ->label(__('purchase_invoice.total_amount'))
                         ->disabled()
                         ->dehydrated(false)
@@ -338,5 +324,66 @@ class PurchaseInvoiceForm
         $items = $get($prefix.'items') ?? [];
         $total = collect($items)->sum('line_total');
         $set($prefix.'total_amount', round($total, 2));
+    }
+
+    /**
+     * Shared helper to add a variant to the invoice items list.
+     * Prevents code duplication between barcode scanner and name search.
+     */
+    protected static function addVariantToInvoice(ProductVariant $variant, Get $get, Set $set, $livewire): void
+    {
+        // Check store boundary
+        $storeId = $get('store_id');
+
+        // Validate variant belongs to the selected store
+        if ($storeId && $variant->product->store_id !== (int) $storeId) {
+            Notification::make()->warning()->title(__('purchase_invoice.product_wrong_store'))->send();
+            $livewire->dispatch('play-sound-error');
+            $livewire->dispatch('focus-barcode');
+
+            return;
+        }
+
+        $items = $get('items') ?? [];
+        $newKey = 'item_'.$variant->id;
+
+        // Check for duplicate variant in existing items (works for both UUID keys and scanned item keys)
+        $alreadyExists = collect($items)->contains(
+            fn ($item) => ((int) ($item['product_variant_id'] ?? 0)) === (int) $variant->id
+        );
+
+        if ($alreadyExists) {
+            Notification::make()->warning()->title(__('purchase_invoice.duplicate_barcode'))->send();
+            $livewire->dispatch('play-sound-error');
+            $livewire->dispatch('focus-barcode');
+
+            return;
+        }
+
+        $fullName = $variant->full_qualified_name;
+        $barcodes = $variant->getAllBarcodesAsArray();
+        $unitCost = (float) $variant->purchase_price;
+
+        $items[$newKey] = [
+            'product_variant_id' => $variant->id,
+            'barcodes' => $barcodes,
+            'product_name' => $fullName,
+            'quantity' => 1,
+            'unit_cost' => $unitCost,
+            'line_total' => round($unitCost, 2),
+            'notes' => null,
+        ];
+
+        $set('items', $items);
+        self::calcTotalAmount($get, $set);
+
+        Notification::make()
+            ->title(__('purchase_invoice.item_added'))
+            ->body($fullName)
+            ->success()
+            ->send();
+
+        $livewire->dispatch('play-sound-success');
+        $livewire->dispatch('focus-barcode');
     }
 }

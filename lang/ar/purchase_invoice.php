@@ -98,5 +98,5 @@ return [
     'search' => 'بحث',
     'search_by_name' => 'البحث بالاسم',
     'search_by_name_placeholder' => 'ابحث عن طريق اسم المنتج...',
-    'search_by_name_helper' => 'يمكنك البحث بكتابة اسم المنتج.',
+    'search_by_name_helper' => 'يتم عرض اول :max  نتيجة فقط. أكتب المزيد من الحروف للحصول علي نتائج اقرب',
 ];

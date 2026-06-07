@@ -59,6 +59,5 @@ trait BelongsToStore
     public function filterByStore(Builder $query, int $storeId): Builder
     {
         return $query->where('store_id', $storeId);
-
     }
 }
