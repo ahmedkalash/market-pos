@@ -5,7 +5,7 @@ return [
     'sale_invoices' => 'فواتير البيع',
     'sales' => 'المبيعات',
     'invoice_number' => 'رقم الفاتورة',
-    'store' => 'المتجر',
+    'store' => 'الفرع',
     'finalized_at' => 'تاريخ الاعتماد',
     'finalized_by' => 'اعتمدت بواسطة',
     'created_by' => 'أنشئت بواسطة',
