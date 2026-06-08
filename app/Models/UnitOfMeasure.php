@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,5 +41,12 @@ class UnitOfMeasure extends Model
     public function productVariants(): HasMany
     {
         return $this->hasMany(ProductVariant::class, 'uom_id');
+    }
+
+    public function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->{lang_suffix('name')},
+        );
     }
 }

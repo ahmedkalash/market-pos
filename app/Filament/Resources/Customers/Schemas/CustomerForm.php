@@ -15,40 +15,45 @@ class CustomerForm
     {
         return $schema
             ->components([
-                Section::make()
-                    ->columnSpanFull()
+                static::schema(),
+            ]);
+    }
+
+    public static function schema()
+    {
+        return Section::make()
+            ->columnSpanFull()
+            ->schema([
+                Grid::make(2)
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('name')
-                                    ->label(__('customer.name'))
-                                    ->required()
-                                    ->maxLength(255),
-                                TextInput::make('email')
-                                    ->label(__('customer.email'))
-                                    ->email()
-                                    ->maxLength(255)
-                                    ->default(null),
-                                TextInput::make('phone')
-                                    ->label(__('customer.phone'))
-                                    ->tel()
-                                    ->maxLength(255)
-                                    ->default(null),
-                                TextInput::make('tax_number')
-                                    ->label(__('customer.tax_number'))
-                                    ->maxLength(255)
-                                    ->default(null),
-                            ]),
-                        Textarea::make('address')
-                            ->label(__('customer.address'))
-                            ->maxLength(65535)
-                            ->default(null)
-                            ->columnSpanFull(),
-                        Toggle::make('is_active')
-                            ->label(__('customer.is_active'))
-                            ->default(true)
-                            ->required(),
+                        TextInput::make('name')
+                            ->label(__('customer.name'))
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('email')
+                            ->label(__('customer.email'))
+                            ->email()
+                            ->maxLength(255)
+                            ->default(null),
+                        TextInput::make('phone')
+                            ->label(__('customer.phone'))
+                            ->tel()
+                            ->maxLength(255)
+                            ->default(null),
+                        TextInput::make('tax_number')
+                            ->label(__('customer.tax_number'))
+                            ->maxLength(255)
+                            ->default(null),
                     ]),
+                Textarea::make('address')
+                    ->label(__('customer.address'))
+                    ->maxLength(65535)
+                    ->default(null)
+                    ->columnSpanFull(),
+                Toggle::make('is_active')
+                    ->label(__('customer.is_active'))
+                    ->default(true)
+                    ->required(),
             ]);
     }
 }
