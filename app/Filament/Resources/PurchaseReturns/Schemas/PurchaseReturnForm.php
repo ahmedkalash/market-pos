@@ -256,7 +256,7 @@ class PurchaseReturnForm
                                         ->numeric()
                                         ->required()
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
-                                        ->minValue(0.001)
+                                        ->rules(['min:0.001',])
                                         ->step(1)
                                         ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set, $state) {

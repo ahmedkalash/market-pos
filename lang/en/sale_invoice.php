@@ -109,6 +109,7 @@ return [
     'subtotal_amount_helper' => 'The gross sum of all items before any item-level or invoice-level discounts are applied. (Excludes shipping cost)',
     'grand_total_discount' => 'Grand Total Discount',
     'grand_total_discount_helper' => 'The sum of all line item discounts plus the global invoice discount.',
+    'extra_items_helper' => 'Total adjustments (additions minus subtractions).',
     'total_amount_helper' => 'The final payable amount by the customer after all discounts have been applied. (Includes shipping cost)',
     'percentage_exceeds_100' => 'Percentage discount cannot exceed 100%.',
     'discount_exceeds_unit_price' => 'Fixed discount cannot exceed the unit price (:max).',
@@ -119,4 +120,9 @@ return [
     'search_by_name' => 'Search by Name',
     'search_by_name_placeholder' => 'Search by product name...',
     'search_by_name_helper' => 'Only the first :max results are displayed. Type more letters for closer results.',
+    'no_items_or_extras' => 'Please add at least one item or extra item before finalizing.',
+    'extra_name_tooltip' => 'The name or description of the extra item.',
+    'extra_type_tooltip' => 'Choose whether this is an addition to the total or a subtraction.',
+    'extra_amount_tooltip' => 'The amount to add or subtract.',
+    'extra_notes_tooltip' => 'Any additional details.',
 ];
