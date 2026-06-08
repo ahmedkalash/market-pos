@@ -2,11 +2,13 @@
 
 namespace App\Enums;
 
+use App\Traits\EnumHelpers;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
 enum ExtraItemActionType: string implements HasColor, HasLabel
 {
+    use EnumHelpers;
     case Addition = 'addition';
     case Subtraction = 'subtraction';
 
