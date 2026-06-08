@@ -22,7 +22,6 @@ class InvoiceExtraItemPreset extends Model
         'name',
         'action_type',
         'amount',
-        'is_refundable',
         'invoice_type',
         'notes',
         'is_active',
@@ -37,7 +36,6 @@ class InvoiceExtraItemPreset extends Model
             'action_type' => ExtraItemActionType::class,
             'invoice_type' => InvoiceType::class,
             'amount' => 'decimal:2',
-            'is_refundable' => 'boolean',
             'is_active' => 'boolean',
         ];
     }

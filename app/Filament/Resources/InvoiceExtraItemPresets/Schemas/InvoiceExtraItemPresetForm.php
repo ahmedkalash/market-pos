@@ -44,10 +44,6 @@ class InvoiceExtraItemPresetForm
                             ->label(__('extra_item.invoice_type'))
                             ->options(InvoiceType::class)
                             ->required(),
-                        Toggle::make('is_refundable')
-                            ->label(__('extra_item.is_refundable'))
-                            ->helperText(__('extra_item.is_refundable_helper'))
-                            ->default(false),
                         Toggle::make('is_active')
                             ->label(__('app.is_active'))
                             ->default(true),
@@ -67,7 +63,8 @@ class InvoiceExtraItemPresetForm
             return Hidden::make('store_id')
                 ->required()
                 ->default($user->store_id);
-       }
+        }
+
         return Select::make('store_id')
             ->label(__('app.store'))
             ->relationship('store', lang_suffix('name'))

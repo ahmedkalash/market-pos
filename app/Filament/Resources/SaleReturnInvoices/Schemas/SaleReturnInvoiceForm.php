@@ -431,13 +431,18 @@ class SaleReturnInvoiceForm
                                             ->afterStateUpdated(function (Get $get, Set $set, $livewire) {
                                                 self::calcTotalAmount($get, $set, $livewire, '../../');
                                             }),
+                                        Textarea::make('notes')
+                                            ->label(__('app.notes'))
+                                            ->helperText(__('sale_return.extra_notes_tooltip'))
+                                            ->rows(1)
+                                            ->maxLength(255),
                                     ])
                                     ->deleteAction(
                                         fn (Action $action) => $action->after(function (Get $get, Set $set, $livewire) {
                                             self::calcTotalAmount($get, $set, $livewire);
                                         })
                                     )
-                                    ->columns(4),
+                                    ->columns(5),
                             ]),
 
                         Section::make(__('app.summary'))

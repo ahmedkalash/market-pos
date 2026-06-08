@@ -18,7 +18,6 @@ class SaleReturnExtraItem extends Model
         'name',
         'action_type',
         'amount',
-        'is_refundable',
         'notes',
     ];
 
@@ -30,7 +29,6 @@ class SaleReturnExtraItem extends Model
         return [
             'action_type' => ExtraItemActionType::class,
             'amount' => 'decimal:2',
-            'is_refundable' => 'boolean',
         ];
     }
 

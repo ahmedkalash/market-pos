@@ -8,7 +8,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
@@ -45,9 +44,6 @@ class InvoiceExtraItemPresetsTable
                 TextColumn::make('invoice_type')
                     ->label(__('extra_item.invoice_type'))
                     ->badge(),
-                IconColumn::make('is_refundable')
-                    ->label(__('extra_item.is_refundable'))
-                    ->boolean(),
                 ToggleColumn::make('is_active')
                     ->label(__('app.is_active')),
                 TextColumn::make('created_at')

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Schemas;
 
-use App\Models\ProductBarcode;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -43,7 +42,7 @@ class PurchaseInvoiceForm
                         ->compact()
                         ->icon('heroicon-o-document-arrow-down')
                         ->columnSpanFull()
-                        ->columns(fn() => $user->isCompanyLevel() ? 5 : 4)
+                        ->columns(fn () => $user->isCompanyLevel() ? 5 : 4)
                         ->schema([
                             static::getStoreIDInput($user),
                             Select::make('vendor_id')
@@ -89,24 +88,16 @@ class PurchaseInvoiceForm
                                         ->label(__('purchase_invoice.search'))
                                 )
                                 ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
-                                    if (!$state) {
+                                    if (! $state) {
                                         return;
                                     }
                                     $set('barcode_scanner', null);
 
-                                    $barcodeRecord = ProductBarcode::query()->where('barcode', $state)->first();
-                                    if (!$barcodeRecord) {
-                                        Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
-                                        $livewire->dispatch('play-sound-error');
-                                        $livewire->dispatch('focus-barcode');
-
-                                        return;
-                                    }
-
                                     $variant = ProductVariant::with(['product.taxClass', 'barcodes'])
-                                        ->find($barcodeRecord->product_variant_id);
+                                        ->whereHas('barcodes', fn ($q) => $q->where('barcode', $state))
+                                        ->first();
 
-                                    if (!$variant) {
+                                    if (! $variant) {
                                         Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
                                         $livewire->dispatch('play-sound-error');
                                         $livewire->dispatch('focus-barcode');
@@ -149,7 +140,7 @@ class PurchaseInvoiceForm
                                 })
                                 ->live()
                                 ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
-                                    if (!$state) {
+                                    if (! $state) {
                                         return;
                                     }
 
@@ -159,7 +150,7 @@ class PurchaseInvoiceForm
                                     $variant = ProductVariant::with(['product.taxClass', 'barcodes'])
                                         ->find($state);
 
-                                    if (!$variant) {
+                                    if (! $variant) {
                                         Notification::make()->warning()->title(__('purchase_invoice.product_not_found'))->send();
                                         $livewire->dispatch('play-sound-error');
 
@@ -210,7 +201,7 @@ class PurchaseInvoiceForm
                                         ->minValue(0.001)
                                         ->step(0.001)
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.quantity_tooltip'))
-                                        ->disabled(fn(Get $get) => !$get('product_variant_id'))
+                                        ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->live()
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
@@ -226,7 +217,7 @@ class PurchaseInvoiceForm
                                         ->minValue(0)
                                         ->step(0.01)
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.unit_cost_tooltip'))
-                                        ->disabled(fn(Get $get) => !$get('product_variant_id'))
+                                        ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->live(debounce: '500ms')
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
@@ -253,7 +244,7 @@ class PurchaseInvoiceForm
                                 ->cloneable(false)
                                 ->defaultItems(0)
                                 ->deleteAction(
-                                    fn($action) => $action->after(fn(Get $get, Set $set) => self::calcTotalAmount($get, $set))
+                                    fn ($action) => $action->after(fn (Get $get, Set $set) => self::calcTotalAmount($get, $set))
                                 ),
 
                         ]),
@@ -289,8 +280,8 @@ class PurchaseInvoiceForm
      */
     private static function recalculateLine(Get $get, Set $set): void
     {
-        $quantity = (float)($get('quantity') ?? 0);
-        $unitCost = (float)($get('unit_cost') ?? 0);
+        $quantity = (float) ($get('quantity') ?? 0);
+        $unitCost = (float) ($get('unit_cost') ?? 0);
         //        $taxRate = (float) ($get('tax_rate') ?? 0); // TAX FEATURE POSTPONED
 
         $subtotal = round($quantity * $unitCost, 2);
@@ -305,9 +296,9 @@ class PurchaseInvoiceForm
 
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
-        $items = $get($prefix . 'items') ?? [];
+        $items = $get($prefix.'items') ?? [];
         $total = collect($items)->sum('line_total');
-        $set($prefix . 'total_amount', round($total, 2));
+        $set($prefix.'total_amount', round($total, 2));
     }
 
     /**
@@ -320,7 +311,7 @@ class PurchaseInvoiceForm
         $storeId = $get('store_id');
 
         // Validate variant belongs to the selected store
-        if ($storeId && $variant->product->store_id !== (int)$storeId) {
+        if ($storeId && $variant->product->store_id !== (int) $storeId) {
             Notification::make()->warning()->title(__('purchase_invoice.product_wrong_store'))->send();
             $livewire->dispatch('play-sound-error');
             $livewire->dispatch('focus-barcode');
@@ -329,11 +320,11 @@ class PurchaseInvoiceForm
         }
 
         $items = $get('items') ?? [];
-        $newKey = 'item_' . $variant->id;
+        $newKey = 'item_'.$variant->id;
 
         // Check for duplicate variant in existing items (works for both UUID keys and scanned item keys)
         $alreadyExists = collect($items)->contains(
-            fn($item) => ((int)($item['product_variant_id'] ?? 0)) === (int)$variant->id
+            fn ($item) => ((int) ($item['product_variant_id'] ?? 0)) === (int) $variant->id
         );
 
         if ($alreadyExists) {
@@ -346,7 +337,7 @@ class PurchaseInvoiceForm
 
         $fullName = $variant->full_qualified_name;
         $barcodes = $variant->getAllBarcodesAsArray();
-        $unitCost = (float)$variant->purchase_price;
+        $unitCost = (float) $variant->purchase_price;
 
         $items[$newKey] = [
             'product_variant_id' => $variant->id,
@@ -376,10 +367,11 @@ class PurchaseInvoiceForm
         if ($user->isStoreLevel()) {
             return Hidden::make('store_id')
                 ->required()
-                ->default(fn() => $user->store_id)
-                ->disabled(fn(string $operation): bool => $operation === 'edit')
-                ->dehydrated(fn(string $operation): bool => $operation !== 'edit');
+                ->default(fn () => $user->store_id)
+                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                ->dehydrated(fn (string $operation): bool => $operation !== 'edit');
         }
+
         return Select::make('store_id')
             ->label(__('purchase_invoice.store'))
             ->relationship('store', lang_suffix('name'))
@@ -387,8 +379,8 @@ class PurchaseInvoiceForm
             ->required()
             ->searchable(['name_en', 'name_ar'])
             ->live()
-            ->visible(fn() => $user->isCompanyLevel())
-            ->disabled(fn(string $operation): bool => $operation === 'edit')
-            ->dehydrated(fn(string $operation): bool => $operation !== 'edit');
+            ->visible(fn () => $user->isCompanyLevel())
+            ->disabled(fn (string $operation): bool => $operation === 'edit')
+            ->dehydrated(fn (string $operation): bool => $operation !== 'edit');
     }
 }

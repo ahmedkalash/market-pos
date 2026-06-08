@@ -36,6 +36,7 @@ class SaleInvoice extends Model
         'discount_amount',
         'global_discount_amount',
         'grand_total_discount',
+        'extra_items_total',
         'notes',
         'finalized_at',
         'finalized_by',
@@ -62,6 +63,7 @@ class SaleInvoice extends Model
             'discount_amount' => 'decimal:2',
             'global_discount_amount' => 'decimal:2',
             'grand_total_discount' => 'decimal:2',
+            'extra_items_total' => 'decimal:2',
             'shipping_cost' => 'decimal:2',
             'finalized_at' => 'datetime',
         ];
@@ -130,6 +132,24 @@ class SaleInvoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleInvoiceItem::class);
+    }
+
+    /**
+     * @return HasMany<SaleInvoiceExtraItem, $this>
+     */
+    public function extraItems(): HasMany
+    {
+        return $this->hasMany(SaleInvoiceExtraItem::class);
+    }
+
+    /**
+     * Calculate the total sum of extra items, factoring in their addition/subtraction types.
+     */
+    public function calculateExtraItemsTotal(): float
+    {
+        $this->loadMissing('extraItems');
+
+        return (float) $this->extraItems->sum('signed_amount');
     }
 
     #[Scope]
