@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\SaleInvoices\Schemas;
 
 use App\Enums\DiscountType;
+use App\Enums\ExtraItemActionType;
 use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
+use App\Filament\Resources\Customers\Schemas\CustomerForm;
 use App\Filament\Resources\ShippingDestinations\ShippingDestinationResource;
-use App\Models\ProductBarcode;
+use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductVariant;
 use App\Models\ShippingDestination;
 use App\Models\User;
@@ -50,7 +52,7 @@ class SaleInvoiceForm
                         ->compact()
                         ->icon('heroicon-o-document-arrow-up')
                         ->columnSpanFull()
-                        ->columns(4)
+                        ->columns(fn () => $user->isCompanyLevel() ? 4 : 3)
                         ->schema([
                             TextEntry::make('draft_warning')
                                 ->hiddenLabel()
@@ -67,11 +69,15 @@ class SaleInvoiceForm
                                 ->searchable(['name_en', 'name_ar'])
                                 ->preload()
                                 ->live()
-                                ->visible(fn () => $user->isCompanyLevel()),
+                                ->visible(fn () => $user->isCompanyLevel())
+                                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                                ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
 
                             Hidden::make('store_id')
                                 ->default(fn () => $user->store_id)
-                                ->visible(fn () => $user->isStoreLevel()),
+                                ->visible(fn () => $user->isStoreLevel())
+                                ->disabled(fn (string $operation): bool => $operation === 'edit')
+                                ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
 
                             Select::make('customer_id')
                                 ->label(__('customer.model_label'))
@@ -79,16 +85,7 @@ class SaleInvoiceForm
                                 ->searchable()
                                 ->preload()
                                 ->createOptionForm([
-                                    Grid::make(2)->schema([
-                                        TextInput::make('name')
-                                            ->label(__('customer.name'))
-                                            ->required()
-                                            ->maxLength(255),
-                                        TextInput::make('phone')
-                                            ->label(__('customer.phone'))
-                                            ->tel()
-                                            ->maxLength(255),
-                                    ]),
+                                    CustomerForm::schema(),
                                 ]),
 
                             Select::make('payment_method')
@@ -106,14 +103,33 @@ class SaleInvoiceForm
                         ]),
 
                     Section::make(__('sale_invoice.items'))
+                        ->footer(function (Get $get) use ($user) {
+                            $items = $get('items') ?? [];
+                            if (empty($items)) {
+                                return null;
+                            }
+
+                            $itemsSubtotalsSum = number_format($get('subtotal'), 2);
+                            $itemsLinesTotalsSum = number_format($get('items_lines_totals'), 2);
+                            $currency = $user->company->currency_symbol ?? 'ج.م';
+
+                            return new HtmlString(
+                                "<div style='display: flex; gap: 1.5rem; margin-top: 0.5rem;'>".
+                                badge(__('sale_invoice.items_section_subtotal').' : '.$itemsSubtotalsSum.' '.$currency).
+                                badge(__('sale_invoice.items_section_line_total').' : '.$itemsLinesTotalsSum.' '.$currency).
+                                '</div>'
+                            );
+                        })
                         ->compact()
                         ->icon('heroicon-o-shopping-cart')
                         ->columnSpanFull()
+                        ->columns(2)
                         ->schema([
                             TextInput::make('barcode_scanner')
+                                ->dehydrated(false)
+                                ->columnSpan(1)
                                 ->label(__('sale_invoice.barcode_scanner'))
                                 ->placeholder(__('sale_invoice.scan_barcode'))
-                                ->helperText(__('sale_invoice.barcode_scanner_helper'))
                                 ->hiddenOn('view')
                                 ->autofocus()
                                 ->extraInputAttributes([
@@ -131,19 +147,9 @@ class SaleInvoiceForm
                                     }
                                     $set('barcode_scanner', null);
 
-                                    $barcodeRecord = ProductBarcode::where('barcode', $state)->first();
-                                    if (! $barcodeRecord) {
-                                        Notification::make()->warning()->title(__('sale_invoice.product_not_found'))->send();
-                                        $livewire->dispatch('play-sound-error');
-                                        $livewire->dispatch('focus-barcode');
-
-                                        return;
-                                    }
-
-                                    // Check store boundary
-                                    $storeId = $get('store_id');
                                     $variant = ProductVariant::with(['product.taxClass', 'barcodes'])
-                                        ->find($barcodeRecord->product_variant_id);
+                                        ->whereHas('barcodes', fn ($q) => $q->where('barcode', $state))
+                                        ->first();
 
                                     if (! $variant) {
                                         Notification::make()->warning()->title(__('sale_invoice.product_not_found'))->send();
@@ -153,70 +159,64 @@ class SaleInvoiceForm
                                         return;
                                     }
 
-                                    // Validate variant belongs to the selected store
-                                    if ($storeId && $variant->product->store_id !== (int) $storeId) {
-                                        Notification::make()->warning()->title(__('sale_invoice.product_wrong_store'))->send();
+                                    self::addVariantToInvoice($variant, $get, $set, $livewire);
+                                }),
+
+                            Select::make('product_search')
+                                ->dehydrated(false)
+                                ->columnSpan(1)
+                                ->label(__('sale_invoice.search_by_name'))
+                                ->placeholder(__('sale_invoice.search_by_name_placeholder'))
+                                ->helperText(__('sale_invoice.search_by_name_helper', ['max' => 30]))
+                                ->hiddenOn('view')
+                                ->searchable()
+                                ->allowHtml()
+                                ->options([])
+                                ->getSearchResultsUsing(function (string $search, $get) {
+                                    if (blank($search)) {
+                                        return [];
+                                    }
+
+                                    return ProductVariant::query()
+                                        ->filterByStore($get('store_id'))
+                                        ->with('product')
+                                        ->fullNameSearch($search)
+                                        ->limit(30)
+                                        ->get()
+                                        ->mapWithKeys(function ($variant) {
+                                            $barcodesText = ($barcodes = $variant->getAllBarcodesAsString()) ? badge($barcodes) : '';
+                                            $fullName = badge($variant->full_qualified_name);
+
+                                            return [$variant->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodesText</div>"];
+                                        })
+                                        ->toArray();
+                                })
+                                ->live()
+                                ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
+                                    if (! $state) {
+                                        return;
+                                    }
+
+                                    // Clear the select field so it can be used again
+                                    $set('product_search', null);
+
+                                    $variant = ProductVariant::with(['product.taxClass', 'barcodes'])->find($state);
+
+                                    if (! $variant) {
+                                        Notification::make()->warning()->title(__('sale_invoice.product_not_found'))->send();
                                         $livewire->dispatch('play-sound-error');
-                                        $livewire->dispatch('focus-barcode');
 
                                         return;
                                     }
 
-                                    $items = $get('items') ?? [];
-                                    $newKey = (string) Str::uuid();
-
-                                    // Check for duplicate variant in existing items
-                                    $alreadyExists = collect($items)->contains(
-                                        fn ($item) => ((int) ($item['product_variant_id'] ?? 0)) === (int) $variant->id
-                                    );
-
-                                    if ($alreadyExists) {
-                                        Notification::make()->warning()->title(__('sale_invoice.duplicate_barcode'))->send();
-                                        $livewire->dispatch('play-sound-error');
-                                        $livewire->dispatch('focus-barcode');
-
-                                        return;
-                                    }
-
-                                    $productName = $variant->product->{lang_suffix('name')} ?? '';
-                                    $variantName = $variant->{lang_suffix('name')} ?? '';
-                                    $fullName = $variantName ? "{$productName} - {$variantName}" : $productName;
-
-                                    $barcodes = $variant->barcodes->pluck('barcode')->toArray();
-
-                                    $unitPrice = (float) $variant->retail_price;
-
-                                    $items[$newKey] = [
-                                        'product_variant_id' => $variant->id,
-                                        'price_type' => PriceType::Retail->value,
-                                        'barcodes' => $barcodes,
-                                        'product_name' => $fullName,
-                                        'quantity' => 1,
-                                        'unit_price' => $unitPrice,
-                                        'subtotal' => $unitPrice,
-                                        'discount_type' => null,
-                                        'unit_discount_amount' => null,
-                                        'line_total_discount' => 0.0,
-                                        'line_total' => round(1 * $unitPrice, 2),
-                                        'notes' => null,
-                                    ];
-
-                                    $set('items', $items);
-                                    self::recalculateTotals($get, $set);
-
-                                    Notification::make()
-                                        ->title(__('sale_invoice.item_added'))
-                                        ->body($fullName)
-                                        ->success()
-                                        ->send();
-
-                                    $livewire->dispatch('play-sound-success');
-                                    $livewire->dispatch('focus-barcode');
+                                    self::addVariantToInvoice($variant, $get, $set, $livewire);
                                 }),
 
                             Repeater::make('items')
+                                ->columnSpanFull()
                                 ->relationship()
                                 ->mutateRelationshipDataBeforeFillUsing(function (array $data, Model $record): array {
+                                    // todo: optimize by eager loading variants for all items in the form instead of querying for each item here
                                     $variant = ProductVariant::with(['product', 'barcodes'])->find($data['product_variant_id'] ?? null);
 
                                     if ($variant) {
@@ -227,46 +227,24 @@ class SaleInvoiceForm
                                     return $data;
                                 })
                                 ->itemLabel(function (array $state): ?HtmlString {
-                                    $productName = '';
-                                    $barcodes = [];
-
-                                    if (! empty($state['product_variant_id'])) {
-                                        // todo static $variantCache = [] in  will leak between requests under Octane consider using non-static property
-                                        static $variantCache = [];
-                                        $vid = $state['product_variant_id'];
-
-                                        if (! isset($variantCache[$vid])) {
-                                            $variantCache[$vid] = ProductVariant::with(['product', 'barcodes'])->find($vid);
-                                        }
-
-                                        $variant = $variantCache[$vid];
-                                        if ($variant) {
-                                            $productName = $variant->full_qualified_name;
-                                            $barcodes = $variant->getAllBarcodesAsArray();
-                                        }
-                                    }
-
-                                    $productHtml = "<span class='font-medium text-gray-950 dark:text-white' style='margin-inline-end: 1rem;'>".e($productName).'</span>';
+                                    $barcodes = $state['barcodes'] ?? [];
+                                    $productHtml = badge($state['product_name'] ?? __('app.unknown_product'));
 
                                     if (empty($barcodes)) {
-                                        return new HtmlString("<div class='flex items-center'>{$productHtml}</div>");
+                                        return new HtmlString("<div class='flex items-center'>$productHtml</div>");
                                     }
 
-                                    $badges = collect($barcodes)->map(function ($barcode) {
-                                        return "<span style='margin-inline-end: 0.5rem;' class='inline-flex items-center justify-center min-h-6 px-2 py-0.5 text-sm font-medium tracking-tight rounded-xl text-primary-700 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:text-primary-400 dark:bg-primary-400/10 dark:ring-primary-400/30'>".e($barcode).'</span>';
-                                    })->implode('');
+                                    $badgesHtml = collect($barcodes)->map(function ($barcode) {
+                                        return badge($barcode);
+                                    })->implode(' ');
 
-                                    return new HtmlString("<div class='flex items-center'>{$productHtml}<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_invoice.barcode').":</span>{$badges}</div>");
+                                    return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>$badgesHtml</div>");
                                 })
                                 ->hiddenLabel()
                                 ->compact()
                                 ->schema([
-                                    Hidden::make('product_variant_id')
-                                        ->required(),
-
-                                    Hidden::make('subtotal')
-                                        ->default(0),
-
+                                    Hidden::make('product_variant_id')->required(),
+                                    
                                     Select::make('price_type')
                                         ->label(__('sale_invoice.price_type'))
                                         ->options(PriceType::class)
@@ -305,20 +283,8 @@ class SaleInvoiceForm
                                         ->numeric()
                                         ->required()
                                         ->default(1)
-                                        ->minValue(0.001)
-                                        ->step(0.001)
-                                        ->hintIcon(
-                                            'heroicon-m-information-circle',
-                                            tooltip: function (Get $get) {
-                                                $variant = self::getCachedVariant($get('product_variant_id'));
-                                                if ($variant && $variant->hasWholesaleQtyThreshold()) {
-                                                    return __('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]);
-                                                }
-
-                                                return __('sale_invoice.quantity_tooltip');
-                                            }
-                                        )
-                                        ->suffix(function (Get $get) {
+                                        ->step(1)
+                                        ->hint(function (Get $get) {
                                             $priceType = $get('price_type');
                                             $priceTypeValue = PriceType::toString($priceType);
 
@@ -331,14 +297,14 @@ class SaleInvoiceForm
 
                                             return null;
                                         })
+                                        ->suffix(function (Get $get) {
+                                            return self::getCachedVariant($get('product_variant_id'))->unitOfMeasure->name;
+                                        })
                                         ->helperText(function (Get $get) {
-                                            $priceType = $get('price_type');
-                                            $priceTypeValue = PriceType::toString($priceType);
-
-                                            if ($priceTypeValue === PriceType::Wholesale->value) {
+                                            if (PriceType::toString($get('price_type')) === PriceType::Wholesale->value) {
                                                 $variant = self::getCachedVariant($get('product_variant_id'));
                                                 if ($variant && $variant->hasWholesaleQtyThreshold()) {
-                                                    return new HtmlString('<span class="text-danger-600 dark:text-danger-400 font-medium">'.__('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]).'</span>');
+                                                    return __('sale_invoice.wholesale_qty_tooltip', ['qty' => (float) $variant->wholesale_qty_threshold]);
                                                 }
                                             }
 
@@ -346,6 +312,7 @@ class SaleInvoiceForm
                                         })
                                         ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->rules([
+                                            'min:0.001',
                                             function (Get $get) {
                                                 return function (string $attribute, $value, \Closure $fail) use ($get) {
                                                     $priceType = $get('price_type');
@@ -385,7 +352,6 @@ class SaleInvoiceForm
 
                                             return $variant->getMinimumAllowedPrice($priceTypeEnum);
                                         })
-                                        ->step(0.01)
                                         ->helperText(function (Get $get) use ($user) {
                                             $variant = self::getCachedVariant($get('product_variant_id'));
                                             if (! $variant) {
@@ -590,185 +556,246 @@ class SaleInvoiceForm
                                 ->deleteAction(
                                     fn ($action) => $action->after(fn (Get $get, Set $set) => self::recalculateTotals($get, $set))
                                 ),
+                        ]),
 
-                            Section::make(__('sale_invoice.invoice_discount'))
-                                ->columnSpan(1)
-                                ->icon('heroicon-o-receipt-percent')
+                    Section::make(__('app.extra_items'))
+                        ->compact()
+                        ->icon('heroicon-o-plus-circle')
+                        ->columnSpanFull()
+                        ->schema([
+                            Repeater::make('extraItems')
+                                ->compact()
+                                ->relationship('extraItems')
+                                ->addActionLabel(__('app.add_more'))
+                                ->hiddenLabel()
+                                ->defaultItems(0)
+                                ->itemLabel(fn (array $state) => $state['name'] ?? '')
                                 ->schema([
-                                    Select::make('discount_type')
-                                        ->label(__('sale_invoice.discount_type'))
-                                        ->options(DiscountType::class)
+                                    Select::make('invoice_extra_item_preset_id')
+                                        ->label(__('app.preset'))
+                                        ->helperText(__('sale_invoice.preset_helper'))
+                                        ->dehydrated(false)
                                         ->live()
-                                        ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
-                                            static::recalculateTotals($get, $set);
-
-                                            $discountAmountPath = str_replace($component->getName(), 'discount_amount', $component->getStatePath());
-                                            $livewire->validateOnly($discountAmountPath);
-                                        }),
-                                    TextInput::make('discount_amount')
-                                        ->label(__('sale_invoice.discount_amount'))
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->step(0.01)
-                                        ->required(fn (Get $get) => filled($get('discount_type')))
-                                        ->disabled(fn (Get $get) => blank($get('discount_type')))
-                                        ->dehydrated()
-                                        ->prefix(function (TextInput $component) use ($user) {
-                                            $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
-                                            $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
-                                            $percentage = DiscountType::Percentage->value;
-
-                                            return new HtmlString(
-                                                '<span x-data="{}" x-text="$wire.get(\''.$discountTypeStatePath.'\') === \''.$percentage.'\' ? \'%\' : \''.$currency.'\'"></span>'
-                                            );
-                                        })
-                                        ->suffix(function (Get $get) {
-                                            if (! ($discountType = DiscountType::try($get('discount_type'))) ||
-                                                empty($items = $get('items') ?? [])
-                                            ) {
-                                                return null;
-                                            }
-
-                                            $initialSubtotalsSum = collect($items)->sum(function ($item) {
-                                                return (float) ($item['line_total'] ?? 0);
-                                            });
-
-                                            $sumOfMinimumAllowedPrices = self::getMinimumAllowedBasketTotal($items);
-
-                                            if ($initialSubtotalsSum <= 0) {
-                                                return null;
-                                            }
-
-                                            // The maximum allowed global discount is the total initial subtotal minus the total allowed minimums
-                                            $maxFixedGlobalDiscount = max(0, $initialSubtotalsSum - $sumOfMinimumAllowedPrices);
-
-                                            // If UI is in percentage mode, convert the max fixed global discount into a percentage
-                                            if ($discountType === DiscountType::Percentage) {
-                                                $maxPercentage = ($maxFixedGlobalDiscount / $initialSubtotalsSum) * 100;
-
-                                                return __('sale_invoice.max_allowed_discount', ['max' => round($maxPercentage, 2).'%']);
-                                            }
-
-                                            return __('sale_invoice.max_allowed_discount', ['max' => round($maxFixedGlobalDiscount, 2)]);
-                                        })
-                                        ->live(debounce: 1000)
-                                        ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
-                                            static::recalculateTotals($get, $set);
-                                            $livewire->validateOnly($component->getStatePath());
-                                        })
-                                        ->rules([
-                                            function (Get $get) {
-                                                return function (string $attribute, $value, \Closure $fail) use ($get) {
-                                                    $discountType = DiscountType::try($get('discount_type') ?? null);
-                                                    $items = $get('items') ?? [];
-                                                    if (! $discountType || empty($value) || empty($items)) {
-                                                        return;
-                                                    }
-
-                                                    // 1. Reject percentages over 100%
-                                                    if ($discountType === DiscountType::Percentage && (float) $value > 100) {
-                                                        $fail(__('sale_invoice.percentage_exceeds_100'));
-
-                                                        return;
-                                                    }
-
-                                                    $initialLinesTotalSum = collect($items)->sum(function ($item) {
-                                                        return (float) ($item['line_total'] ?? 0);
-                                                    });
-
-                                                    // 2. Reject fixed discounts that exceed the total invoice amount
-                                                    if ($discountType === DiscountType::Fixed &&
-                                                        round((float) $value, 2) > round($initialLinesTotalSum, 2)) {
-                                                        $fail(__('sale_invoice.grand_total_discount_exceeds_total'));
-
-                                                        return;
-                                                    }
-
-                                                    // Determine the global discount monetary amount
-                                                    $globalDiscountAmount = ($discountType === DiscountType::Fixed
-                                                        ? (float) $value
-                                                        : $initialLinesTotalSum * ((float) $value / 100));
-
-                                                    $grandTotal = round($initialLinesTotalSum - $globalDiscountAmount, 2);
-
-                                                    // 3. Basket-level minimum threshold validation
-                                                    $sumOfMinimumAllowedPrices = self::getMinimumAllowedBasketTotal($items);
-
-                                                    // Reject if the global discount pushes the grand total below the sum of all absolute minimums
-
-                                                    if ($grandTotal < round($sumOfMinimumAllowedPrices, 2)) {
-                                                        $fail(__('sale_invoice.invoice_below_minimum_after_global', [
-                                                            'min' => number_format($sumOfMinimumAllowedPrices, 2),
-                                                        ]));
-                                                    }
-                                                };
-                                            },
-                                        ]),
-                                    TextInput::make('global_discount_amount')
-                                        ->label(__('sale_invoice.global_discount_amount'))
-                                        ->readOnly()
-                                        ->dehydrated()
-                                        ->numeric()
-                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
-                                ])
-                                ->columns(3)
-                                ->compact(),
-
-                            Section::make(__('shipping.shipping_and_delivery'))
-                                ->columnSpan(1)
-                                ->icon('heroicon-o-truck')
-                                ->schema([
-                                    Select::make('shipping_destination_id')
-                                        ->label(__('shipping.destination'))
-                                        ->relationship('shippingDestination', 'name', fn (Builder $query) => $query->active())
                                         ->searchable()
-                                        ->preload()
-                                        ->createOptionForm([
-                                            Grid::make(2)
-                                                ->schema(ShippingDestinationResource::getFormSchema()),
-                                        ])
-                                        ->live()
-                                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                            if ($state) {
-                                                $destination = ShippingDestination::query()->find($state);
-                                                if ($destination) {
-                                                    $set('shipping_cost', (float) $destination->cost);
-                                                    $set('shipping_address', $destination->name);
-                                                    static::recalculateTotals($get, $set);
-                                                }
-                                            } else {
-                                                $set('shipping_cost', 0);
-                                                $set('shipping_address', '');
-                                                static::recalculateTotals($get, $set);
+                                        ->options((InvoiceExtraItemPreset::query()->forSaleInvoice()->pluck('name', 'id')))
+                                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                            $preset = InvoiceExtraItemPreset::find((int) $state);
+                                            if ($preset) {
+                                                $set('name', $preset->name);
+                                                $set('action_type', $preset->action_type);
+                                                $set('amount', $preset->amount);
                                             }
-                                        }),
 
-                                    TextInput::make('shipping_cost')
-                                        ->label(__('shipping.shipping_cost'))
-                                        ->numeric()
-                                        ->required(fn (Get $get) => filled($get('shipping_destination_id')))
-                                        ->default(0)
-                                        ->minValue(0)
+                                            static::recalculateTotals($get, $set, '../../');
+                                        }),
+                                    TextInput::make('name')
+                                        ->label(__('app.name'))
+                                        ->helperText(__('sale_invoice.extra_name_tooltip'))
+                                        ->required(),
+                                    Select::make('action_type')
+                                        ->label(__('extra_item.action_type'))
+                                        ->helperText(__('sale_invoice.extra_type_tooltip'))
+                                        ->options(ExtraItemActionType::class)
+                                        ->required()
+                                        ->live()
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            static::recalculateTotals($get, $set, '../../');
+                                        }),
+                                    TextInput::make('amount')
+                                        ->label(__('app.amount'))
+                                        ->helperText(__('sale_invoice.extra_amount_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->required()
                                         ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set) {
-                                            static::recalculateTotals($get, $set);
+                                            static::recalculateTotals($get, $set, '../../');
                                         }),
-
-                                    Textarea::make('shipping_address')
-                                        ->label(__('shipping.shipping_address'))
-                                        ->rows(2),
+                                    Textarea::make('notes')
+                                        ->label(__('app.notes'))
+                                        ->rows(1)
+                                        ->maxLength(255),
                                 ])
-                                ->columns(3)
-                                ->compact(),
+                                ->deleteAction(
+                                    fn (Action $action) => $action->after(fn (Get $get, Set $set) => static::recalculateTotals($get, $set))
+                                )
+                                ->columns(5),
                         ]),
+
+                    Section::make(__('sale_invoice.invoice_discount'))
+                        ->columnSpanFull()
+                        ->icon('heroicon-o-receipt-percent')
+                        ->schema([
+                            Select::make('discount_type')
+                                ->label(__('sale_invoice.discount_type'))
+                                ->options(DiscountType::class)
+                                ->live()
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
+                                    static::recalculateTotals($get, $set);
+
+                                    $discountAmountPath = str_replace($component->getName(), 'discount_amount', $component->getStatePath());
+                                    $livewire->validateOnly($discountAmountPath);
+                                }),
+                            TextInput::make('discount_amount')
+                                ->label(__('sale_invoice.discount_amount'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->step(0.01)
+                                ->required(fn (Get $get) => filled($get('discount_type')))
+                                ->disabled(fn (Get $get) => blank($get('discount_type')))
+                                ->dehydrated()
+                                ->prefix(function (TextInput $component) use ($user) {
+                                    $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
+                                    $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
+                                    $percentage = DiscountType::Percentage->value;
+
+                                    return new HtmlString(
+                                        '<span x-data="{}" x-text="$wire.get(\''.$discountTypeStatePath.'\') === \''.$percentage.'\' ? \'%\' : \''.$currency.'\'"></span>'
+                                    );
+                                })
+                                ->suffix(function (Get $get) {
+                                    if (! ($discountType = DiscountType::try($get('discount_type'))) ||
+                                        empty($items = $get('items') ?? [])
+                                    ) {
+                                        return null;
+                                    }
+
+                                    $initialSubtotalsSum = $get('items_lines_totals');
+
+                                    $sumOfMinimumAllowedPrices = self::getMinimumAllowedBasketTotal($items);
+
+                                    if ($initialSubtotalsSum <= 0) {
+                                        return null;
+                                    }
+
+                                    // The maximum allowed global discount is the total initial subtotal minus the total allowed minimums
+                                    $maxFixedGlobalDiscount = max(0, $initialSubtotalsSum - $sumOfMinimumAllowedPrices);
+
+                                    // If UI is in percentage mode, convert the max fixed global discount into a percentage
+                                    if ($discountType === DiscountType::Percentage) {
+                                        $maxPercentage = ($maxFixedGlobalDiscount / $initialSubtotalsSum) * 100;
+
+                                        return __('sale_invoice.max_allowed_discount', ['max' => round($maxPercentage, 2).'%']);
+                                    }
+
+                                    return __('sale_invoice.max_allowed_discount', ['max' => round($maxFixedGlobalDiscount, 2)]);
+                                })
+                                ->live(debounce: 1000)
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
+                                    static::recalculateTotals($get, $set);
+                                    $livewire->validateOnly($component->getStatePath());
+                                })
+                                ->rules([
+                                    function (Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $discountType = DiscountType::try($get('discount_type'));
+                                            $items = $get('items') ?? [];
+                                            if (! $discountType || empty($value) || empty($items)) {
+                                                return;
+                                            }
+
+                                            // 1. Reject percentages over 100%
+                                            if ($discountType === DiscountType::Percentage && (float) $value > 100) {
+                                                $fail(__('sale_invoice.percentage_exceeds_100'));
+
+                                                return;
+                                            }
+
+                                            $initialLinesTotalSum = $get('items_lines_totals');
+
+                                            // 2. Reject fixed discounts that exceed the total invoice amount
+                                            if ($discountType === DiscountType::Fixed &&
+                                                round((float) $value, 2) > round($initialLinesTotalSum, 2)) {
+                                                $fail(__('sale_invoice.grand_total_discount_exceeds_total'));
+
+                                                return;
+                                            }
+
+                                            // Determine the global discount monetary amount
+                                            $globalDiscountAmount = ($discountType === DiscountType::Fixed
+                                                ? (float) $value
+                                                : $initialLinesTotalSum * ((float) $value / 100));
+
+                                            $grandTotal = round($initialLinesTotalSum - $globalDiscountAmount, 2);
+
+                                            // 3. Basket-level minimum threshold validation
+                                            $sumOfMinimumAllowedPrices = self::getMinimumAllowedBasketTotal($items);
+
+                                            // Reject if the global discount pushes the grand total below the sum of all absolute minimums
+
+                                            if ($grandTotal < round($sumOfMinimumAllowedPrices, 2)) {
+                                                $fail(__('sale_invoice.invoice_below_minimum_after_global', [
+                                                    'min' => number_format($sumOfMinimumAllowedPrices, 2),
+                                                ]));
+                                            }
+                                        };
+                                    },
+                                ]),
+                            TextInput::make('global_discount_amount')
+                                ->label(__('sale_invoice.global_discount_amount'))
+                                ->readOnly()
+                                ->dehydrated()
+                                ->numeric()
+                                ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                        ])
+                        ->columns(3)
+                        ->compact(),
+
+                    Section::make(__('shipping.shipping_and_delivery'))
+                        ->columnSpanFull()
+                        ->icon('heroicon-o-truck')
+                        ->schema([
+                            Select::make('shipping_destination_id')
+                                ->label(__('shipping.destination'))
+                                ->relationship('shippingDestination', 'name', fn (Builder $query) => $query->active())
+                                ->searchable()
+                                ->preload()
+                                ->createOptionForm([
+                                    Grid::make(2)
+                                        ->schema(ShippingDestinationResource::getFormSchema()),
+                                ])
+                                ->live()
+                                ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                    if ($state) {
+                                        $destination = ShippingDestination::query()->find($state);
+                                        if ($destination) {
+                                            $set('shipping_cost', (float) $destination->cost);
+                                            $set('shipping_address', $destination->name);
+                                            static::recalculateTotals($get, $set);
+                                        }
+                                    } else {
+                                        $set('shipping_cost', 0);
+                                        $set('shipping_address', '');
+                                        static::recalculateTotals($get, $set);
+                                    }
+                                }),
+
+                            TextInput::make('shipping_cost')
+                                ->label(__('shipping.shipping_cost'))
+                                ->numeric()
+                                ->required(fn (Get $get) => filled($get('shipping_destination_id')))
+                                ->default(0)
+                                ->minValue(0)
+                                ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                ->live(debounce: 1000)
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    static::recalculateTotals($get, $set);
+                                }),
+
+                            Textarea::make('shipping_address')
+                                ->label(__('shipping.shipping_address'))
+                                ->rows(1),
+                        ])
+                        ->columns(3)
+                        ->compact(),
 
                     Section::make(__('app.summary'))
                         ->compact()
                         ->columnSpanFull()
                         ->icon('heroicon-o-calculator')
                         ->schema([
-                            Grid::make(3)
+                            Grid::make(4)
                                 ->columnSpanFull()
                                 ->schema([
                                     TextInput::make('subtotal')
@@ -778,6 +805,15 @@ class SaleInvoiceForm
                                         ->numeric()
                                         ->extraInputAttributes(['class' => 'text-lg font-semibold'])
                                         ->helperText(__('sale_invoice.subtotal_amount_helper'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
+
+                                    TextInput::make('extra_items_total')
+                                        ->label(__('app.extra_items_total'))
+                                        ->readOnly()
+                                        ->dehydrated()
+                                        ->numeric()
+                                        ->extraInputAttributes(['class' => 'text-lg font-semibold'])
+                                        ->helperText(__('sale_invoice.extra_items_helper'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م'),
 
                                     TextInput::make('grand_total_discount')
@@ -897,16 +933,8 @@ class SaleInvoiceForm
     private static function recalculateTotals(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
-
-        // Sum the 'line_total' of all items (these are subtotals AFTER item-level discounts)
-        $initialLinesTotalSum = collect($items)->sum(function ($item) {
-            return (float) ($item['line_total'] ?? 0);
-        });
-
-        // Sum the 'subtotal' of all items (these are subtotals BEFORE any discounts)
-        $initialSubtotalsSum = collect($items)->sum(function ($item) {
-            return (float) ($item['subtotal'] ?? 0);
-        });
+        $itemsLinesTotalsSum = static::itemsLinesTotalsSum($items);
+        $itemsSubtotalsSum = static::itemsSubtotalsSum($items);
 
         // Retrieve global invoice discount inputs
         $invoiceDiscountType = DiscountType::toString($get($prefix.'discount_type'));
@@ -915,17 +943,15 @@ class SaleInvoiceForm
         if (blank($invoiceDiscountType)) {
             $set($prefix.'discount_amount', null);
         }
-
         $invoiceDiscountAmount = (float) ($get($prefix.'discount_amount') ?? 0);
-
         $globalDiscountAmount = 0.0;
         if ($invoiceDiscountType == DiscountType::Fixed->value) {
             // Cap the fixed global discount so it never exceeds the sum of all item line totals
-            $globalDiscountAmount = min($invoiceDiscountAmount, $initialLinesTotalSum);
+            $globalDiscountAmount = min($invoiceDiscountAmount, $itemsLinesTotalsSum);
         } elseif ($invoiceDiscountType == DiscountType::Percentage->value) {
             // Cap the percentage at 100%, then calculate its monetary value based on the summed line totals
             $invoiceDiscountAmount = min($invoiceDiscountAmount, 100);
-            $globalDiscountAmount = $initialLinesTotalSum * ($invoiceDiscountAmount / 100);
+            $globalDiscountAmount = $itemsLinesTotalsSum * ($invoiceDiscountAmount / 100);
         }
 
         // Sum up the monetary value of all individual item-level discounts
@@ -935,17 +961,44 @@ class SaleInvoiceForm
 
         $shippingCost = (float) ($get($prefix.'shipping_cost') ?? 0);
 
-        // The final payable amount is the sum of item line totals minus the global invoice discount plus shipping cost
-        $totalAmount = ($initialLinesTotalSum - $globalDiscountAmount) + $shippingCost;
+        // Calculate extra items total (additions and subtractions)
+        $extraItemsTotal = self::calculateExtraItemsTotal($get, $prefix);
+
+        // The final payable amount is the sum of item line totals minus the global invoice discount plus shipping cost plus extra items
+        $totalAmount = max(0, ($itemsLinesTotalsSum - $globalDiscountAmount) + $shippingCost + $extraItemsTotal);
 
         // The grand total discount is the aggregate of all item discounts PLUS the global invoice discount
         $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;
 
         // Update the Livewire component state with rounded final values
-        $set($prefix.'subtotal', round($initialSubtotalsSum, 2));
+        $set($prefix.'subtotal', round($itemsSubtotalsSum, 2));
+        $set($prefix.'items_lines_totals', round($itemsLinesTotalsSum, 2));
         $set($prefix.'global_discount_amount', round($globalDiscountAmount, 2));
         $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
+        $set($prefix.'extra_items_total', round($extraItemsTotal, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
+    }
+
+    /**
+     * Calculates the total value of all extra items (additions minus subtractions).
+     */
+    public static function calculateExtraItemsTotal(Get $get, string $prefix = ''): float
+    {
+        $extraItems = $get($prefix.'extraItems') ?? [];
+        $total = 0.0;
+
+        foreach ($extraItems as $extraItem) {
+            $amount = (float) ($extraItem['amount'] ?? 0);
+            $actionType = ExtraItemActionType::toString($extraItem['action_type'] ?? null);
+
+            if ($actionType === ExtraItemActionType::Addition->value) {
+                $total += $amount;
+            } elseif ($actionType === ExtraItemActionType::Subtraction->value) {
+                $total -= $amount;
+            }
+        }
+
+        return $total;
     }
 
     /**
@@ -981,6 +1034,7 @@ class SaleInvoiceForm
      */
     private static function getCachedVariant(?int $variantId): ?ProductVariant
     {
+        // todo Critical Concurrency & Memory Leak in Octane consider using alternate solution
         if (! $variantId) {
             return null;
         }
@@ -991,6 +1045,92 @@ class SaleInvoiceForm
 
         static $cache = [];
 
-        return $cache[$variantId] ??= ProductVariant::find($variantId);
+        return $cache[$variantId] ??= ProductVariant::with(['unitOfMeasure'])->find($variantId);
+    }
+
+    /**
+     * Shared helper to add a variant to the invoice items list.
+     * Prevents code duplication between barcode scanner and name search.
+     */
+    protected static function addVariantToInvoice(ProductVariant $variant, Get $get, Set $set, $livewire): void
+    {
+        // Check store boundary
+        $storeId = $get('store_id');
+
+        // Validate variant belongs to the selected store
+        if ($storeId && $variant->product->store_id !== (int) $storeId) {
+            Notification::make()->warning()->title(__('sale_invoice.product_wrong_store'))->send();
+            $livewire->dispatch('play-sound-error');
+            $livewire->dispatch('focus-barcode');
+
+            return;
+        }
+
+        $items = $get('items') ?? [];
+        $newKey = (string) Str::uuid();
+
+        // Check for duplicate variant in existing items
+        $alreadyExists = collect($items)->contains(
+            fn ($item) => ((int) ($item['product_variant_id'] ?? 0)) === (int) $variant->id
+        );
+
+        if ($alreadyExists) {
+            Notification::make()->warning()->title(__('sale_invoice.duplicate_barcode'))->send();
+            $livewire->dispatch('play-sound-error');
+            $livewire->dispatch('focus-barcode');
+
+            return;
+        }
+
+        $fullName = $variant->full_qualified_name;
+        $barcodes = $variant->getAllBarcodesAsArray();
+        $unitPrice = (float) $variant->retail_price;
+
+        $items[$newKey] = [
+            'product_variant_id' => $variant->id,
+            'price_type' => PriceType::Retail->value,
+            'barcodes' => $barcodes,
+            'product_name' => $fullName,
+            'quantity' => 1,
+            'unit_price' => $unitPrice,
+            'subtotal' => $unitPrice,
+            'discount_type' => null,
+            'unit_discount_amount' => null,
+            'line_total_discount' => 0.0,
+            'line_total' => round($unitPrice, 2),
+            'notes' => null,
+        ];
+
+        $set('items', $items);
+        self::recalculateTotals($get, $set);
+
+        Notification::make()
+            ->title(__('sale_invoice.item_added'))
+            ->body($fullName)
+            ->success()
+            ->send();
+
+        $livewire->dispatch('play-sound-success');
+        $livewire->dispatch('focus-barcode');
+    }
+
+    /**
+     * Sum the 'line_total' of all items (these are subtotals AFTER item-level discounts)
+     */
+    private static function itemsLinesTotalsSum(array $items):float
+    {
+        return collect($items)->sum(function ($item) {
+            return (float) ($item['line_total'] ?? 0);
+        });
+    }
+
+    /**
+     * Sum the 'subtotal' of all items (these are subtotals BEFORE any discounts)
+     */
+    private static function itemsSubtotalsSum(array $items):float
+    {
+        return collect($items)->sum(function ($item) {
+            return (float) ($item['subtotal'] ?? 0);
+        });
     }
 }
