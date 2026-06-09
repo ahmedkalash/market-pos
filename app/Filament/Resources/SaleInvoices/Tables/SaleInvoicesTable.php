@@ -94,6 +94,15 @@ class SaleInvoicesTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                TextColumn::make('extra_items_total')
+                    ->label(__('app.extra_items_total'))
+                    ->badge()
+                    ->color('info')
+                    ->numeric(decimalPlaces: 2, locale: 'en')
+                    ->prefix($currencySymbol.' ')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('total_amount')
                     ->label(__('sale_invoice.total_amount'))
                     ->badge()
