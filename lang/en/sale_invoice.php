@@ -105,7 +105,7 @@ return [
     'item_below_minimum' => 'Discount on item :item breaches the minimum allowed price of :min.',
     'invoice_discount_breaches_minimum' => 'Invoice discount pushes item :item below its minimum allowed price.',
     'invoice_discount' => 'Global Invoice Discount',
-    'subtotal_amount' => 'Total Before Discount',
+    'subtotal_amount' => 'Line Items Total Before Discount',
     'subtotal_amount_helper' => 'The gross sum of all product items before any item-level or invoice-level discounts are applied. (Excludes shipping cost and extra items)',
     'items_section_subtotal' => 'Items Subtotal(Before Discount)',
     'items_section_line_total' => 'Items Total (After Discount)',
@@ -128,4 +128,6 @@ return [
     'extra_type_tooltip' => 'Choose whether this is an addition to the total or a subtraction.',
     'extra_amount_tooltip' => 'The amount to add or subtract.',
     'extra_notes_tooltip' => 'Any additional details.',
+    'negative_total_warning' => 'Negative Total Warning',
+    'deductions_exceed_total_message' => 'Some deductions make the invoice total negative.',
 ];

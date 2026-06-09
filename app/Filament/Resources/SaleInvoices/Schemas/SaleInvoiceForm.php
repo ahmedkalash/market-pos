@@ -90,11 +90,7 @@ class SaleInvoiceForm
 
                             Select::make('payment_method')
                                 ->label(__('sale_invoice.payment_method'))
-                                ->options([
-                                    PaymentMethod::Cash->value => __('sale_invoice.payment_method_cash'),
-                                    PaymentMethod::Card->value => __('sale_invoice.payment_method_card'),
-                                    PaymentMethod::Split->value => __('sale_invoice.payment_method_split'),
-                                ])
+                                ->options(PaymentMethod::class)
                                 ->required(),
 
                             Textarea::make('notes')
@@ -244,7 +240,7 @@ class SaleInvoiceForm
                                 ->compact()
                                 ->schema([
                                     Hidden::make('product_variant_id')->required(),
-                                    
+
                                     Select::make('price_type')
                                         ->label(__('sale_invoice.price_type'))
                                         ->options(PriceType::class)
@@ -298,7 +294,7 @@ class SaleInvoiceForm
                                             return null;
                                         })
                                         ->suffix(function (Get $get) {
-                                            return self::getCachedVariant($get('product_variant_id'))->unitOfMeasure->name;
+                                            return self::getCachedVariant($get('product_variant_id'))?->unitOfMeasure?->name;
                                         })
                                         ->helperText(function (Get $get) {
                                             if (PriceType::toString($get('price_type')) === PriceType::Wholesale->value) {
@@ -830,6 +826,7 @@ class SaleInvoiceForm
                                         ->readOnly()
                                         ->dehydrated()
                                         ->numeric()
+                                        ->minValue(0)
                                         ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
                                         ->helperText(__('sale_invoice.total_amount_helper'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
@@ -965,7 +962,16 @@ class SaleInvoiceForm
         $extraItemsTotal = self::calculateExtraItemsTotal($get, $prefix);
 
         // The final payable amount is the sum of item line totals minus the global invoice discount plus shipping cost plus extra items
-        $totalAmount = max(0, ($itemsLinesTotalsSum - $globalDiscountAmount) + $shippingCost + $extraItemsTotal);
+        $totalAmount = ($itemsLinesTotalsSum - $globalDiscountAmount) + $shippingCost + $extraItemsTotal;
+
+        if ($totalAmount < 0) {
+            Notification::make()
+                ->warning()
+                ->title(__('sale_invoice.negative_total_warning'))
+                ->body(__('sale_invoice.deductions_exceed_total_message'))
+                ->send();
+        }
+
 
         // The grand total discount is the aggregate of all item discounts PLUS the global invoice discount
         $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;
@@ -1034,7 +1040,7 @@ class SaleInvoiceForm
      */
     private static function getCachedVariant(?int $variantId): ?ProductVariant
     {
-        // todo Critical Concurrency & Memory Leak in Octane consider using alternate solution
+        // todo: Critical Concurrency & Memory Leak in Octane consider using alternate solution
         if (! $variantId) {
             return null;
         }
@@ -1044,6 +1050,10 @@ class SaleInvoiceForm
         }
 
         static $cache = [];
+
+        // todo: Many callers of getCachedVariant() access $variant->product, $variant->barcodes, $variant->wholesale_enabled,
+        //  etc. Since only unitOfMeasure is eager-loaded, every other relation access triggers an N+1 lazy load query.
+        //  This is particularly expensive inside repeater closures that fire for every row.
 
         return $cache[$variantId] ??= ProductVariant::with(['unitOfMeasure'])->find($variantId);
     }
@@ -1117,7 +1127,7 @@ class SaleInvoiceForm
     /**
      * Sum the 'line_total' of all items (these are subtotals AFTER item-level discounts)
      */
-    private static function itemsLinesTotalsSum(array $items):float
+    private static function itemsLinesTotalsSum(array $items): float
     {
         return collect($items)->sum(function ($item) {
             return (float) ($item['line_total'] ?? 0);
@@ -1127,7 +1137,7 @@ class SaleInvoiceForm
     /**
      * Sum the 'subtotal' of all items (these are subtotals BEFORE any discounts)
      */
-    private static function itemsSubtotalsSum(array $items):float
+    private static function itemsSubtotalsSum(array $items): float
     {
         return collect($items)->sum(function ($item) {
             return (float) ($item['subtotal'] ?? 0);

@@ -3,12 +3,11 @@
 namespace App\Filament\Resources\SaleReturnInvoices\Schemas;
 
 use App\Enums\ExtraItemActionType;
-use App\Enums\InvoiceType;
+use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
 use App\Models\User;
-use App\Services\ExtraItemPresetCache;
 use App\Services\SaleInvoiceService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -53,9 +52,6 @@ class SaleReturnInvoiceForm
     {
         /** @var User $user */
         $user = Auth::user()->load('company');
-
-        // Dedicated cache object — request-scoped, Octane-safe, zero DB duplication.
-        $extraItemPresetCache = new ExtraItemPresetCache;
 
         return $schema
             ->components([
@@ -393,18 +389,19 @@ class SaleReturnInvoiceForm
                                     ->schema([
                                         Select::make('invoice_extra_item_preset_id')
                                             ->label(__('app.preset'))
+                                            ->helperText(__('sale_invoice.preset_helper'))
                                             ->dehydrated(false)
                                             ->live()
-                                            ->options(fn () => $extraItemPresetCache->get(null, InvoiceType::SaleReturn)->pluck('name', 'id'))
-                                            ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) use ($extraItemPresetCache) {
-                                                if ($state) {
-                                                    $preset = $extraItemPresetCache->get((int) $state);
-                                                    if ($preset) {
-                                                        $set('name', $preset->name);
-                                                        $set('action_type', $preset->action_type);
-                                                        $set('amount', $preset->amount);
-                                                    }
+                                            ->searchable()
+                                            ->options(InvoiceExtraItemPreset::query()->forSaleReturn()->pluck('name', 'id'))
+                                            ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) {
+                                                $preset = InvoiceExtraItemPreset::find((int) $state);
+                                                if ($preset) {
+                                                    $set('name', $preset->name);
+                                                    $set('action_type', $preset->action_type);
+                                                    $set('amount', $preset->amount);
                                                 }
+
                                                 self::calcTotalAmount($get, $set, $livewire, '../../');
                                             }),
                                         TextInput::make('name')
