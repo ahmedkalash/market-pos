@@ -77,13 +77,15 @@ class SaleInvoiceService
             $grandTotalDiscount = $totalItemsDiscount + $globalInvoiceDiscount;
 
             $shippingCost = (float) ($invoice->shipping_cost ?? 0);
-            $totalAmount = max(0, $totalBeforeTax + $totalTaxAmount + $shippingCost);
+            $extraItemsTotal = $invoice->calculateExtraItemsTotal();
+            $totalAmount = max(0, $totalBeforeTax + $totalTaxAmount + $shippingCost + $extraItemsTotal);
 
             // Persist the final invoice totals
             $this->updateInvoiceTotals($invoice, [
                 'subtotal' => round($subtotalsBeforeDiscountSum, 2),
                 'global_discount_amount' => round($globalInvoiceDiscount, 2),
                 'grand_total_discount' => round($grandTotalDiscount, 2),
+                'extra_items_total' => round($extraItemsTotal, 2),
                 'total_before_tax' => round($totalBeforeTax, 2),
                 'total_tax_amount' => round($totalTaxAmount, 2),
                 'total_amount' => round($totalAmount, 2),
@@ -100,6 +102,7 @@ class SaleInvoiceService
         $lockedInvoice = SaleInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
         $lockedInvoice->load(['items' => fn ($query) => $query->lockForUpdate()]);
         $lockedInvoice->load('items.variant.product.taxClass');
+        $lockedInvoice->load('extraItems');
 
         return $lockedInvoice;
     }
@@ -218,9 +221,9 @@ class SaleInvoiceService
             // Re-fetch the invoice and lock the row for update to prevent concurrent modifications
             $invoice = SaleInvoice::query()->where('id', $invoice->id)->lockForUpdate()->firstOrFail();
 
-            // Guard: ensure the invoice actually has items before finalizing
-            if ($invoice->items()->count() === 0) {
-                throw new \RuntimeException(__('sale_invoice.no_items'));
+            // Guard: ensure the invoice actually has items or extra items before finalizing
+            if ($invoice->items()->count() === 0 && $invoice->extraItems()->count() === 0) {
+                throw new \RuntimeException(__('sale_invoice.no_items_or_extras'));
             }
 
             // Guard: re-check status inside the lock to prevent double-finalization
@@ -232,6 +235,7 @@ class SaleInvoiceService
             // Eager load the required relationships for inventory deduction
             $invoice->load([
                 'items.variant.product',
+                'extraItems',
             ]);
 
             // Iterate through each item to deduct stock
