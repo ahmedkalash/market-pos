@@ -687,6 +687,15 @@ class SaleReturnInvoiceForm
 
         $totalRefundAmount = $itemsRefundTotal + $extraItemsTotal;
 
+        if ($totalRefundAmount < 0) {
+            Notification::make()
+                ->warning()
+                ->title(__('sale_invoice.negative_total_warning'))
+                ->body(__('sale_invoice.deductions_exceed_total_message'))
+                ->send();
+            $livewire?->dispatch('play-sound-error');
+        }
+
         $set($prefix.'items_refund_total', round($itemsRefundTotal, 2));
         $set($prefix.'extra_items_total', round($extraItemsTotal, 2));
         $set($prefix.'total_refund_amount', round($totalRefundAmount, 2));

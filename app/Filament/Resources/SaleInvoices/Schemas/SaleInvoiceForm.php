@@ -386,7 +386,8 @@ class SaleInvoiceForm
                                         ->label(__('sale_invoice.subtotal'))
                                         ->numeric()
                                         ->required()
-                                        ->readOnly()
+                                        ->disabled()
+                                        ->dehydrated()
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->helperText(__('sale_invoice.subtotal_helper_text'))
                                         ->columnSpan(3),
@@ -521,17 +522,19 @@ class SaleInvoiceForm
                                     TextInput::make('line_total_discount')
                                         ->label(__('sale_invoice.line_total_discount'))
                                         ->numeric()
-                                        ->readOnly()
+                                        ->disabled()
+                                        ->dehydrated()
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.line_total_discount_helper_text'))
                                         ->columnSpan(3)
-                                        ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
-                                        ->dehydrated(),
+//                                        ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
+                                       ,
 
                                     TextInput::make('line_total')
                                         ->label(__('sale_invoice.final_line_total'))
                                         ->numeric()
-                                        ->readOnly()
+                                        ->disabled()
+                                        ->dehydrated()
                                         ->minValue(0)
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->helperText(__('sale_invoice.final_line_total_helper_text'))
@@ -733,7 +736,7 @@ class SaleInvoiceForm
                                 ]),
                             TextInput::make('global_discount_amount')
                                 ->label(__('sale_invoice.global_discount_amount'))
-                                ->readOnly()
+                                ->disabled()
                                 ->dehydrated()
                                 ->numeric()
                                 ->prefix($user->company->currency_symbol ?? 'ج.م'),
@@ -799,7 +802,7 @@ class SaleInvoiceForm
                                 ->schema([
                                     TextInput::make('subtotal')
                                         ->label(__('sale_invoice.subtotal_amount'))
-                                        ->readOnly()
+                                        ->disabled()
                                         ->dehydrated()
                                         ->numeric()
                                         ->extraInputAttributes(['class' => 'text-lg font-semibold'])
@@ -808,7 +811,7 @@ class SaleInvoiceForm
 
                                     TextInput::make('extra_items_total')
                                         ->label(__('app.extra_items_total'))
-                                        ->readOnly()
+                                        ->disabled()
                                         ->dehydrated()
                                         ->numeric()
                                         ->extraInputAttributes(['class' => 'text-lg font-semibold'])
@@ -817,7 +820,7 @@ class SaleInvoiceForm
 
                                     TextInput::make('grand_total_discount')
                                         ->label(__('sale_invoice.grand_total_discount'))
-                                        ->readOnly()
+                                        ->disabled()
                                         ->dehydrated()
                                         ->numeric()
                                         ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
@@ -826,16 +829,13 @@ class SaleInvoiceForm
 
                                     TextInput::make('total_amount')
                                         ->label(__('sale_invoice.total_amount'))
-                                        ->readOnly()
+                                        ->disabled()
                                         ->dehydrated()
                                         ->numeric()
                                         ->minValue(0)
                                         ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
                                         ->helperText(__('sale_invoice.total_amount_helper'))
-                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                        ->afterStateHydrated(function (Get $get, Set $set) {
-                                            static::recalculateTotals($get, $set);
-                                        }),
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
                                 ]),
                         ]),
                 ]),
