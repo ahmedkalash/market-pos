@@ -620,11 +620,13 @@ class SaleInvoiceForm
                         ]),
 
                     Section::make(__('sale_invoice.invoice_discount'))
+                        ->description(__('sale_invoice.invoice_discount_description'))
                         ->columnSpanFull()
                         ->icon('heroicon-o-receipt-percent')
                         ->schema([
                             Select::make('discount_type')
                                 ->label(__('sale_invoice.discount_type'))
+                                ->helperText(__('sale_invoice.global_discount_type_helper'))
                                 ->options(DiscountType::class)
                                 ->live()
                                 ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
@@ -635,6 +637,7 @@ class SaleInvoiceForm
                                 }),
                             TextInput::make('discount_amount')
                                 ->label(__('sale_invoice.discount_amount'))
+                                ->helperText(__('sale_invoice.global_discount_amount_helper'))
                                 ->numeric()
                                 ->minValue(0)
                                 ->step(0.01)

@@ -195,7 +195,7 @@ return [
     'product' => 'Product',
     'quantity' => 'Quantity',
     'unit_price' => 'Unit Price',
-    'extra_items' => 'Extra Items',
+    'extra_items' => 'Extra Items / Adjustments',
     'summary' => 'Summary',
     'items_refund_total' => 'Items Refund Total',
     'extra_items_total' => 'Extra Items Total',
