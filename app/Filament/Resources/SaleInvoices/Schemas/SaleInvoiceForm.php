@@ -98,7 +98,7 @@ class SaleInvoiceForm
                                 ->rows(1),
                         ]),
 
-                    Section::make(__('sale_invoice.items'))
+                    Section::make(__('app.main_invoice_items'))
                         ->footer(function (Get $get) use ($user) {
                             $items = $get('items') ?? [];
                             if (empty($items)) {

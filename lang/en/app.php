@@ -192,6 +192,7 @@ return [
     'returned_at' => 'Returned At',
     'return_reason' => 'Return Reason',
     'items' => 'Items',
+    'main_invoice_items' => 'Main Line Items',
     'product' => 'Product',
     'quantity' => 'Quantity',
     'unit_price' => 'Unit Price',

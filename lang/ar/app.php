@@ -193,6 +193,7 @@ return [
     'returned_at' => 'تاريخ الإرجاع',
     'return_reason' => 'سبب الإرجاع',
     'items' => 'العناصر',
+    'main_invoice_items' => 'بنود الفاتورة الاساسية',
     'product' => 'المنتج',
     'quantity' => 'الكمية',
     'unit_price' => 'سعر الوحدة',

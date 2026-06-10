@@ -181,7 +181,7 @@ class SaleReturnInvoiceForm
 
                             ]),
 
-                        Section::make(__('app.items'))
+                        Section::make(__('app.main_invoice_items'))
                             ->compact()
                             ->icon('heroicon-o-shopping-cart')
                             ->columnSpanFull()
