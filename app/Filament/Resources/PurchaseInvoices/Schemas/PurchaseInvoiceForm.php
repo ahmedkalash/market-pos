@@ -327,23 +327,25 @@ class PurchaseInvoiceForm
                             Grid::make(3)
                                 ->columnSpanFull()
                                 ->schema([
-                                    TextInput::make('items_subtotal')
+                                    TextInput::make('subtotal')
                                         ->label(__('purchase_invoice.items_subtotal'))
                                         ->helperText(__('purchase_invoice.subtotal_amount_helper'))
                                         ->disabled()
-                                        ->dehydrated(false)
+                                        ->dehydrated()
+                                        ->minValue(0)
                                         ->prefix($user->company->currency_symbol ?? 'ج.م'),
                                     TextInput::make('extra_items_total')
                                         ->label(__('app.extra_items_total'))
                                         ->helperText(__('purchase_invoice.extra_items_helper'))
                                         ->disabled()
-                                        ->dehydrated(false)
+                                        ->dehydrated()
                                         ->prefix($user->company->currency_symbol ?? 'ج.م'),
                                     TextInput::make('total_amount')
                                         ->label(__('purchase_invoice.total_amount'))
                                         ->helperText(__('purchase_invoice.total_amount_helper'))
                                         ->disabled()
-                                        ->dehydrated(false)
+                                        ->dehydrated()
+                                        ->minValue(0)
                                         ->extraInputAttributes(['class' => 'text-xl font-bold'])
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->afterStateHydrated(function (Get $get, Set $set) {
@@ -392,7 +394,7 @@ class PurchaseInvoiceForm
                 ->send();
         }
 
-        $set($prefix.'items_subtotal', round($itemsSubtotal, 2));
+        $set($prefix.'subtotal', round($itemsSubtotal, 2));
         $set($prefix.'extra_items_total', round($extraItemsTotal, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
     }

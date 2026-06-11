@@ -23,6 +23,7 @@ class PurchaseInvoice extends Model
         'vendor_id',
         'invoice_number',
         'vendor_invoice_ref',
+        'subtotal',
         'total_before_tax',
         'total_tax_amount',
         'extra_items_total',
@@ -44,6 +45,7 @@ class PurchaseInvoice extends Model
         return [
             'status' => PurchaseInvoiceStatus::class,
             'return_status' => InvoiceReturnStatus::class,
+            'subtotal' => 'decimal:2',
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
             'extra_items_total' => 'decimal:2',
