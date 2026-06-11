@@ -618,8 +618,8 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] - for item lable of a repeater consder displaying product name and barcodes via the badge() fnuction in all anvoices
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
 - [ ] - Apply the `extraItems` feature (Additions & Subtractions) currently implemented in `SaleReturnInvoiceForm` to all other invoice forms (`SaleInvoiceForm`, `PurchaseInvoiceForm`, `PurchaseReturnInvoiceForm`). This involves adding the `Repeater` for `extraItems`, integrating it with the totals calculation, and ensuring the corresponding database relationships and tables exist.
-- [ ] - some models has an `active` col we should make sure that this toggle correctly used and applied to db queries 
-  
+- [ ] - some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
+- [ ] - Add custom permission 'override_purchase_return_unit_cost' to Company permissions. Allow users with this permission to edit this field and handle side effects.
 
 
 ### Performance & Database Optimization
