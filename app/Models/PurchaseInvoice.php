@@ -25,6 +25,7 @@ class PurchaseInvoice extends Model
         'vendor_invoice_ref',
         'total_before_tax',
         'total_tax_amount',
+        'extra_items_total',
         'total_amount',
         'status',
         'return_status',
@@ -45,6 +46,7 @@ class PurchaseInvoice extends Model
             'return_status' => InvoiceReturnStatus::class,
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
+            'extra_items_total' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'received_at' => 'date',
             'finalized_at' => 'datetime',
@@ -114,6 +116,19 @@ class PurchaseInvoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseInvoiceItem::class);
+    }
+
+    /**
+     * @return HasMany<PurchaseInvoiceExtraItem, $this>
+     */
+    public function extraItems(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoiceExtraItem::class);
+    }
+
+    public function calculateExtraItemsTotal(): float
+    {
+        return (float) $this->extraItems->sum('signed_amount');
     }
 
     #[Scope]

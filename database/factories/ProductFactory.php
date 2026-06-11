@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Store;
@@ -21,6 +22,7 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
+            'company_id' => Company::factory(),
             'store_id' => Store::factory(),
             'category_id' => ProductCategory::factory(),
             'tax_class_id' => TaxClass::factory(),

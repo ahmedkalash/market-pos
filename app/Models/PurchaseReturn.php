@@ -27,6 +27,7 @@ class PurchaseReturn extends Model
         'status',
         'total_before_tax',
         'total_tax_amount',
+        'extra_items_total',
         'total_amount',
         'notes',
         'returned_at',
@@ -46,6 +47,7 @@ class PurchaseReturn extends Model
             'finalized_at' => 'datetime',
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
+            'extra_items_total' => 'decimal:2',
             'total_amount' => 'decimal:2',
         ];
     }
@@ -77,6 +79,19 @@ class PurchaseReturn extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseReturnItem::class);
+    }
+
+    /**
+     * @return HasMany<PurchaseReturnExtraItem, $this>
+     */
+    public function extraItems(): HasMany
+    {
+        return $this->hasMany(PurchaseReturnExtraItem::class);
+    }
+
+    public function calculateExtraItemsTotal(): float
+    {
+        return (float) $this->extraItems->sum('signed_amount');
     }
 
     /**

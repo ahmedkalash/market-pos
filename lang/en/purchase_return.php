@@ -80,6 +80,8 @@ return [
     'quantity_tooltip' => 'Cannot exceed the remaining returnable quantity.',
     'unit_cost_tooltip' => 'The original unit cost from the invoice.',
     'line_total_tooltip' => 'Calculated automatically based on quantity.',
+    'subtotal_tooltip' => 'Calculated automatically. (quantity * unit cost).',
+    'subtotal' => 'Subtotal',
     'notes_tooltip' => 'Optional: Reason for return or item condition.',
     'grand_total' => 'Grand Total',
     'search_by_product' => 'Search by Product / Barcode',
