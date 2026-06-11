@@ -130,6 +130,7 @@ class PurchaseInvoice extends Model
 
     public function calculateExtraItemsTotal(): float
     {
+        $this->loadMissing(['extraItems']);
         return (float) $this->extraItems->sum('signed_amount');
     }
 

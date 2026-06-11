@@ -64,7 +64,7 @@ return [
     'create_and_finalize' => 'إنشاء واعتماد',
     'save_as_draft' => 'حفظ كمسودة',
 
-    'no_items' => 'يرجى إضافة بند واحد على الأقل قبل الاعتماد.',
+    'no_items_or_extras' => 'يرجى إضافة بند واحد أو تسوية إضافية على الأقل قبل الاعتماد.',
     'exceeds_returnable_quantity' => 'لا يمكن إرجاع كمية أكبر من الكمية المتاحة للإرجاع (:max وحدة).',
 
     // Return status (on invoice)

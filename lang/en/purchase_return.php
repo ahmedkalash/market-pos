@@ -65,7 +65,7 @@ return [
     'finalize_success' => 'Return finalized successfully.',
     'create_and_finalize' => 'Create & Finalize',
     'save_as_draft' => 'Save as Draft',
-    'no_items' => 'Please add at least one item before finalizing.',
+    'no_items_or_extras' => 'Please add at least one item or extra item before finalizing.',
     'exceeds_returnable_quantity' => 'Cannot return more than the remaining returnable quantity (:max units).',
 
     // Return status (on invoice)

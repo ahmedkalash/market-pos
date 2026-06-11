@@ -41,7 +41,7 @@ return [
     'finalize_confirm_title' => 'Finalize Invoice?',
     'finalize_confirm_body' => 'This will update stock for all items and lock the invoice permanently. This cannot be undone.',
     'already_finalized' => 'This invoice has already been finalized.',
-    'no_items' => 'Please add at least one item before finalizing.',
+    'no_items_or_extras' => 'Please add at least one item or extra item before finalizing.',
     'purchasing' => 'Purchasing',
     'product_not_found_hint' => 'Product not in system yet? Create it in Products first.',
     'item_notes' => 'Line Notes',

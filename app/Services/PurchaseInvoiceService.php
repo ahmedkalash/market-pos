@@ -12,6 +12,7 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -92,10 +93,14 @@ class PurchaseInvoiceService
             $totalTaxAmount += $taxAmount;
         }
 
+        $extraItemsTotal = $invoice->calculateExtraItemsTotal();
+
         $invoice->update([
+            'subtotal' => round($totalBeforeTax, 2),
             'total_before_tax' => round($totalBeforeTax, 2),
             'total_tax_amount' => round($totalTaxAmount, 2),
-            'total_amount' => round($totalBeforeTax + $totalTaxAmount, 2),
+            'extra_items_total' => round($extraItemsTotal, 2),
+            'total_amount' => round($totalBeforeTax + $totalTaxAmount + $extraItemsTotal, 2),
         ]);
     }
 
@@ -108,8 +113,8 @@ class PurchaseInvoiceService
             /** @var PurchaseInvoice $invoice */
             $invoice = PurchaseInvoice::query()->where('id', $invoice->id)->lockForUpdate()->firstOrFail();
             // todo: check if we need to lock the invoice items also to avoid concurrency issues like phantom reads or no consestant reads
-            if ($invoice->items()->count() === 0) {
-                throw new \RuntimeException(__('purchase_invoice.no_items'));
+            if ($invoice->items()->count() === 0 && $invoice->extraItems()->count() === 0) {
+                throw new \RuntimeException(__('purchase_invoice.no_items_or_extras'));
             }
 
             // Guard: re-check status inside the lock to prevent double-finalization
@@ -148,7 +153,7 @@ class PurchaseInvoiceService
             $invoice->update([
                 'status' => PurchaseInvoiceStatus::Finalized,
                 'finalized_at' => now(),
-                'finalized_by' => auth()->id(),
+                'finalized_by' => Auth::id(),
             ]);
         });
     }
@@ -191,10 +196,14 @@ class PurchaseInvoiceService
             $totalTaxAmount += $taxAmount;
         }
 
+        $extraItemsTotal = $return->calculateExtraItemsTotal();
+
         $return->update([
+            'subtotal' => round($totalBeforeTax, 2),
             'total_before_tax' => round($totalBeforeTax, 2),
             'total_tax_amount' => round($totalTaxAmount, 2),
-            'total_amount' => round($totalBeforeTax + $totalTaxAmount, 2),
+            'extra_items_total' => round($extraItemsTotal, 2),
+            'total_amount' => round($totalBeforeTax + $totalTaxAmount + $extraItemsTotal, 2),
         ]);
     }
 
@@ -224,8 +233,8 @@ class PurchaseInvoiceService
                 return; // Idempotent — no-op if already finalized
             }
 
-            if ($return->items()->count() === 0) {
-                throw new \RuntimeException(__('purchase_return.no_items'));
+            if ($return->items()->count() === 0 && $return->extraItems()->count() === 0) {
+                throw new \RuntimeException(__('purchase_return.no_items_or_extras'));
             }
 
             if ($return->original_invoice_id) {
@@ -266,7 +275,7 @@ class PurchaseInvoiceService
             $return->update([
                 'status' => PurchaseReturnStatus::Finalized,
                 'finalized_at' => now(),
-                'finalized_by' => $userId ?? auth()->id(),
+                'finalized_by' => $userId ?? Auth::id(),
             ]);
 
             if ($return->original_invoice_id) {
