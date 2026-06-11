@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PurchaseReturns\Schemas;
 
+use App\Enums\ExtraItemActionType;
+use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductVariant;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
@@ -256,7 +258,7 @@ class PurchaseReturnForm
                                         ->numeric()
                                         ->required()
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
-                                        ->rules(['min:0.001',])
+                                        ->rules(['min:0.001'])
                                         ->step(1)
                                         ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set, $state) {
@@ -284,11 +286,11 @@ class PurchaseReturnForm
                                         ->dehydrated()
                                         ->columnSpan(1),
 
-                                    TextInput::make('line_total')
-                                        ->label(__('purchase_return.line_total'))
+                                    TextInput::make('subtotal')
+                                        ->label(__('purchase_return.subtotal'))
                                         ->numeric()
                                         ->readOnly()
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.line_total_tooltip'))
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.subtotal_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->columnSpan(1),
 
@@ -307,21 +309,100 @@ class PurchaseReturnForm
                                 ->defaultItems(0),
                         ]),
 
+                    Section::make(__('app.extra_items'))
+                        ->compact()
+                        ->icon('heroicon-o-plus-circle')
+                        ->columnSpanFull()
+                        ->schema([
+                            Repeater::make('extraItems')
+                                ->compact()
+                                ->relationship('extraItems')
+                                ->addActionLabel(__('app.add_more'))
+                                ->hiddenLabel()
+                                ->defaultItems(0)
+                                ->itemLabel(fn (array $state) => $state['name'] ?? '')
+                                ->schema([
+                                    Select::make('invoice_extra_item_preset_id')
+                                        ->label(__('app.preset'))
+                                        ->helperText(__('purchase_invoice.preset_helper'))
+                                        ->dehydrated(false)
+                                        ->live()
+                                        ->searchable()
+                                        ->options((InvoiceExtraItemPreset::query()->forPurchaseReturn()->pluck('name', 'id')))
+                                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                            $preset = InvoiceExtraItemPreset::find((int) $state);
+                                            if ($preset) {
+                                                $set('name', $preset->name);
+                                                $set('action_type', $preset->action_type);
+                                                $set('amount', $preset->amount);
+                                            }
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        }),
+                                    TextInput::make('name')
+                                        ->label(__('app.name'))
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_name_tooltip'))
+                                        ->required(),
+                                    Select::make('action_type')
+                                        ->label(__('extra_item.action_type'))
+                                        ->options(ExtraItemActionType::class)
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_type_tooltip'))
+                                        ->required()
+                                        ->live()
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        }),
+                                    TextInput::make('amount')
+                                        ->label(__('app.amount'))
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_amount_tooltip'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->required()
+                                        ->live(debounce: 1000)
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        }),
+                                    Textarea::make('notes')
+                                        ->label(__('app.notes'))
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_notes_tooltip'))
+                                        ->rows(1)
+                                        ->maxLength(255),
+                                ])
+                                ->deleteAction(
+                                    fn (Action $action) => $action->after(fn (Get $get, Set $set) => static::calcTotalAmount($get, $set))
+                                )
+                                ->columns(5),
+                        ]),
+
                     Section::make(__('app.summary'))
                         ->compact()
                         ->icon('heroicon-o-calculator')
                         ->columnSpanFull()
                         ->schema([
+                            TextInput::make('subtotal')
+                                ->label(__('app.items_refund_total'))
+                                ->helperText(__('purchase_return.items_refund_helper'))
+                                ->disabled()
+                                ->dehydrated()
+                                ->minValue(0)
+                                ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                            TextInput::make('extra_items_total')
+                                ->label(__('app.extra_items_total'))
+                                ->helperText(__('purchase_invoice.extra_items_helper'))
+                                ->disabled()
+                                ->dehydrated()
+                                ->prefix($user->company->currency_symbol ?? 'ج.م'),
                             TextInput::make('total_amount')
                                 ->label(__('purchase_return.grand_total'))
                                 ->disabled()
                                 ->dehydrated()
+                                ->minValue(0)
                                 ->extraInputAttributes(['class' => 'text-xl font-bold'])
                                 ->prefix($user->company->currency_symbol ?? 'ج.م')
                                 ->afterStateHydrated(function (Get $get, Set $set) {
                                     static::calcTotalAmount($get, $set);
                                 })
-                                ->columnSpanFull(),
+                                ->columnSpan(1),
                         ])
                         ->columns(3),
                 ]),
@@ -335,9 +416,9 @@ class PurchaseReturnForm
     {
         $quantity = (float) ($get('quantity') ?? 0);
         $unitCost = (float) ($get('unit_cost') ?? 0);
-        $lineTotal = round($quantity * $unitCost, 2);
+        $subtotal = round($quantity * $unitCost, 2);
 
-        $set('line_total', $lineTotal);
+        $set('subtotal', $subtotal);
     }
 
     public static function getAllInvoiceItemsForReturn(PurchaseInvoice $invoice): array
@@ -359,7 +440,7 @@ class PurchaseReturnForm
                     'max_returnable' => $maxReturnable,
                     'quantity' => $maxReturnable,
                     'unit_cost' => (float) $originalItem->unit_cost,
-                    'line_total' => round($maxReturnable * (float) $originalItem->unit_cost, 2),
+                    'subtotal' => round($maxReturnable * (float) $originalItem->unit_cost, 2),
                     'notes' => null,
                 ];
             }
@@ -408,7 +489,7 @@ class PurchaseReturnForm
             'product_name' => $originalItem->variant->full_qualified_name,
             'quantity' => 1,
             'unit_cost' => (float) $originalItem->unit_cost,
-            'line_total' => round(1 * (float) $originalItem->unit_cost, 2),
+            'subtotal' => round((float) $originalItem->unit_cost, 2),
             'max_returnable' => $maxReturnable,
             'notes' => null,
         ];
@@ -422,8 +503,42 @@ class PurchaseReturnForm
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
-        $total = collect($items)->sum('line_total');
-        $set($prefix.'total_amount', round($total, 2));
+        $itemsRefundTotal = collect($items)->sum('subtotal');
+
+        $extraItemsTotal = self::calculateExtraItemsTotal($get, $prefix);
+
+        $totalRefundAmount = $itemsRefundTotal + $extraItemsTotal;
+
+        if ($totalRefundAmount < 0) {
+            Notification::make()
+                ->warning()
+                ->title(__('sale_invoice.negative_total_warning'))
+                ->body(__('sale_invoice.deductions_exceed_total_message'))
+                ->send();
+        }
+
+        $set($prefix.'subtotal', round($itemsRefundTotal, 2));
+        $set($prefix.'extra_items_total', round($extraItemsTotal, 2));
+        $set($prefix.'total_amount', round($totalRefundAmount, 2));
+    }
+
+    public static function calculateExtraItemsTotal(Get $get, string $prefix = ''): float
+    {
+        $extraItems = $get($prefix.'extraItems') ?? [];
+        $total = 0.0;
+
+        foreach ($extraItems as $extraItem) {
+            $amount = (float) ($extraItem['amount'] ?? 0);
+            $actionType = ExtraItemActionType::toString($extraItem['action_type'] ?? null);
+
+            if ($actionType === ExtraItemActionType::Addition->value) {
+                $total += $amount;
+            } elseif ($actionType === ExtraItemActionType::Subtraction->value) {
+                $total -= $amount;
+            }
+        }
+
+        return $total;
     }
 
     /**
