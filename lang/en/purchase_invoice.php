@@ -19,7 +19,7 @@ return [
     'items' => 'Line Items',
     'item' => 'Line Item',
     'item_added' => 'Item Added',
-    'extra_items_helper' => 'Total adjustments (additions minus subtractions).',
+    'extra_items_helper' => 'Total net value of any extra invoice items (e.g., shipping refunds, restocking fees). These items are completely independent and are NOT subjected to any global discount proration.',
     'preset_helper' => 'Selecting a preset will instantly populate the following fields.',
     'extra_name_tooltip' => 'The name or description of the extra item.',
     'extra_type_tooltip' => 'Choose whether this is an addition to the total or a subtraction.',

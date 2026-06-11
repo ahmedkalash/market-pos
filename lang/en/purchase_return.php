@@ -83,6 +83,7 @@ return [
     'subtotal_tooltip' => 'Calculated automatically. (quantity * unit cost).',
     'subtotal' => 'Subtotal',
     'items_refund_helper' => 'The total refund value for the returned main line items ONLY. This accounts for the original unit price minus any item-level discounts and its share of the prorated global invoice discount. It does NOT include any Extra Items adjustments.',
+    'total_refund_helper' => 'The final grand total to be refunded from the vendor. This is exactly the sum of (Items Refund Total) + (Extra Items Total).',
     'notes_tooltip' => 'Optional: Reason for return or item condition.',
     'grand_total' => 'Grand Total',
     'search_by_product' => 'Search by Product / Barcode',

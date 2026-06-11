@@ -257,7 +257,7 @@ class PurchaseReturnForm
                                         ->label(__('purchase_return.quantity'))
                                         ->numeric()
                                         ->required()
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
+                                        ->helperText( __('purchase_return.quantity_tooltip'))
                                         ->rules(['min:0.001'])
                                         ->step(1)
                                         ->live(debounce: 1000)
@@ -280,7 +280,7 @@ class PurchaseReturnForm
                                         ->label(__('purchase_return.unit_cost'))
                                         ->numeric()
                                         ->required()
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.unit_cost_tooltip'))
+                                        ->helperText(__('purchase_return.unit_cost_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->disabled()
                                         ->dehydrated()
@@ -289,8 +289,9 @@ class PurchaseReturnForm
                                     TextInput::make('subtotal')
                                         ->label(__('purchase_return.subtotal'))
                                         ->numeric()
-                                        ->readOnly()
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.subtotal_tooltip'))
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->helperText(__('purchase_return.subtotal_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->columnSpan(1),
 
@@ -298,7 +299,7 @@ class PurchaseReturnForm
                                         ->label(__('purchase_return.item_notes'))
                                         ->maxLength(255)
                                         ->rows(1)
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.notes_tooltip'))
+                                        ->helperText(__('purchase_return.notes_tooltip'))
                                         ->columnSpan(1),
 
                                 ])
@@ -340,12 +341,12 @@ class PurchaseReturnForm
                                         }),
                                     TextInput::make('name')
                                         ->label(__('app.name'))
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_name_tooltip'))
+                                        ->helperText(__('purchase_invoice.extra_name_tooltip'))
                                         ->required(),
                                     Select::make('action_type')
                                         ->label(__('extra_item.action_type'))
                                         ->options(ExtraItemActionType::class)
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_type_tooltip'))
+                                        ->helperText(__('purchase_invoice.extra_type_tooltip'))
                                         ->required()
                                         ->live()
                                         ->afterStateUpdated(function (Get $get, Set $set) {
@@ -353,7 +354,7 @@ class PurchaseReturnForm
                                         }),
                                     TextInput::make('amount')
                                         ->label(__('app.amount'))
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_amount_tooltip'))
+                                        ->helperText(__('purchase_invoice.extra_amount_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->numeric()
                                         ->minValue(0)
@@ -364,7 +365,7 @@ class PurchaseReturnForm
                                         }),
                                     Textarea::make('notes')
                                         ->label(__('app.notes'))
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.extra_notes_tooltip'))
+                                        ->helperText(__('purchase_invoice.extra_notes_tooltip'))
                                         ->rows(1)
                                         ->maxLength(255),
                                 ])
@@ -394,6 +395,7 @@ class PurchaseReturnForm
                                 ->prefix($user->company->currency_symbol ?? 'ج.م'),
                             TextInput::make('total_amount')
                                 ->label(__('purchase_return.grand_total'))
+                                ->helperText(__('purchase_return.total_refund_helper'))
                                 ->disabled()
                                 ->dehydrated()
                                 ->minValue(0)
