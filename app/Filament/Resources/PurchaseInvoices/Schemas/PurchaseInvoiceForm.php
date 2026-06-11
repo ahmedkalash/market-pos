@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Schemas;
 
+use App\Enums\ExtraItemActionType;
+use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -65,7 +67,7 @@ class PurchaseInvoiceForm
                                 ->rows(1),
                         ]),
 
-                    Section::make(__('purchase_invoice.items'))
+                    Section::make(__('app.main_invoice_items'))
                         ->compact()
                         ->icon('heroicon-o-shopping-cart')
                         ->columnSpanFull()
@@ -198,25 +200,25 @@ class PurchaseInvoiceForm
                                         ->numeric()
                                         ->required()
                                         ->default(1)
-                                        ->minValue(0.001)
-                                        ->step(0.001)
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.quantity_tooltip'))
+                                        ->step(1)
+                                        ->helperText(__('purchase_invoice.quantity_tooltip'))
                                         ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->live()
+                                        ->rules(['min:0.001'])
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
                                             self::calcTotalAmount($get, $set, '../../');
                                         })
                                         ->columnSpan(4),
-                                    //  (ex. Tax)
+
                                     TextInput::make('unit_cost')
                                         ->label(__('purchase_invoice.unit_cost'))
                                         ->numeric()
                                         ->required()
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->minValue(0)
-                                        ->step(0.01)
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.unit_cost_tooltip'))
+                                        ->step(1)
+                                        ->helperText(__('purchase_invoice.unit_cost_tooltip'))
                                         ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->live(debounce: '500ms')
                                         ->afterStateUpdated(function (Get $get, Set $set) {
@@ -224,13 +226,16 @@ class PurchaseInvoiceForm
                                             self::calcTotalAmount($get, $set, '../../');
                                         })
                                         ->columnSpan(4),
-                                    TextInput::make('line_total')
-                                        ->label(__('purchase_invoice.line_total'))
+
+                                    TextInput::make('subtotal')
+                                        ->label(__('purchase_invoice.subtotal'))
                                         ->numeric()
-                                        ->readOnly()
-                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.line_total_tooltip'))
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->helperText( __('purchase_invoice.subtotal_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->columnSpan(4),
+
                                     Textarea::make('notes')
                                         ->label(__('purchase_invoice.item_notes'))
                                         ->maxLength(255)
@@ -249,25 +254,101 @@ class PurchaseInvoiceForm
 
                         ]),
 
+                    Section::make(__('app.extra_items'))
+                        ->compact()
+                        ->icon('heroicon-o-plus-circle')
+                        ->columnSpanFull()
+                        ->schema([
+                            Repeater::make('extraItems')
+                                ->compact()
+                                ->relationship('extraItems')
+                                ->addActionLabel(__('app.add_more'))
+                                ->hiddenLabel()
+                                ->defaultItems(0)
+                                ->itemLabel(fn (array $state) => $state['name'] ?? '')
+                                ->schema([
+                                    Select::make('invoice_extra_item_preset_id')
+                                        ->label(__('app.preset'))
+                                        ->helperText(__('purchase_invoice.preset_helper'))
+                                        ->dehydrated(false)
+                                        ->live()
+                                        ->searchable()
+                                        ->options((InvoiceExtraItemPreset::query()->forPurchaseInvoice()->pluck('name', 'id')))
+                                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                            $preset = InvoiceExtraItemPreset::find((int) $state);
+                                            if ($preset) {
+                                                $set('name', $preset->name);
+                                                $set('action_type', $preset->action_type);
+                                                $set('amount', $preset->amount);
+                                            }
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        }),
+                                    TextInput::make('name')
+                                        ->label(__('app.name'))
+                                        ->helperText(__('purchase_invoice.extra_name_tooltip'))
+                                        ->required(),
+                                    Select::make('action_type')
+                                        ->label(__('extra_item.action_type'))
+                                        ->options(ExtraItemActionType::class)
+                                        ->helperText(__('purchase_invoice.extra_type_tooltip'))
+                                        ->required()
+                                        ->live()
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        }),
+                                    TextInput::make('amount')
+                                        ->label(__('app.amount'))
+                                        ->helperText(__('purchase_invoice.extra_amount_tooltip'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->required()
+                                        ->live(debounce: 1000)
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        }),
+                                    Textarea::make('notes')
+                                        ->label(__('app.notes'))
+                                        ->helperText(__('purchase_invoice.extra_notes_tooltip'))
+                                        ->rows(1)
+                                        ->maxLength(255),
+                                ])
+                                ->deleteAction(
+                                    fn (Action $action) => $action->after(fn (Get $get, Set $set) => static::calcTotalAmount($get, $set))
+                                )
+                                ->columns(5),
+                        ]),
+
                     Section::make(__('app.summary'))
                         ->compact()
                         ->columnSpanFull()
                         ->icon('heroicon-o-calculator')
                         ->schema([
-                            Grid::make(1)
+                            Grid::make(3)
                                 ->columnSpanFull()
                                 ->schema([
+                                    TextInput::make('items_subtotal')
+                                        ->label(__('purchase_invoice.items_subtotal'))
+                                        ->helperText(__('purchase_invoice.subtotal_amount_helper'))
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                                    TextInput::make('extra_items_total')
+                                        ->label(__('app.extra_items_total'))
+                                        ->helperText(__('purchase_invoice.extra_items_helper'))
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
                                     TextInput::make('total_amount')
-                                        ->columnSpanFull()
                                         ->label(__('purchase_invoice.total_amount'))
+                                        ->helperText(__('purchase_invoice.total_amount_helper'))
                                         ->disabled()
                                         ->dehydrated(false)
                                         ->extraInputAttributes(['class' => 'text-xl font-bold'])
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->afterStateHydrated(function (Get $get, Set $set) {
                                             static::calcTotalAmount($get, $set);
-                                        })
-                                        ->columnSpanFull(),
+                                        }),
                                 ]),
                         ]),
                 ]),
@@ -287,18 +368,52 @@ class PurchaseInvoiceForm
         $subtotal = round($quantity * $unitCost, 2);
         //        $taxAmount = round($subtotal * $taxRate / 100, 2); // TAX FEATURE POSTPONED
         $taxAmount = 0.0; // TAX FEATURE POSTPONED
-        $lineTotal = round($subtotal + $taxAmount, 2);
+        // $lineTotal = round($subtotal + $taxAmount, 2);
 
-        //        $set('subtotal', $subtotal);
+        $set('subtotal', $subtotal);
         //        $set('tax_amount', $taxAmount); // TAX FEATURE POSTPONED
-        $set('line_total', $lineTotal);
+        // $set('line_total', $lineTotal);
     }
 
     private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
-        $total = collect($items)->sum('line_total');
-        $set($prefix.'total_amount', round($total, 2));
+        $itemsSubtotal = collect($items)->sum('subtotal');
+
+        $extraItemsTotal = self::calculateExtraItemsTotal($get, $prefix);
+
+        $totalAmount = $itemsSubtotal + $extraItemsTotal;
+
+        if ($totalAmount < 0) {
+            Notification::make()
+                ->warning()
+                ->title(__('sale_invoice.negative_total_warning'))
+                ->body(__('sale_invoice.deductions_exceed_total_message'))
+                ->send();
+        }
+
+        $set($prefix.'items_subtotal', round($itemsSubtotal, 2));
+        $set($prefix.'extra_items_total', round($extraItemsTotal, 2));
+        $set($prefix.'total_amount', round($totalAmount, 2));
+    }
+
+    public static function calculateExtraItemsTotal(Get $get, string $prefix = ''): float
+    {
+        $extraItems = $get($prefix.'extraItems') ?? [];
+        $total = 0.0;
+
+        foreach ($extraItems as $extraItem) {
+            $amount = (float) ($extraItem['amount'] ?? 0);
+            $actionType = ExtraItemActionType::toString($extraItem['action_type'] ?? null);
+
+            if ($actionType === ExtraItemActionType::Addition->value) {
+                $total += $amount;
+            } elseif ($actionType === ExtraItemActionType::Subtraction->value) {
+                $total -= $amount;
+            }
+        }
+
+        return $total;
     }
 
     /**
@@ -345,7 +460,7 @@ class PurchaseInvoiceForm
             'product_name' => $fullName,
             'quantity' => 1,
             'unit_cost' => $unitCost,
-            'line_total' => round($unitCost, 2),
+            'subtotal' => round($unitCost, 2),
             'notes' => null,
         ];
 
