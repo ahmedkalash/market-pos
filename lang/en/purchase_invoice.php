@@ -58,6 +58,8 @@ return [
     'finalize' => 'Finalize',
     'finalize_confirmation' => 'Are you sure? Once finalized, stock will be updated and this cannot be undone.',
     'finalized_success' => 'Invoice finalized successfully.',
+    'negative_total_warning' => 'Negative Total Warning',
+    'deductions_exceed_total_message' => 'Some deductions make the invoice total negative.',
 
     // Return management actions
     'return_items' => 'Return Items',

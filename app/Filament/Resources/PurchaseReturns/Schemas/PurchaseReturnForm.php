@@ -187,7 +187,7 @@ class PurchaseReturnForm
                                         $barcodes = $item->variant->getAllBarcodesAsString();
                                         $barcodeText = $barcodes ? badge($barcodes) : '';
                                         $max = $item->getRemainingReturnableQuantity();
-                                        $maxLabel = badge(__('sale_return.max_suffix').$max);
+                                        $maxLabel = badge(__('purchase_return.max_suffix').$max);
 
                                         return [$item->id => "<div class='flex flex-wrap items-center gap-2' dir='auto'>$fullName $barcodeText $maxLabel</div>"];
                                     })->toArray();
@@ -246,7 +246,7 @@ class PurchaseReturnForm
 
                                     })->implode(' ');
 
-                                    return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>{$badgesHtml}</div>");
+                                    return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('purchase_return.barcode').":</span>{$badgesHtml}</div>");
                                 })
                                 ->schema([
                                     Hidden::make('original_item_id')->required(),
@@ -257,7 +257,7 @@ class PurchaseReturnForm
                                         ->label(__('purchase_return.quantity'))
                                         ->numeric()
                                         ->required()
-                                        ->helperText( __('purchase_return.quantity_tooltip'))
+                                        ->helperText(__('purchase_return.quantity_tooltip'))
                                         ->rules(['min:0.001'])
                                         ->step(1)
                                         ->live(debounce: 1000)
@@ -329,7 +329,7 @@ class PurchaseReturnForm
                                         ->dehydrated(false)
                                         ->live()
                                         ->searchable()
-                                        ->options((InvoiceExtraItemPreset::query()->forPurchaseReturn()->pluck('name', 'id')))
+                                        ->options((InvoiceExtraItemPreset::query()->forPurchaseReturn()->active()->pluck('name', 'id')))
                                         ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                             $preset = InvoiceExtraItemPreset::find((int) $state);
                                             if ($preset) {
@@ -514,8 +514,8 @@ class PurchaseReturnForm
         if ($totalRefundAmount < 0) {
             Notification::make()
                 ->warning()
-                ->title(__('sale_invoice.negative_total_warning'))
-                ->body(__('sale_invoice.deductions_exceed_total_message'))
+                ->title(__('purchase_return.negative_total_warning'))
+                ->body(__('purchase_return.deductions_exceed_total_message'))
                 ->send();
         }
 

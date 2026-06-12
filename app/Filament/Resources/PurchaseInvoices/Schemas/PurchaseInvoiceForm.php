@@ -188,7 +188,7 @@ class PurchaseInvoiceForm
                                         return badge($barcode);
                                     })->implode(' ');
 
-                                    return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('sale_return.barcode').":</span>$badgesHtml</div>");
+                                    return new HtmlString("<div class='flex items-center'>$productHtml<span class='text-sm text-gray-500' style='margin-inline-end: 0.5rem;'>".__('purchase_invoice.barcode').":</span>$badgesHtml</div>");
                                 })
                                 ->hiddenLabel()
                                 ->compact()
@@ -232,7 +232,7 @@ class PurchaseInvoiceForm
                                         ->numeric()
                                         ->disabled()
                                         ->dehydrated()
-                                        ->helperText( __('purchase_invoice.subtotal_tooltip'))
+                                        ->helperText(__('purchase_invoice.subtotal_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->columnSpan(4),
 
@@ -273,7 +273,7 @@ class PurchaseInvoiceForm
                                         ->dehydrated(false)
                                         ->live()
                                         ->searchable()
-                                        ->options((InvoiceExtraItemPreset::query()->forPurchaseInvoice()->pluck('name', 'id')))
+                                        ->options((InvoiceExtraItemPreset::query()->forPurchaseInvoice()->active()->pluck('name', 'id')))
                                         ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                             $preset = InvoiceExtraItemPreset::find((int) $state);
                                             if ($preset) {
@@ -389,8 +389,8 @@ class PurchaseInvoiceForm
         if ($totalAmount < 0) {
             Notification::make()
                 ->warning()
-                ->title(__('sale_invoice.negative_total_warning'))
-                ->body(__('sale_invoice.deductions_exceed_total_message'))
+                ->title(__('purchase_invoice.negative_total_warning'))
+                ->body(__('purchase_invoice.deductions_exceed_total_message'))
                 ->send();
         }
 

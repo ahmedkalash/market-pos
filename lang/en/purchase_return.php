@@ -67,6 +67,8 @@ return [
     'save_as_draft' => 'Save as Draft',
     'no_items_or_extras' => 'Please add at least one item or extra item before finalizing.',
     'exceeds_returnable_quantity' => 'Cannot return more than the remaining returnable quantity (:max units).',
+    'negative_total_warning' => 'Negative Total Warning',
+    'deductions_exceed_total_message' => 'Some deductions make the invoice total negative.',
 
     // Return status (on invoice)
     'return_status_none' => 'Not Returned',

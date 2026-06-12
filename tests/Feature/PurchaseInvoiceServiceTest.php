@@ -152,7 +152,7 @@ class PurchaseInvoiceServiceTest extends TestCase
         $this->assertEquals(10, $invoice->total_before_tax);
         $this->assertEquals(0, $invoice->total_tax_amount);
         $this->assertEquals(-100, $invoice->extra_items_total);
-        // Ensure total amount doesn't go below 0
-        $this->assertEquals(0, $invoice->total_amount);
+        // Negative total is intentionally preserved so the user can see the issue
+        $this->assertEquals(-90, $invoice->total_amount);
     }
 }

@@ -66,6 +66,8 @@ return [
 
     'no_items_or_extras' => 'يرجى إضافة بند واحد أو تسوية إضافية على الأقل قبل الاعتماد.',
     'exceeds_returnable_quantity' => 'لا يمكن إرجاع كمية أكبر من الكمية المتاحة للإرجاع (:max وحدة).',
+    'negative_total_warning' => 'تحذير إجمالي بالسالب',
+    'deductions_exceed_total_message' => 'توجد خصومات تجعل إجمالي الفاتورة بالسالب.',
 
     // Return status (on invoice)
     'return_status_none' => 'لا يوجد إرجاع',

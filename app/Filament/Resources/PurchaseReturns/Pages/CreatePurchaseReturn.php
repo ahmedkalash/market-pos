@@ -71,15 +71,19 @@ class CreatePurchaseReturn extends CreateRecord
                 $this->data['items'],
                 fn ($item) => (float) ($item['quantity'] ?? 0) > 0
             );
+        }
 
-            if (empty($this->data['items'])) {
-                Notification::make()
-                    ->title(__('purchase_return.no_items_to_return'))
-                    ->danger()
-                    ->send();
+        $hasItems = ! empty($this->data['items']);
+        $hasExtraItems = ! empty($this->data['extraItems']);
 
-                $this->halt();
-            }
+        // Allow extra-items-only returns (e.g. restocking fee with no physical product return)
+        if (! $hasItems && ! $hasExtraItems) {
+            Notification::make()
+                ->title(__('purchase_return.no_items_or_extras'))
+                ->danger()
+                ->send();
+
+            $this->halt();
         }
     }
 

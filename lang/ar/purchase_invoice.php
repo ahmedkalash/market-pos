@@ -58,6 +58,8 @@ return [
     'finalize' => 'اعتماد',
     'finalize_confirmation' => 'هل أنت متأكد؟ بمجرد الاعتماد، سيتم تحديث المخزون ولا يمكن التراجع عن ذلك.',
     'finalized_success' => 'تم اعتماد الفاتورة بنجاح.',
+    'negative_total_warning' => 'تحذير إجمالي بالسالب',
+    'deductions_exceed_total_message' => 'توجد خصومات تجعل إجمالي الفاتورة بالسالب.',
 
     // Return management actions
     'return_items' => 'إرجاع بنود',
