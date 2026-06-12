@@ -67,6 +67,33 @@ class CreatePurchaseInvoice extends CreateRecord
     /**
      * @throws Halt
      */
+    protected function afterValidate(): void
+    {
+        // Filter out repeater rows with 0 quantity
+        if (isset($this->data['items']) && is_array($this->data['items'])) {
+            $this->data['items'] = array_filter(
+                $this->data['items'],
+                fn ($item) => (float) ($item['quantity'] ?? 0) > 0
+            );
+        }
+
+        $hasItems = ! empty($this->data['items']);
+        $hasExtraItems = ! empty($this->data['extraItems']);
+
+        // Allow extra-items-only invoices (e.g. fee invoice)
+        if (! $hasItems && ! $hasExtraItems) {
+            Notification::make()
+                ->title(__('purchase_invoice.no_items_or_extras'))
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+    }
+
+    /**
+     * @throws Halt
+     */
     protected function afterCreate(): void
     {
         /** @var PurchaseInvoice $invoice */
