@@ -108,7 +108,7 @@ return [
     'barcode_scanner_helper' => 'Scan a product barcode to quickly add it to the return list.',
     'quantity_tooltip' => 'Cannot exceed the remaining returnable quantity.',
     'unit_cost_tooltip' => 'The original unit cost from the invoice.',
-    'line_total_tooltip' => 'Calculated automatically based on quantity.',
+    'line_total_tooltip' => 'Total refund amount for this line item (Effective Unit Refund × Quantity).',
     'subtotal_tooltip' => 'Calculated automatically. (quantity * unit cost).',
     'items_refund_helper' => 'The total refund value for the returned main line items ONLY. This accounts for the original unit price minus any item-level discounts and its share of the prorated global invoice discount. It does NOT include any Extra Items adjustments.',
     'total_refund_helper' => 'The final grand total to be refunded from the vendor. This is exactly the sum of (Items Refund Total) + (Extra Items Total).',
@@ -117,4 +117,7 @@ return [
     'search_by_product' => 'Search by Product / Barcode',
     'search_by_product_placeholder' => 'Search by product name or barcode...',
     'search_by_product_helper' => 'You can search by typing the product name or scanning the barcode here.',
+    'pricing_breakdown' => 'Refund per unit calculation: :price (Base Price) - :unit_disc (Item Discount) - :global_disc (Prorated Global Discount) = :net Net. Note: Global discount was prorated across main items only.',
+    'effective_unit_refund' => 'Effective Unit Refund',
+    'item_refund_total' => 'Item Refund Total',
 ];

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DiscountType;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -43,22 +44,30 @@ class PurchaseInvoiceItem extends Model
         ];
     }
 
-    public function monetaryUnitDiscountAmount(): float
+    protected function monetaryUnitDiscountAmount(): Attribute
     {
-        if (! $this->discount_type) {
-            return 0;
-        }
+        return Attribute::make(
+            get: function (): float {
+                if (! $this->discount_type || $this->unit_discount_amount <= 0) {
+                    return 0.0;
+                }
 
-        if ($this->discount_type === DiscountType::Percentage) {
-            return (float) $this->unit_cost * ((float) $this->unit_discount_amount / 100);
-        }
+                if ($this->discount_type === DiscountType::Fixed) {
+                    return round((float) $this->unit_discount_amount, 2);
+                }
 
-        return (float) $this->unit_discount_amount;
+                if ($this->discount_type === DiscountType::Percentage) {
+                    return round((float) $this->unit_cost * ((float) $this->unit_discount_amount / 100.0), 2);
+                }
+
+                return 0.0;
+            }
+        );
     }
 
     public function lineTotalDiscount(): float
     {
-        return $this->monetaryUnitDiscountAmount() * (float) $this->quantity;
+        return $this->monetary_unit_discount_amount * (float) $this->quantity;
     }
 
     public function getSubtotalBeforeItemDiscountAttribute(): float

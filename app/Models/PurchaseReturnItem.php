@@ -41,15 +41,6 @@ class PurchaseReturnItem extends Model
         ];
     }
 
-    public function monetaryUnitDiscountAmount(): float
-    {
-        if ($this->discount_type === 'percentage') {
-            return ($this->unit_discount_amount / 100) * $this->unit_cost;
-        }
-
-        return (float) $this->unit_discount_amount;
-    }
-
     public function subtotalBeforeItemDiscount(): float
     {
         return $this->quantity * $this->unit_cost;

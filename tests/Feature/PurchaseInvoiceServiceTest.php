@@ -491,21 +491,21 @@ class PurchaseInvoiceServiceTest extends TestCase
             'discount_type' => DiscountType::Fixed,
             'unit_discount_amount' => 15,
         ]);
-        $this->assertEquals(15, $item->monetaryUnitDiscountAmount());
+        $this->assertEquals(15, $item->monetary_unit_discount_amount);
 
         $item2 = new PurchaseInvoiceItem([
             'unit_cost' => 200,
             'discount_type' => DiscountType::Percentage,
             'unit_discount_amount' => 15, // 15%
         ]);
-        $this->assertEquals(30, $item2->monetaryUnitDiscountAmount());
+        $this->assertEquals(30, $item2->monetary_unit_discount_amount);
 
         $item3 = new PurchaseInvoiceItem([
             'unit_cost' => 200,
             'discount_type' => null,
             'unit_discount_amount' => 15,
         ]);
-        $this->assertEquals(0, $item3->monetaryUnitDiscountAmount());
+        $this->assertEquals(0, $item3->monetary_unit_discount_amount);
     }
 
     public function test_line_total_discount_helper(): void

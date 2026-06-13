@@ -145,6 +145,7 @@ return [
             'update_purchase_return',
             'delete_purchase_return',
             'finalize_purchase_return',  // lock return & reverse stock (senior staff only)
+            'override_purchase_return_unit_cost',
         ],
         'Sale Invoices' => [
             'view_any_sale_invoice',

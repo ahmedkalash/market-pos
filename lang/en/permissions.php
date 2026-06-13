@@ -96,6 +96,7 @@ return [
     'update_purchase_return' => 'Update Purchase Return',
     'delete_purchase_return' => 'Delete Purchase Return',
     'finalize_purchase_return' => 'Finalize Purchase Return',
+    'override_purchase_return_unit_cost' => 'Override Purchase Return Unit Cost',
 
     'view_any_sale_invoice' => 'View All Sale Invoices',
     'view_sale_invoice' => 'View Sale Invoice',

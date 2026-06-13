@@ -63,8 +63,6 @@ class SaleReturnInvoiceForm
                     ])
                     ->columnSpanFull()
                     ->schema([
-                        // todo use field set and disable all form on wire load event to prevent overwriting
-                        //  the form data in the browser by the one coming back from the server
                         Section::make(__('app.sale_return'))
                             ->compact()
                             ->columnSpanFull()
@@ -341,6 +339,7 @@ class SaleReturnInvoiceForm
                                                 ]);
                                             })
                                             ->numeric()
+                                            ->required()
                                             ->disabled(fn () => ! $user?->can('override_sale_return_refund_amount'))
                                             ->dehydrated()
                                             ->live(debounce: 1000)
@@ -631,7 +630,6 @@ class SaleReturnInvoiceForm
             if ($maxReturnable > 0) {
                 $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
                 $key = 'item_'.$originalItem->id;
-                // todo review this calculateRefundBreakdown fun
                 $refundBreakdown = SaleInvoiceService::make()->calculateRefundBreakdown($originalItem);
 
                 $items[$key] = [

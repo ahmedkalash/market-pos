@@ -96,6 +96,7 @@ return [
     'update_purchase_return' => 'تعديل مرتجع شراء',
     'delete_purchase_return' => 'حذف مرتجع شراء',
     'finalize_purchase_return' => 'اعتماد مرتجع الشراء',
+    'override_purchase_return_unit_cost' => 'تعديل تكلفة الوحدة المرتجعة يدويا',
 
     'view_any_sale_invoice' => 'عرض كل فواتير البيع',
     'view_sale_invoice' => 'عرض فاتورة البيع',
