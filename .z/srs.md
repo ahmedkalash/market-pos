@@ -501,17 +501,13 @@ settings
 - [x] Draft & Finalized states
 - [x] Validate stock availability before finalizing
 - [x] Deduct inventory upon invoice finalization
-- [ ] Sale Return Invoices CRUD
-- [ ] Link returns to original sale invoice
-- [ ] Restock inventory upon sale return
+- [x] Sale Return Invoices CRUD
+- [x] Link returns to original sale invoice
+- [x] Restock inventory upon sale return
 - [ ] Invoice printing and PDF export
 
 ### Phase 4.2 — Advanced Procurement (V2 / Later)
-- [ ] Formal Purchase Order workflow: `Draft → Sent → Approved → Received`
-- [ ] Receive goods against an open PO (partial or full)
 - [ ] Discrepancy flagging: ordered qty vs. received qty variance report
-- [ ] **Inline product/variant creation during Purchase Invoice:** Allow clerks to create a new Product or Variant directly inside the invoice line-item repeater without leaving the page. Currently, clerks must first create the product in the Products module (with qty=0) and then return to the invoice. See `implementation_plan_direct_receiving.md` — the `finalize()` service is already architected to support this with zero changes to the service layer.
-- [ ] Approval layers: Manager authorization for POs exceeding a configurable amount
 - [ ] PDF export of Purchase Invoice
 - [ ] Vendor performance reporting (delivery accuracy, price consistency)
 
@@ -615,11 +611,9 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
         the form data in the browser by the one coming back from the server in all invoices forms
 - [ ] -  static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
 - [ ] -  static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
-- [ ] - for item lable of a repeater consder displaying product name and barcodes via the badge() fnuction in all anvoices
+- [ ] - for item label of a repeater consider displaying product name and barcodes via the badge() function in all invoices
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
-- [ ] - Apply the `extraItems` feature (Additions & Subtractions) currently implemented in `SaleReturnInvoiceForm` to all other invoice forms (`SaleInvoiceForm`, `PurchaseInvoiceForm`, `PurchaseReturnInvoiceForm`). This involves adding the `Repeater` for `extraItems`, integrating it with the totals calculation, and ensuring the corresponding database relationships and tables exist.
 - [ ] - some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
-- [ ] - Add custom permission 'override_purchase_return_unit_cost' to Company permissions. Allow users with this permission to edit this field and handle side effects.
 
 
 ### Performance & Database Optimization
