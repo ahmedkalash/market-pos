@@ -41,8 +41,6 @@ class PurchaseInvoiceForm
                 ])
                 ->columnSpanFull()
                 ->schema([
-
-
                     Section::make(__('purchase_invoice.purchase_invoice'))
                         ->compact()
                         ->icon('heroicon-o-document-arrow-down')
@@ -71,6 +69,23 @@ class PurchaseInvoiceForm
                         ]),
 
                     Section::make(__('app.main_invoice_items'))
+                        ->footer(function (Get $get) use ($user) {
+                            $items = $get('items') ?? [];
+                            if (empty($items)) {
+                                return null;
+                            }
+
+                            $itemsSubtotalsSum = number_format($get('subtotal'), 2);
+                            $itemsLinesTotalsSum = number_format($get('items_lines_totals'), 2);
+                            $currency = $user->company->currency_symbol ?? 'ج.م';
+
+                            return new HtmlString(
+                                "<div style='display: flex; gap: 1.5rem; margin-top: 0.5rem;'>".
+                                badge(__('purchase_invoice.items_section_subtotal').' : '.$itemsSubtotalsSum.' '.$currency).
+                                badge(__('purchase_invoice.items_section_line_total').' : '.$itemsLinesTotalsSum.' '.$currency).
+                                '</div>'
+                            );
+                        })
                         ->compact()
                         ->icon('heroicon-o-shopping-cart')
                         ->columnSpanFull()

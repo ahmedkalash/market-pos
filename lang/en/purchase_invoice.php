@@ -133,4 +133,6 @@ return [
     'search_by_name' => 'Search by Name',
     'search_by_name_placeholder' => 'Search by product name...',
     'search_by_name_helper' => 'Only the first :max results are displayed. Type more letters for closer results.',
+    'items_section_subtotal' => 'Items Subtotal(Before Discount)',
+    'items_section_line_total' => 'Items Total (After Discount)',
 ];
