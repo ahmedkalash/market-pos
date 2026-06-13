@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\User;
+use App\Services\PurchaseInvoiceService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
@@ -252,12 +253,17 @@ class PurchaseReturnForm
                                     Hidden::make('original_item_id')->required(),
                                     Hidden::make('product_variant_id')->required(),
                                     Hidden::make('max_returnable')->dehydrated(false),
+                                    Hidden::make('unit_cost')->required(),
+                                    Hidden::make('unit_discount_amount')->default(0),
+                                    Hidden::make('unit_prorated_global_discount')->default(0),
 
                                     TextInput::make('quantity')
                                         ->label(__('purchase_return.quantity'))
                                         ->numeric()
                                         ->required()
-                                        ->helperText(__('purchase_return.quantity_tooltip'))
+                                        ->helperText(__('sale_return.qty_tooltip'))
+                                        ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
+                                        ->hint(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
                                         ->rules(['min:0.001'])
                                         ->step(1)
                                         ->live(debounce: 1000)
@@ -271,39 +277,48 @@ class PurchaseReturnForm
 
                                             static::calcTotalAmount($get, $set, '../../');
                                         })
-                                        ->suffix(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
-                                        ->columnSpan(1),
+                                        ->columnSpan(2),
 
-                                    // TODO: Add custom permission 'override_purchase_return_unit_cost' to Company permissions.
-                                    //       Allow users with this permission to edit this field and handle side effects.
-                                    TextInput::make('unit_cost')
-                                        ->label(__('purchase_return.unit_cost'))
+                                    TextInput::make('effective_unit_refund')
+                                        ->label(__('purchase_return.effective_unit_refund'))
                                         ->numeric()
-                                        ->required()
-                                        ->helperText(__('purchase_return.unit_cost_tooltip'))
-                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                        ->disabled()
+                                        ->disabled(fn () => ! $user?->can('override_purchase_return_unit_cost'))
                                         ->dehydrated()
-                                        ->columnSpan(1),
+                                        ->required()
+                                        ->live(debounce: 1000)
+                                        ->afterStateUpdated(function (Get $get, Set $set) {
+                                            self::recalculateLine($get, $set);
+                                            static::calcTotalAmount($get, $set, '../../');
+                                        })
+                                        ->helperText(function (Get $get) {
+                                            return __('purchase_return.pricing_breakdown', [
+                                                'price' => number_format($unit_cost = (float) $get('unit_cost'), 2),
+                                                'unit_disc' => number_format($unit_discount_amount = (float) $get('unit_discount_amount'), 2),
+                                                'global_disc' => number_format($unit_prorated_global_discount = (float) $get('unit_prorated_global_discount'), 2),
+                                                'net' => number_format($unit_cost - $unit_discount_amount - $unit_prorated_global_discount, 2),
+                                            ]);
+                                        })
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->columnSpan(5),
 
                                     TextInput::make('subtotal')
-                                        ->label(__('purchase_return.subtotal'))
+                                        ->label(__('purchase_return.item_refund_total'))
                                         ->numeric()
                                         ->disabled()
                                         ->dehydrated()
-                                        ->helperText(__('purchase_return.subtotal_tooltip'))
+                                        ->helperText(__('purchase_return.line_total_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                        ->columnSpan(1),
+                                        ->columnSpan(3),
 
                                     Textarea::make('notes')
                                         ->label(__('purchase_return.item_notes'))
                                         ->maxLength(255)
                                         ->rows(1)
                                         ->helperText(__('purchase_return.notes_tooltip'))
-                                        ->columnSpan(1),
+                                        ->columnSpan(2),
 
                                 ])
-                                ->columns(4)
+                                ->columns(12)
                                 ->addable(false)
                                 ->reorderable(false)
                                 ->cloneable(false)
@@ -331,7 +346,7 @@ class PurchaseReturnForm
                                         ->searchable()
                                         ->options((InvoiceExtraItemPreset::query()->forPurchaseReturn()->active()->pluck('name', 'id')))
                                         ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                            $preset = InvoiceExtraItemPreset::find((int) $state);
+                                            $preset = InvoiceExtraItemPreset::query()->find((int) $state);
                                             if ($preset) {
                                                 $set('name', $preset->name);
                                                 $set('action_type', $preset->action_type);
@@ -417,8 +432,8 @@ class PurchaseReturnForm
     private static function recalculateLine(Get $get, Set $set): void
     {
         $quantity = (float) ($get('quantity') ?? 0);
-        $unitCost = (float) ($get('unit_cost') ?? 0);
-        $subtotal = round($quantity * $unitCost, 2);
+        $effectiveUnitRefund = (float) ($get('effective_unit_refund') ?? 0);
+        $subtotal = round($quantity * $effectiveUnitRefund, 2);
 
         $set('subtotal', $subtotal);
     }
@@ -433,6 +448,7 @@ class PurchaseReturnForm
             if ($maxReturnable > 0) {
                 $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
                 $key = 'item_'.$originalItem->id;
+                $refundBreakdown = PurchaseInvoiceService::make()->calculateRefundBreakdown($originalItem);
 
                 $items[$key] = [
                     'original_item_id' => $originalItem->id,
@@ -442,7 +458,10 @@ class PurchaseReturnForm
                     'max_returnable' => $maxReturnable,
                     'quantity' => $maxReturnable,
                     'unit_cost' => (float) $originalItem->unit_cost,
-                    'subtotal' => round($maxReturnable * (float) $originalItem->unit_cost, 2),
+                    'unit_discount_amount' => (float) $originalItem->monetary_unit_discount_amount,
+                    'unit_prorated_global_discount' => (float) $refundBreakdown['unit_prorated_global_discount'],
+                    'effective_unit_refund' => (float) $refundBreakdown['effective_unit_refund'],
+                    'subtotal' => round($maxReturnable * (float) $refundBreakdown['effective_unit_refund'], 2),
                     'notes' => null,
                 ];
             }
@@ -483,6 +502,7 @@ class PurchaseReturnForm
         }
 
         $barcodes = $originalItem->variant->barcodes->pluck('barcode')->toArray();
+        $refundBreakdown = PurchaseInvoiceService::make()->calculateRefundBreakdown($originalItem);
 
         $items[$key] = [
             'original_item_id' => $originalItem->id,
@@ -491,7 +511,10 @@ class PurchaseReturnForm
             'product_name' => $originalItem->variant->full_qualified_name,
             'quantity' => 1,
             'unit_cost' => (float) $originalItem->unit_cost,
-            'subtotal' => round((float) $originalItem->unit_cost, 2),
+            'unit_discount_amount' => (float) $originalItem->monetary_unit_discount_amount,
+            'unit_prorated_global_discount' => (float) $refundBreakdown['unit_prorated_global_discount'],
+            'effective_unit_refund' => (float) $refundBreakdown['effective_unit_refund'],
+            'subtotal' => round((float) $refundBreakdown['effective_unit_refund'], 2),
             'max_returnable' => $maxReturnable,
             'notes' => null,
         ];
