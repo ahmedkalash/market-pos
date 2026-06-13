@@ -14,6 +14,9 @@ class PurchaseReturnItem extends Model
         'original_item_id',
         'quantity',
         'unit_cost',
+        'unit_discount_amount',
+        'unit_prorated_global_discount',
+        'effective_unit_refund',
         'subtotal',
         'tax_rate',
         'tax_amount',
@@ -29,11 +32,32 @@ class PurchaseReturnItem extends Model
         return [
             'quantity' => 'decimal:3',
             'unit_cost' => 'decimal:4',
+            'unit_discount_amount' => 'decimal:4',
+            'line_total_discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
         ];
+    }
+
+    public function monetaryUnitDiscountAmount(): float
+    {
+        if ($this->discount_type === 'percentage') {
+            return ($this->unit_discount_amount / 100) * $this->unit_cost;
+        }
+
+        return (float) $this->unit_discount_amount;
+    }
+
+    public function subtotalBeforeItemDiscount(): float
+    {
+        return $this->quantity * $this->unit_cost;
+    }
+
+    public function subtotalAfterItemDiscount(): float
+    {
+        return $this->subtotalBeforeItemDiscount() - $this->line_total_discount;
     }
 
     /**

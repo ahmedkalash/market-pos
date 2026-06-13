@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use App\Enums\InvoiceReturnStatus;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Models\Concerns\BelongsToCompany;
@@ -23,6 +24,10 @@ class PurchaseInvoice extends Model
         'vendor_id',
         'invoice_number',
         'vendor_invoice_ref',
+        'discount_type',
+        'discount_amount',
+        'global_discount_amount',
+        'grand_total_discount',
         'subtotal',
         'total_before_tax',
         'total_tax_amount',
@@ -45,6 +50,10 @@ class PurchaseInvoice extends Model
         return [
             'status' => PurchaseInvoiceStatus::class,
             'return_status' => InvoiceReturnStatus::class,
+            'discount_type' => DiscountType::class,
+            'discount_amount' => 'decimal:4',
+            'global_discount_amount' => 'decimal:2',
+            'grand_total_discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
@@ -131,7 +140,17 @@ class PurchaseInvoice extends Model
     public function calculateExtraItemsTotal(): float
     {
         $this->loadMissing(['extraItems']);
+
         return (float) $this->extraItems->sum('signed_amount');
+    }
+
+    public function subtotalsAfterItemDiscountSum(): float
+    {
+        $this->loadMissing(['items']);
+
+        return (float) $this->items->sum(function (PurchaseInvoiceItem $item) {
+            return $item->subtotalAfterItemDiscount();
+        });
     }
 
     #[Scope]

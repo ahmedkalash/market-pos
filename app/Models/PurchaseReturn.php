@@ -25,6 +25,10 @@ class PurchaseReturn extends Model
         'vendor_credit_ref',
         'return_reason',
         'status',
+        'discount_type',
+        'discount_amount',
+        'global_discount_amount',
+        'grand_total_discount',
         'subtotal',
         'total_before_tax',
         'total_tax_amount',
@@ -46,12 +50,20 @@ class PurchaseReturn extends Model
             'status' => PurchaseReturnStatus::class,
             'returned_at' => 'date',
             'finalized_at' => 'datetime',
+            'discount_amount' => 'decimal:2',
+            'global_discount_amount' => 'decimal:2',
+            'grand_total_discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'total_before_tax' => 'decimal:2',
             'total_tax_amount' => 'decimal:2',
             'extra_items_total' => 'decimal:2',
             'total_amount' => 'decimal:2',
         ];
+    }
+
+    public function subtotalsAfterItemDiscountSum(): float
+    {
+        return (float) $this->items()->sum('line_total_discount');
     }
 
     public function isFinalized(): bool
@@ -94,6 +106,7 @@ class PurchaseReturn extends Model
     public function calculateExtraItemsTotal(): float
     {
         $this->loadMissing(['extraItems']);
+
         return (float) $this->extraItems->sum('signed_amount');
     }
 

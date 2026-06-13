@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,6 +15,9 @@ class PurchaseInvoiceItem extends Model
         'product_variant_id',
         'quantity',
         'unit_cost',
+        'discount_type',
+        'unit_discount_amount',
+        'line_total_discount',
         'subtotal',
         'tax_rate',
         'tax_amount',
@@ -29,11 +33,42 @@ class PurchaseInvoiceItem extends Model
         return [
             'quantity' => 'decimal:3',
             'unit_cost' => 'decimal:4',
+            'discount_type' => DiscountType::class,
+            'unit_discount_amount' => 'decimal:4',
+            'line_total_discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
         ];
+    }
+
+    public function monetaryUnitDiscountAmount(): float
+    {
+        if (! $this->discount_type) {
+            return 0;
+        }
+
+        if ($this->discount_type === DiscountType::Percentage) {
+            return (float) $this->unit_cost * ((float) $this->unit_discount_amount / 100);
+        }
+
+        return (float) $this->unit_discount_amount;
+    }
+
+    public function lineTotalDiscount(): float
+    {
+        return $this->monetaryUnitDiscountAmount() * (float) $this->quantity;
+    }
+
+    public function getSubtotalBeforeItemDiscountAttribute(): float
+    {
+        return (float) $this->quantity * (float) $this->unit_cost;
+    }
+
+    public function subtotalAfterItemDiscount(): float
+    {
+        return $this->subtotalBeforeItemDiscount - $this->lineTotalDiscount();
     }
 
     /**

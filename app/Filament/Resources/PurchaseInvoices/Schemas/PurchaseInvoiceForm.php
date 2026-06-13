@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Schemas;
 
+use App\Enums\DiscountType;
 use App\Enums\ExtraItemActionType;
 use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductVariant;
@@ -40,6 +41,8 @@ class PurchaseInvoiceForm
                 ])
                 ->columnSpanFull()
                 ->schema([
+
+
                     Section::make(__('purchase_invoice.purchase_invoice'))
                         ->compact()
                         ->icon('heroicon-o-document-arrow-down')
@@ -192,6 +195,7 @@ class PurchaseInvoiceForm
                                 })
                                 ->hiddenLabel()
                                 ->compact()
+                                ->columns(4)
                                 ->schema([
                                     Hidden::make('product_variant_id')->required(),
 
@@ -207,9 +211,9 @@ class PurchaseInvoiceForm
                                         ->rules(['min:0.001'])
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
-                                            self::calcTotalAmount($get, $set, '../../');
+                                            self::recalculateTotals($get, $set, '../../');
                                         })
-                                        ->columnSpan(4),
+                                        ->columnSpan(1),
 
                                     TextInput::make('unit_cost')
                                         ->label(__('purchase_invoice.unit_cost'))
@@ -220,12 +224,12 @@ class PurchaseInvoiceForm
                                         ->step(1)
                                         ->helperText(__('purchase_invoice.unit_cost_tooltip'))
                                         ->disabled(fn (Get $get) => ! $get('product_variant_id'))
-                                        ->live(debounce: '500ms')
+                                        ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);
-                                            self::calcTotalAmount($get, $set, '../../');
+                                            self::recalculateTotals($get, $set, '../../');
                                         })
-                                        ->columnSpan(4),
+                                        ->columnSpan(1),
 
                                     TextInput::make('subtotal')
                                         ->label(__('purchase_invoice.subtotal'))
@@ -234,22 +238,117 @@ class PurchaseInvoiceForm
                                         ->dehydrated()
                                         ->helperText(__('purchase_invoice.subtotal_tooltip'))
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
-                                        ->columnSpan(4),
+                                        ->columnSpan(1),
 
                                     Textarea::make('notes')
                                         ->label(__('purchase_invoice.item_notes'))
                                         ->maxLength(255)
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_invoice.notes_tooltip'))
                                         ->rows(1)
-                                        ->columnSpanFull(),
+                                        ->columnSpan(1),
+
+                                    Select::make('discount_type')
+                                        ->label(__('purchase_invoice.discount_type'))
+                                        ->options(DiscountType::class)
+                                        ->helperText(__('purchase_invoice.discount_type_helper_text'))
+                                        ->dehydrated()
+                                        ->live()
+                                        ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
+                                            self::recalculateLine($get, $set);
+                                            self::recalculateTotals($get, $set, '../../');
+                                            $unitDiscountAmountPath = str_replace($component->getName(), 'unit_discount_amount', $component->getStatePath());
+                                            $livewire->validateOnly($unitDiscountAmountPath);
+                                        })
+                                        ->columnSpan(1),
+
+                                    TextInput::make('unit_discount_amount')
+                                        ->label(__('purchase_invoice.unit_discount_amount'))
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->step(0.01)
+                                        ->required(fn (Get $get) => filled($get('discount_type')))
+                                        ->helperText(__('purchase_invoice.unit_discount_helper_text'))
+                                        ->disabled(fn (Get $get) => blank($get('discount_type')))
+                                        ->dehydrated()
+                                        ->prefix(function (TextInput $component) use ($user) {
+                                            $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
+                                            $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
+                                            $percentage = DiscountType::Percentage->value;
+
+                                            return new HtmlString(
+                                                '<span x-data="{}" x-text="$wire.get(\''.$discountTypeStatePath.'\') === \''.$percentage.'\' ? \'%\' : \''.$currency.'\'"></span>'
+                                            );
+                                        })
+                                        ->hint(function (Get $get) {
+                                            $discountType = DiscountType::try($get('discount_type'));
+                                            if (! $discountType) {
+                                                return null;
+                                            }
+
+                                            $unitCost = (float) ($get('unit_cost') ?? 0);
+
+                                            if ($discountType === DiscountType::Percentage) {
+                                                return __('purchase_invoice.max_allowed_discount', ['max' => '100%']);
+                                            }
+
+                                            return __('purchase_invoice.max_allowed_discount', ['max' => round($unitCost, 2)]);
+                                        })
+                                        ->live(debounce: 1000)
+                                        ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
+                                            self::recalculateLine($get, $set);
+                                            self::recalculateTotals($get, $set, '../../');
+                                            $livewire->validateOnly($component->getStatePath());
+                                        })
+                                        ->rules([
+                                            function (Get $get) {
+                                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                                    $discountType = DiscountType::try($get('discount_type'));
+                                                    if (! $discountType || empty($value = (float) $value)) {
+                                                        return;
+                                                    }
+
+                                                    if ($discountType === DiscountType::Percentage && $value > 100) {
+                                                        $fail(__('purchase_invoice.percentage_exceeds_100'));
+
+                                                        return;
+                                                    }
+
+                                                    $unitCost = (float) ($get('unit_cost') ?? 0);
+
+                                                    if ($discountType === DiscountType::Fixed && round($value, 2) > round($unitCost, 2)) {
+                                                        $fail(__('purchase_invoice.discount_exceeds_unit_cost', ['max' => $unitCost]));
+                                                    }
+                                                };
+                                            },
+                                        ])
+                                        ->columnSpan(1),
+
+                                    TextInput::make('line_total_discount')
+                                        ->label(__('purchase_invoice.line_total_discount'))
+                                        ->numeric()
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->helperText(__('purchase_invoice.line_total_discount_helper_text'))
+                                        ->columnSpan(1),
+
+                                    TextInput::make('line_total')
+                                        ->label(__('purchase_invoice.final_line_total'))
+                                        ->numeric()
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->minValue(0)
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م')
+                                        ->helperText(__('purchase_invoice.final_line_total_helper_text'))
+                                        ->columnSpan(1),
                                 ])
-                                ->columns(12)
+
                                 ->addable(false)
                                 ->reorderable(false)
                                 ->cloneable(false)
                                 ->defaultItems(0)
                                 ->deleteAction(
-                                    fn ($action) => $action->after(fn (Get $get, Set $set) => self::calcTotalAmount($get, $set))
+                                    fn ($action) => $action->after(fn (Get $get, Set $set) => self::recalculateTotals($get, $set))
                                 ),
 
                         ]),
@@ -281,7 +380,7 @@ class PurchaseInvoiceForm
                                                 $set('action_type', $preset->action_type);
                                                 $set('amount', $preset->amount);
                                             }
-                                            static::calcTotalAmount($get, $set, '../../');
+                                            static::recalculateTotals($get, $set, '../../');
                                         }),
                                     TextInput::make('name')
                                         ->label(__('app.name'))
@@ -294,7 +393,7 @@ class PurchaseInvoiceForm
                                         ->required()
                                         ->live()
                                         ->afterStateUpdated(function (Get $get, Set $set) {
-                                            static::calcTotalAmount($get, $set, '../../');
+                                            static::recalculateTotals($get, $set, '../../');
                                         }),
                                     TextInput::make('amount')
                                         ->label(__('app.amount'))
@@ -305,7 +404,7 @@ class PurchaseInvoiceForm
                                         ->required()
                                         ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set) {
-                                            static::calcTotalAmount($get, $set, '../../');
+                                            static::recalculateTotals($get, $set, '../../');
                                         }),
                                     Textarea::make('notes')
                                         ->label(__('app.notes'))
@@ -314,17 +413,109 @@ class PurchaseInvoiceForm
                                         ->maxLength(255),
                                 ])
                                 ->deleteAction(
-                                    fn (Action $action) => $action->after(fn (Get $get, Set $set) => static::calcTotalAmount($get, $set))
+                                    fn (Action $action) => $action->after(fn (Get $get, Set $set) => static::recalculateTotals($get, $set))
                                 )
                                 ->columns(5),
                         ]),
+
+                    Section::make(__('purchase_invoice.invoice_discount'))
+                        ->description(__('purchase_invoice.invoice_discount_description'))
+                        ->columnSpanFull()
+                        ->icon('heroicon-o-receipt-percent')
+                        ->schema([
+                            Select::make('discount_type')
+                                ->label(__('purchase_invoice.discount_type'))
+                                ->helperText(__('purchase_invoice.global_discount_type_helper'))
+                                ->options(DiscountType::class)
+                                ->live()
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, Select $component) {
+                                    static::recalculateTotals($get, $set);
+
+                                    $discountAmountPath = str_replace($component->getName(), 'discount_amount', $component->getStatePath());
+                                    $livewire->validateOnly($discountAmountPath);
+                                }),
+                            TextInput::make('discount_amount')
+                                ->label(__('purchase_invoice.global_discount_amount'))
+                                ->helperText(__('purchase_invoice.global_discount_amount_helper'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->step(0.01)
+                                ->required(fn (Get $get) => filled($get('discount_type')))
+                                ->disabled(fn (Get $get) => blank($get('discount_type')))
+                                ->dehydrated()
+                                ->prefix(function (TextInput $component) use ($user) {
+                                    $discountTypeStatePath = str_replace($component->getName(), 'discount_type', $component->getStatePath());
+                                    $currency = addslashes($user->company->currency_symbol ?? 'ج.م');
+                                    $percentage = DiscountType::Percentage->value;
+
+                                    return new HtmlString(
+                                        '<span x-data="{}" x-text="$wire.get(\''.$discountTypeStatePath.'\') === \''.$percentage.'\' ? \'%\' : \''.$currency.'\'"></span>'
+                                    );
+                                })
+                                ->suffix(function (Get $get) {
+                                    if (! ($discountType = DiscountType::try($get('discount_type'))) || empty($get('items') ?? [])) {
+                                        return null;
+                                    }
+
+                                    $initialLinesTotalSum = $get('items_lines_totals');
+
+                                    if ($initialLinesTotalSum <= 0) {
+                                        return __('purchase_invoice.max_allowed_discount', ['max' => '0']);
+                                    }
+
+                                    if ($discountType === DiscountType::Percentage) {
+                                        return __('purchase_invoice.max_allowed_discount', ['max' => '100%']);
+                                    }
+
+                                    return __('purchase_invoice.max_allowed_discount', ['max' => round($initialLinesTotalSum, 2)]);
+                                })
+                                ->live(debounce: 1000)
+                                ->afterStateUpdated(function (Get $get, Set $set, $livewire, TextInput $component) {
+                                    static::recalculateTotals($get, $set);
+                                    $livewire->validateOnly($component->getStatePath());
+                                })
+                                ->rules([
+                                    function (Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $discountType = DiscountType::try($get('discount_type'));
+                                            $items = $get('items') ?? [];
+                                            if (! $discountType || empty($value) || empty($items)) {
+                                                return;
+                                            }
+
+                                            if ($discountType === DiscountType::Percentage && (float) $value > 100) {
+                                                $fail(__('purchase_invoice.percentage_exceeds_100'));
+
+                                                return;
+                                            }
+
+                                            $initialLinesTotalSum = $get('items_lines_totals');
+
+                                            if ($discountType === DiscountType::Fixed &&
+                                                round((float) $value, 2) > round($initialLinesTotalSum, 2)) {
+                                                $fail(__('purchase_invoice.grand_total_discount_exceeds_total'));
+
+                                                return;
+                                            }
+                                        };
+                                    },
+                                ]),
+                            TextInput::make('global_discount_amount')
+                                ->label(__('purchase_invoice.global_discount_amount'))
+                                ->disabled()
+                                ->dehydrated()
+                                ->numeric()
+                                ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                        ])
+                        ->columns(3)
+                        ->compact(),
 
                     Section::make(__('app.summary'))
                         ->compact()
                         ->columnSpanFull()
                         ->icon('heroicon-o-calculator')
                         ->schema([
-                            Grid::make(3)
+                            Grid::make(4)
                                 ->columnSpanFull()
                                 ->schema([
                                     TextInput::make('subtotal')
@@ -340,16 +531,24 @@ class PurchaseInvoiceForm
                                         ->disabled()
                                         ->dehydrated()
                                         ->prefix($user->company->currency_symbol ?? 'ج.م'),
+                                    TextInput::make('grand_total_discount')
+                                        ->label(__('purchase_invoice.grand_total_discount'))
+                                        ->disabled()
+                                        ->dehydrated()
+                                        ->numeric()
+                                        ->extraInputAttributes(['class' => 'text-lg font-semibold text-danger-600 dark:text-danger-400'])
+                                        ->helperText(__('purchase_invoice.grand_total_discount_helper'))
+                                        ->prefix($user->company->currency_symbol ?? 'ج.م'),
                                     TextInput::make('total_amount')
                                         ->label(__('purchase_invoice.total_amount'))
                                         ->helperText(__('purchase_invoice.total_amount_helper'))
                                         ->disabled()
                                         ->dehydrated()
                                         ->minValue(0)
-                                        ->extraInputAttributes(['class' => 'text-xl font-bold'])
+                                        ->extraInputAttributes(['class' => 'text-xl font-bold text-success-600 dark:text-success-400'])
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->afterStateHydrated(function (Get $get, Set $set) {
-                                            static::calcTotalAmount($get, $set);
+                                            static::recalculateTotals($get, $set);
                                         }),
                                 ]),
                         ]),
@@ -365,26 +564,48 @@ class PurchaseInvoiceForm
     {
         $quantity = (float) ($get('quantity') ?? 0);
         $unitCost = (float) ($get('unit_cost') ?? 0);
-        //        $taxRate = (float) ($get('tax_rate') ?? 0); // TAX FEATURE POSTPONED
-
         $subtotal = round($quantity * $unitCost, 2);
-        //        $taxAmount = round($subtotal * $taxRate / 100, 2); // TAX FEATURE POSTPONED
-        $taxAmount = 0.0; // TAX FEATURE POSTPONED
-        // $lineTotal = round($subtotal + $taxAmount, 2);
+
+        $discountType = DiscountType::try($get('discount_type'));
+        $unitDiscountAmount = (float) ($get('unit_discount_amount') ?? 0);
+
+        $monetaryUnitDiscount = 0.0;
+        if ($discountType === DiscountType::Percentage) {
+            $monetaryUnitDiscount = $unitCost * ($unitDiscountAmount / 100);
+        } elseif ($discountType === DiscountType::Fixed) {
+            $monetaryUnitDiscount = $unitDiscountAmount;
+        }
+
+        $lineTotalDiscount = round($monetaryUnitDiscount * $quantity, 2);
+        $lineTotal = round($subtotal - $lineTotalDiscount, 2);
 
         $set('subtotal', $subtotal);
-        //        $set('tax_amount', $taxAmount); // TAX FEATURE POSTPONED
-        // $set('line_total', $lineTotal);
+        $set('line_total_discount', $lineTotalDiscount);
+        $set('line_total', $lineTotal);
     }
 
-    private static function calcTotalAmount(Get $get, Set $set, string $prefix = ''): void
+    private static function recalculateTotals(Get $get, Set $set, string $prefix = ''): void
     {
         $items = $get($prefix.'items') ?? [];
         $itemsSubtotal = collect($items)->sum('subtotal');
+        $itemsLinesTotals = collect($items)->sum('line_total');
 
         $extraItemsTotal = self::calculateExtraItemsTotal($get, $prefix);
 
-        $totalAmount = $itemsSubtotal + $extraItemsTotal;
+        $globalDiscountType = DiscountType::try($get($prefix.'discount_type'));
+        $globalDiscountAmountVal = (float) ($get($prefix.'discount_amount') ?? 0);
+
+        $globalDiscountAmount = 0.0;
+        if ($globalDiscountType === DiscountType::Percentage) {
+            $globalDiscountAmount = $itemsLinesTotals * ($globalDiscountAmountVal / 100);
+        } elseif ($globalDiscountType === DiscountType::Fixed) {
+            $globalDiscountAmount = $globalDiscountAmountVal;
+        }
+
+        $itemsTotalDiscount = collect($items)->sum('line_total_discount');
+        $grandTotalDiscount = $itemsTotalDiscount + $globalDiscountAmount;
+
+        $totalAmount = $itemsLinesTotals - $globalDiscountAmount + $extraItemsTotal;
 
         if ($totalAmount < 0) {
             Notification::make()
@@ -395,6 +616,9 @@ class PurchaseInvoiceForm
         }
 
         $set($prefix.'subtotal', round($itemsSubtotal, 2));
+        $set($prefix.'items_lines_totals', round($itemsLinesTotals, 2));
+        $set($prefix.'global_discount_amount', round($globalDiscountAmount, 2));
+        $set($prefix.'grand_total_discount', round($grandTotalDiscount, 2));
         $set($prefix.'extra_items_total', round($extraItemsTotal, 2));
         $set($prefix.'total_amount', round($totalAmount, 2));
     }
@@ -463,11 +687,13 @@ class PurchaseInvoiceForm
             'quantity' => 1,
             'unit_cost' => $unitCost,
             'subtotal' => round($unitCost, 2),
+            'line_total_discount' => 0,
+            'line_total' => round($unitCost, 2),
             'notes' => null,
         ];
 
         $set('items', $items);
-        self::calcTotalAmount($get, $set);
+        self::recalculateTotals($get, $set);
 
         Notification::make()
             ->title(__('purchase_invoice.item_added'))
