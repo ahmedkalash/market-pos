@@ -526,9 +526,7 @@ class SaleInvoiceForm
                                         ->dehydrated()
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.line_total_discount_helper_text'))
-                                        ->columnSpan(3)
-//                                        ->disabled(fn (Get $get) => self::isDiscountDisabled($get))
-                                       ,
+                                        ->columnSpan(3),
 
                                     TextInput::make('line_total')
                                         ->label(__('sale_invoice.final_line_total'))
