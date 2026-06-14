@@ -313,6 +313,11 @@ class SaleReturnInvoiceForm
                                             ->required()
                                             ->minValue(0.001)
                                             ->step(0.001)
+                                            ->maxValue(fn (Get $get) => (float) $get('max_returnable'))
+                                            ->extraInputAttributes(fn (Get $get) => [
+                                                'oninvalid' => "this.setCustomValidity('" . __('sale_return.exceeds_returnable_quantity', ['max' => $get('max_returnable'),]) . "')",
+                                                'oninput' => "this.setCustomValidity('')", // Clears the error when they start typing again
+                                            ])
                                             ->live(debounce: 1000)
                                             ->afterStateUpdated(function (Get $get, Set $set, $state, $livewire) {
                                                 // validate quantity and set it to max_returnable if it exceeds that value.

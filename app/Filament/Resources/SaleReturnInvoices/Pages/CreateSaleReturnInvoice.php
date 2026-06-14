@@ -30,7 +30,7 @@ class CreateSaleReturnInvoice extends CreateRecord
                 ->modalHeading(__('sale_return.finalize_confirm_title'))
                 ->modalDescription(__('sale_return.finalize_confirm_body'))
                 ->successNotificationTitle(__('sale_return.finalize_success'))
-                ->authorize(['create_sale_return_invoice', 'finalize_sale_return_invoice']) // Assuming similar permissions pattern, Filament uses standard policy methods implicitly but here we can rely on standard policies or just authorize
+                ->authorize(['create_sale_return', 'finalize_sale_return']) // Assuming similar permissions pattern, Filament uses standard policy methods implicitly but here we can rely on standard policies or just authorize
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
                 ->action(function () {

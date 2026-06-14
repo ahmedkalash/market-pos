@@ -15,8 +15,9 @@ use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Tables\Table;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
@@ -73,6 +74,10 @@ class AppServiceProvider extends ServiceProvider
     private function configureFilamentComponentsDefaults(): void
     {
         Select::configureUsing(function (Select $component) {
+            $component->native(false);
+        });
+
+        SelectFilter::configureUsing(function (SelectFilter $component) {
             $component->native(false);
         });
 

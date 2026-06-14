@@ -218,9 +218,10 @@ class SaleInvoicesTable
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when($data['name'] ?? null,
                             fn (Builder $query, $name): Builder => $query->whereHas(
-                                'items.variant', fn (Builder $variantQuery) => $variantQuery
-                                ->whereNameLike($name)
-                                ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->whereNameLike($name))
+                                'items.variant', fn (Builder $variantQuery) => $variantQuery->where(fn ($q) => $q
+                                    ->whereNameLike($name)
+                                    ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->whereNameLike($name))
+                                )
                             )
                         );
                     })
@@ -484,7 +485,6 @@ class SaleInvoicesTable
 
                     ViewAction::make()
                         ->authorize('view_sale_invoice'),
-
                     Action::make('create_return')
                         ->label(__('app.create_return'))
                         ->icon('heroicon-o-arrow-uturn-left')

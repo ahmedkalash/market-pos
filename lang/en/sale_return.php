@@ -48,6 +48,7 @@ return [
     'negative_total_error_body' => 'The total refund amount cannot be negative. Reduce your deductions or add fewer extra items.',
     'max_allowed_amount' => 'Max allowed: :amount',
     'no_items_to_return' => 'Cannot create a return without any items.',
+    'finalize_confirmation' => 'Are you sure? Once finalized, stock will be increased and this cannot be undone.',
     'finalize_confirm_title' => 'Confirm Finalization?',
     'finalize_confirm_body' => 'The inventory movement will be reversed for all items and the return will be locked permanently. This action cannot be undone.',
     'finalize_success' => 'Sale return finalized successfully.',
