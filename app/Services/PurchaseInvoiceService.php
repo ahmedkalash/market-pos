@@ -63,66 +63,67 @@ class PurchaseInvoiceService
      */
     public function recalculateTotals(PurchaseInvoice $invoice): void
     {
-        // TODO wrap inside a transaction
-        $invoice->load('items.variant.product.taxClass');
+        DB::transaction(function () use ($invoice) {
+            // Lock the invoice for update to prevent concurrent modifications
+            $invoice = PurchaseInvoice::with('items.variant.product.taxClass')
+                ->lockForUpdate()
+                ->findOrFail($invoice->id);
 
-        $totalBeforeTax = 0;
-        $totalTaxAmount = 0;
-        $itemsTotalDiscount = 0;
-        $itemsSubtotal = 0;
+            $totalBeforeTax = 0;
+            $totalTaxAmount = 0;
+            $itemsTotalDiscount = 0;
+            $itemsSubtotal = 0;
 
-        foreach ($invoice->items as /** @var PurchaseInvoiceItem $item */ $item) {
-            /** @var ProductVariant $variant */
-            $variant = $item->variant;
+            foreach ($invoice->items as $item) {
+                $quantity = (float) $item->quantity;
+                $unitCost = (float) $item->unit_cost;
+                // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
+                $taxRate = 0.0;
+                $subtotal = round($quantity * $unitCost, 2);
+                $lineTotalDiscount = $item->lineTotalDiscount();
 
-            $quantity = (float) $item->quantity;
-            $unitCost = (float) $item->unit_cost;
-            // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
-            $taxRate = 0.0;
-            $subtotal = round($quantity * $unitCost, 2);
-            $lineTotalDiscount = $item->lineTotalDiscount();
+                $lineTotal = round($subtotal - $lineTotalDiscount, 2);
+                $taxAmount = 0.0; // TAX FEATURE POSTPONED
 
-            $lineTotal = round($subtotal - $lineTotalDiscount, 2);
-            $taxAmount = 0.0; // TAX FEATURE POSTPONED
+                $item->update([
+                    'subtotal' => $subtotal,
+                    'line_total_discount' => $lineTotalDiscount,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'line_total' => $lineTotal,
+                ]);
 
-            $item->update([
-                'subtotal' => $subtotal,
-                'line_total_discount' => $lineTotalDiscount,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'line_total' => $lineTotal,
+                $itemsSubtotal += $subtotal;
+                $itemsTotalDiscount += $lineTotalDiscount;
+                $totalBeforeTax += $lineTotal;
+                $totalTaxAmount += $taxAmount;
+            }
+
+            $extraItemsTotal = $invoice->calculateExtraItemsTotal();
+
+            $globalDiscountType = $invoice->discount_type;
+            $globalDiscountAmountVal = (float) $invoice->discount_amount;
+
+            $globalDiscountAmount = 0.0;
+            if ($globalDiscountType === DiscountType::Percentage) {
+                $globalDiscountAmount = $totalBeforeTax * ($globalDiscountAmountVal / 100);
+            } elseif ($globalDiscountType === DiscountType::Fixed) {
+                $globalDiscountAmount = $globalDiscountAmountVal;
+            }
+
+            $grandTotalDiscount = $itemsTotalDiscount + $globalDiscountAmount;
+            $totalAmount = $totalBeforeTax - $globalDiscountAmount + $extraItemsTotal;
+
+            $invoice->update([
+                'subtotal' => round($itemsSubtotal, 2),
+                'global_discount_amount' => round($globalDiscountAmount, 2),
+                'grand_total_discount' => round($grandTotalDiscount, 2),
+                'total_before_tax' => round($totalBeforeTax, 2),
+                'total_tax_amount' => round($totalTaxAmount, 2),
+                'extra_items_total' => round($extraItemsTotal, 2),
+                'total_amount' => round($totalAmount, 2),
             ]);
-
-            $itemsSubtotal += $subtotal;
-            $itemsTotalDiscount += $lineTotalDiscount;
-            $totalBeforeTax += $lineTotal;
-            $totalTaxAmount += $taxAmount;
-        }
-
-        $extraItemsTotal = $invoice->calculateExtraItemsTotal();
-
-        $globalDiscountType = $invoice->discount_type;
-        $globalDiscountAmountVal = (float) $invoice->discount_amount;
-
-        $globalDiscountAmount = 0.0;
-        if ($globalDiscountType === DiscountType::Percentage) {
-            $globalDiscountAmount = $totalBeforeTax * ($globalDiscountAmountVal / 100);
-        } elseif ($globalDiscountType === DiscountType::Fixed) {
-            $globalDiscountAmount = $globalDiscountAmountVal;
-        }
-
-        $grandTotalDiscount = $itemsTotalDiscount + $globalDiscountAmount;
-        $totalAmount = $totalBeforeTax - $globalDiscountAmount + $extraItemsTotal;
-
-        $invoice->update([
-            'subtotal' => round($itemsSubtotal, 2),
-            'global_discount_amount' => round($globalDiscountAmount, 2),
-            'grand_total_discount' => round($grandTotalDiscount, 2),
-            'total_before_tax' => round($totalBeforeTax, 2),
-            'total_tax_amount' => round($totalTaxAmount, 2),
-            'extra_items_total' => round($extraItemsTotal, 2),
-            'total_amount' => round($totalAmount, 2),
-        ]);
+        });
     }
 
     /**
@@ -250,43 +251,44 @@ class PurchaseInvoiceService
 
     public function recalculateReturnTotals(PurchaseReturn $return): void
     {
-        // TODO wrap inside a transaction
+        DB::transaction(function () use ($return) {
+            $return = PurchaseReturn::query()->lockForUpdate()->findOrFail($return->id);
+            $return->load('items.variant.product.taxClass');
 
-        $return->load('items.variant.product.taxClass');
+            $totalBeforeTax = 0;
+            $totalTaxAmount = 0;
 
-        $totalBeforeTax = 0;
-        $totalTaxAmount = 0;
+            foreach ($return->items as $item) {
+                $quantity = (float) $item->quantity;
+                $effectiveUnitRefund = (float) $item->effective_unit_refund;
+                // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
+                $taxRate = 0.0;
 
-        foreach ($return->items as $item) {
-            $quantity = (float) $item->quantity;
-            $effectiveUnitRefund = (float) $item->effective_unit_refund;
-            // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
-            $taxRate = 0.0;
+                $subtotal = round($quantity * $effectiveUnitRefund, 2);
+                $taxAmount = round($subtotal * $taxRate / 100, 2);
+                $lineTotal = round($subtotal + $taxAmount, 2);
 
-            $subtotal = round($quantity * $effectiveUnitRefund, 2);
-            $taxAmount = round($subtotal * $taxRate / 100, 2);
-            $lineTotal = round($subtotal + $taxAmount, 2);
+                $item->update([
+                    'subtotal' => $subtotal,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'line_total' => $lineTotal,
+                ]);
 
-            $item->update([
-                'subtotal' => $subtotal,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'line_total' => $lineTotal,
+                $totalBeforeTax += $subtotal;
+                $totalTaxAmount += $taxAmount;
+            }
+
+            $extraItemsTotal = $return->calculateExtraItemsTotal();
+
+            $return->update([
+                'subtotal' => round($totalBeforeTax, 2),
+                'total_before_tax' => round($totalBeforeTax, 2),
+                'total_tax_amount' => round($totalTaxAmount, 2),
+                'extra_items_total' => round($extraItemsTotal, 2),
+                'total_amount' => round($totalBeforeTax + $totalTaxAmount + $extraItemsTotal, 2),
             ]);
-
-            $totalBeforeTax += $subtotal;
-            $totalTaxAmount += $taxAmount;
-        }
-
-        $extraItemsTotal = $return->calculateExtraItemsTotal();
-
-        $return->update([
-            'subtotal' => round($totalBeforeTax, 2),
-            'total_before_tax' => round($totalBeforeTax, 2),
-            'total_tax_amount' => round($totalTaxAmount, 2),
-            'extra_items_total' => round($extraItemsTotal, 2),
-            'total_amount' => round($totalBeforeTax + $totalTaxAmount + $extraItemsTotal, 2),
-        ]);
+        });
     }
 
     /**
