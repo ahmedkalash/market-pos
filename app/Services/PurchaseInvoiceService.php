@@ -187,6 +187,67 @@ class PurchaseInvoiceService
      * Recalculate and persist all financial totals on a Draft PurchaseReturn.
      * Called from Filament afterCreate/afterSave hooks — mirrors recalculateTotals().
      */
+
+    /**
+     * Calculate the accurate unit refund for a PurchaseInvoiceItem.
+     *
+     * This handles prorating the global invoice discount across the returned item
+     * according to its weight (value) within the invoice.
+     *
+     * @return array{unit_prorated_global_discount: float, effective_unit_refund: float}
+     */
+    public function calculateRefundBreakdown(PurchaseInvoiceItem $originalItem): array
+    {
+        // Retrieve the parent invoice of the item
+        $originalInvoice = $originalItem->invoice;
+
+        // Fallback: If no invoice is attached, return defaults using the raw unit cost
+        if (! $originalInvoice) {
+            return [
+                'unit_prorated_global_discount' => 0.0,
+                'effective_unit_refund' => (float) $originalItem->unit_cost,
+            ];
+        }
+
+        // Ensure all items on the invoice are loaded so we can calculate total weights
+        $originalInvoice->loadMissing('items');
+
+        // Note: The 'subtotal' column on PurchaseInvoiceItem is the gross amount BEFORE item discounts.
+        // To get the true value of the items after item-level discounts, we MUST subtract
+        // 'line_total_discount' from 'subtotal'. This is mathematically correct.
+        $subtotalsAfterItemDiscountSum = $originalInvoice->subtotalsAfterItemDiscountSum();
+
+        // Fetch the global discount applied to the entire invoice
+        $globalDiscount = (float) $originalInvoice->global_discount_amount;
+
+        // Calculate the specific item's value after its own line discount is applied
+        $itemSubtotalAfterItemDiscount = (float) $originalItem->subtotal - (float) $originalItem->line_total_discount;
+        $originalQuantity = (float) $originalItem->quantity;
+
+        // Calculate how much of the global discount belongs to this specific item line
+        $proratedGlobalDiscount = 0.0;
+        if ($subtotalsAfterItemDiscountSum > 0) {
+            // Find the percentage (weight) of this item's value relative to the whole invoice
+            $weight = $itemSubtotalAfterItemDiscount / $subtotalsAfterItemDiscountSum;
+
+            // Multiply the total global discount by this item's weight to get its prorated share
+            $proratedGlobalDiscount = $weight * $globalDiscount;
+        }
+
+        // The effective total refund for the entire line is its discounted subtotal minus its share of the global discount
+        $effectiveLineRefund = $itemSubtotalAfterItemDiscount - $proratedGlobalDiscount;
+
+        // Divide by the original quantity to get the final refund amounts for a single unit
+        $unitProratedGlobalDiscount = $originalQuantity > 0 ? ($proratedGlobalDiscount / $originalQuantity) : 0;
+        $effectiveUnitRefund = $originalQuantity > 0 ? ($effectiveLineRefund / $originalQuantity) : 0;
+
+        // Return the final values rounded to 4 decimal places for precision
+        return [
+            'unit_prorated_global_discount' => round($unitProratedGlobalDiscount, 4),
+            'effective_unit_refund' => round($effectiveUnitRefund, 4),
+        ];
+    }
+
     public function recalculateReturnTotals(PurchaseReturn $return): void
     {
         // TODO wrap inside a transaction
@@ -198,11 +259,11 @@ class PurchaseInvoiceService
 
         foreach ($return->items as $item) {
             $quantity = (float) $item->quantity;
-            $unitCost = (float) $item->unit_cost;
+            $effectiveUnitRefund = (float) $item->effective_unit_refund;
             // TAX FEATURE POSTPONED: Force tax rate to 0 for MVP
             $taxRate = 0.0;
 
-            $subtotal = round($quantity * $unitCost, 2);
+            $subtotal = round($quantity * $effectiveUnitRefund, 2);
             $taxAmount = round($subtotal * $taxRate / 100, 2);
             $lineTotal = round($subtotal + $taxAmount, 2);
 
