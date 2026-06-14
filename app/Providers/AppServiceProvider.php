@@ -15,9 +15,11 @@ use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
+use Filament\Tables\Table;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -47,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerDynamicPermissionsGate();
 
         $this->configureFilamentComponentsDefaults();
+        $this->configureNumberLocale();
 
         Livewire::addPersistentMiddleware([
             ApplyTenantScopes::class,
@@ -62,6 +65,11 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
+    private function configureNumberLocale(): void
+    {
+        Number::useLocale('en');
+    }
+
     private function configureFilamentComponentsDefaults(): void
     {
         Select::configureUsing(function (Select $component) {
@@ -74,6 +82,14 @@ class AppServiceProvider extends ServiceProvider
 
         DateTimePicker::configureUsing(function (DateTimePicker $component) {
             $component->native(false);
+        });
+
+        Table::configureUsing(function (Table $table): void {
+            $table->defaultNumberLocale('en');
+            // Default format for ->date() columns
+            $table->defaultDateDisplayFormat('d-m-Y');
+            // Default format for ->dateTime() columns
+            $table->defaultDateTimeDisplayFormat('d-m-Y h:i A');
         });
     }
 
