@@ -2,7 +2,7 @@
 
 return [
     'status_draft' => 'مسودة',
-    'status_finalized' => 'نهائي',
+    'status_finalized' => 'معتمدة',
     'no_items_or_extras' => 'لا يمكن اعتماد مرتجع مبيعات بدون أي عناصر أو تسويات إضافية.',
     'exceeds_returnable_quantity' => 'لا يمكن إرجاع كمية أكبر من الكمية المتبقية القابلة للإرجاع (:max).',
     'cannot_edit_finalized' => 'لا يمكن تعديل مرتجع المبيعات المعتمد.',

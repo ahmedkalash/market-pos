@@ -212,4 +212,6 @@ return [
     'finalize' => 'Finalize',
     'unknown_product' => 'Unknown Product',
     'success' => 'Success',
+    'created_by' => 'Created By',
+    'finalized_by' => 'Finalized By',
 ];

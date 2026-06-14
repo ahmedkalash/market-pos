@@ -99,7 +99,7 @@ class PurchaseReturnsTable
 
                 TextColumn::make('returned_at')
                     ->label(__('purchase_return.returned_at'))
-                    ->date('d-m-Y')
+                    ->date()
                     ->sortable(),
 
                 TextColumn::make('createdBy.name')
@@ -107,8 +107,7 @@ class PurchaseReturnsTable
 
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->description(fn (PurchaseReturn $record) => $record->created_at->format('h:i ').($record->created_at->format('a') === 'am' ? 'ص' : 'م'))
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable(),
 
                 TextColumn::make('finalizedBy.name')
@@ -117,7 +116,7 @@ class PurchaseReturnsTable
 
                 TextColumn::make('finalized_at')
                     ->label(__('purchase_return.finalized_at'))
-                    ->dateTime('d-m-Y H:i')
+                    ->dateTime()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

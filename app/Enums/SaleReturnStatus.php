@@ -22,7 +22,7 @@ enum SaleReturnStatus: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::Draft => 'gray',
-            self::Finalized => 'warning',
+            self::Finalized => 'success',
         };
     }
 }

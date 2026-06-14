@@ -39,7 +39,7 @@ class RolesTable
 
                 TextColumn::make('created_at')
                     ->label(__('app.created'))
-                    ->dateTime('j - M - Y')
+                    ->dateTime()
                     ->sortable(),
             ])
             ->filters([

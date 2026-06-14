@@ -44,7 +44,7 @@ class UnitOfMeasuresTable
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->dateTime('d M Y')
+                    ->dateTime()
                     ->sortable(),
             ])
             ->filters([

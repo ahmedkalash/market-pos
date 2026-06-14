@@ -120,11 +120,11 @@ class BrandResource extends Resource
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->dateTime('d M Y')
+                    ->dateTime()
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->label(__('app.updated_at'))
-                    ->dateTime('d M Y')
+                    ->dateTime()
                     ->sortable(),
             ])
             ->filters([

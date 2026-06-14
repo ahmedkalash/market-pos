@@ -120,8 +120,7 @@ class SaleInvoicesTable
 
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->description(fn (SaleInvoice $record) => $record->created_at->format('h:i ').($record->created_at->format('a') === 'am' ? 'ص' : 'م'))
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable(),
 
                 TextColumn::make('finalizedBy.name')
@@ -132,15 +131,13 @@ class SaleInvoicesTable
 
                 TextColumn::make('finalized_at')
                     ->label(__('sale_invoice.finalized_at'))
-                    ->description(fn (SaleInvoice $record): ?string => $record->finalized_at ? $record->finalized_at->format('h:i ').($record->finalized_at->format('a') === 'am' ? 'ص' : 'م') : null)
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
                     ->label(__('app.updated_at'))
-                    ->description(fn (SaleInvoice $record): ?string => $record->updated_at ? $record->updated_at->format('h:i ').($record->updated_at->format('a') === 'am' ? 'ص' : 'م') : null)
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

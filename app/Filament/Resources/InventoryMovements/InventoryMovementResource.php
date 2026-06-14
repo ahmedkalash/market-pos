@@ -76,8 +76,7 @@ class InventoryMovementResource extends Resource
             ->columns([
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->description(fn (InventoryMovement $record) => $record->created_at->format('h:i ').($record->created_at->format('a') === 'am' ? 'ص' : 'م'))
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable(),
 
                 TextColumn::make('store.name')

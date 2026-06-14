@@ -93,7 +93,7 @@ class PurchaseInvoicesTable
 
                 TextColumn::make('received_at')
                     ->label(__('purchase_invoice.received_at'))
-                    ->date('d-m-Y')
+                    ->date()
                     ->sortable(),
 
                 TextColumn::make('createdBy.name')
@@ -101,8 +101,7 @@ class PurchaseInvoicesTable
 
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
-                    ->description(fn (PurchaseInvoice $record) => $record->created_at->format('h:i ').($record->created_at->format('a') === 'am' ? 'ص' : 'م'))
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable(),
 
                 TextColumn::make('finalizedBy.name')
@@ -111,15 +110,13 @@ class PurchaseInvoicesTable
 
                 TextColumn::make('finalized_at')
                     ->label(__('purchase_invoice.finalized_at'))
-                    ->description(fn (PurchaseInvoice $record): ?string => $record->finalized_at ? $record->finalized_at->format('h:i ').($record->finalized_at->format('a') === 'am' ? 'ص' : 'م') : null)
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
                     ->label(__('app.updated_at'))
-                    ->description(fn (PurchaseInvoice $record): ?string => $record->updated_at ? $record->updated_at->format('h:i ').($record->updated_at->format('a') === 'am' ? 'ص' : 'م') : null)
-                    ->dateTime('d-m-Y')
+                    ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

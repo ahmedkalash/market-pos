@@ -213,4 +213,6 @@ return [
     'finalize' => 'اعتماد',
     'unknown_product' => 'منتج غير معروف',
     'success' => 'تم',
+    'created_by' => 'أنشئ بواسطة',
+    'finalized_by' => 'اعتمدت بواسطة',
 ];
