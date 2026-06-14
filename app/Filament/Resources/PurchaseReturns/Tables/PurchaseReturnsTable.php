@@ -280,8 +280,8 @@ class PurchaseReturnsTable
                         return $indicators;
                     }),
             ])
-            ->filtersLayout(FiltersLayout::AboveContent)
-            ->filtersFormColumns(5)
+            ->filtersLayout(FiltersLayout::Modal)
+            ->filtersFormColumns(4)
             ->recordActionsColumnLabel(__('app.actions'))
             ->recordActions([
                 ActionGroup::make([

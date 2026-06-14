@@ -210,6 +210,30 @@ class SaleInvoicesTable
                         return $indicators;
                     }),
 
+                Filter::make('product_name')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label(__('product.model_label')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when($data['name'] ?? null,
+                            fn (Builder $query, $name): Builder => $query->whereHas(
+                                'items.variant', fn (Builder $variantQuery) => $variantQuery
+                                ->whereNameLike($name)
+                                ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->whereNameLike($name))
+                            )
+                        );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['name'] ?? null) {
+                            $indicators[] = Indicator::make(__('product.model_label').': '.$data['name'])
+                                ->removeField('name');
+                        }
+
+                        return $indicators;
+                    }),
+
                 TernaryFilter::make('has_notes')
                     ->label(__('sale_invoice.has_notes'))
                     ->placeholder(__('app.all'))
@@ -266,30 +290,6 @@ class SaleInvoicesTable
                         if ($data['phone'] ?? null) {
                             $indicators[] = Indicator::make(__('customer.phone').': '.$data['phone'])
                                 ->removeField('phone');
-                        }
-
-                        return $indicators;
-                    }),
-
-                Filter::make('product_name')
-                    ->schema([
-                        TextInput::make('name')
-                            ->label(__('product.model_label')),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query->when($data['name'] ?? null,
-                            fn (Builder $query, $name): Builder => $query->whereHas(
-                                'items.variant', fn (Builder $variantQuery) => $variantQuery
-                                    ->whereNameLike($name)
-                                    ->orWhereHas('product', fn (Builder $productQuery) => $productQuery->whereNameLike($name))
-                            )
-                        );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['name'] ?? null) {
-                            $indicators[] = Indicator::make(__('product.model_label').': '.$data['name'])
-                                ->removeField('name');
                         }
 
                         return $indicators;
