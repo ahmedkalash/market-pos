@@ -474,6 +474,9 @@ class SaleInvoiceService
      * Validate that the return quantity on a line does not exceed the
      * remaining returnable quantity (original qty − already finalized return qty).
      *
+     * Note: The caller must eager load the `variant` relationship on the items
+     * before calling this inside a loop to prevent N+1 query issues.
+     *
      * @throws \RuntimeException
      */
     private function validateReturnLineQuantity(SaleReturnInvoiceItem $item): void
@@ -481,15 +484,21 @@ class SaleInvoiceService
         $originalItem = $item->originalItem;
 
         if (! $originalItem) {
-            return; // Cannot validate without the original — skip
+            throw new \RuntimeException(
+                __('sale_return.missing_original_item', [
+                    'item_name' => $item->variant?->full_qualified_name ?? __('app.unknown_product'),
+                ])
+            );
         }
 
         $remainingReturnable = $originalItem->getRemainingReturnableQuantity($item->id);
 
         if ((float) $item->quantity > $remainingReturnable) {
+
             throw new \RuntimeException(
-                __('sale_return.exceeds_returnable_quantity', [
+                __('sale_return.exceeds_returnable_quantity_for_item', [
                     'max' => $remainingReturnable,
+                    'item_name' => $item->variant?->full_qualified_name,
                 ])
             );
         }
