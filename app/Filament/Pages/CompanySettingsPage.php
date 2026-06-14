@@ -445,7 +445,7 @@ class CompanySettingsPage extends Page implements HasForms
                     ->numeric()
                     ->minValue(0)
                     ->maxValue(100)
-                    ->step(0.01)
+                    ->step('any')
                     ->suffix('%')
                     ->required(),
             ])

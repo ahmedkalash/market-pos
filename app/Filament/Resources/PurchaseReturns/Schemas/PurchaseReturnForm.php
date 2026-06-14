@@ -264,8 +264,13 @@ class PurchaseReturnForm
                                         ->helperText(__('sale_return.qty_tooltip'))
                                         ->hintIcon('heroicon-m-information-circle', tooltip: __('purchase_return.quantity_tooltip'))
                                         ->hint(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
+                                        ->maxValue(fn (Get $get) => (float) $get('max_returnable'))
+                                        ->extraInputAttributes(fn (Get $get) => [
+                                            'oninvalid' => "this.setCustomValidity('" . __('purchase_return.exceeds_returnable_quantity', ['max' => $get('max_returnable'),]) . "')",
+                                            'oninput' => "this.setCustomValidity('')", // Clears the error when they start typing again
+                                        ])
                                         ->rules(['min:0.001'])
-                                        ->step(1)
+                                        ->step('any')
                                         ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set, $state) {
                                             $max = (float) $get('max_returnable');

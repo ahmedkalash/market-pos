@@ -311,8 +311,8 @@ class SaleReturnInvoiceForm
                                             ->hintIcon('heroicon-m-information-circle', tooltip: __('sale_return.quantity_tooltip'))
                                             ->numeric()
                                             ->required()
-                                            ->minValue(0.001)
-                                            ->step(0.001)
+                                            ->rules(['min:0.001'])
+                                            ->step('any')
                                             ->maxValue(fn (Get $get) => (float) $get('max_returnable'))
                                             ->extraInputAttributes(fn (Get $get) => [
                                                 'oninvalid' => "this.setCustomValidity('" . __('sale_return.exceeds_returnable_quantity', ['max' => $get('max_returnable'),]) . "')",

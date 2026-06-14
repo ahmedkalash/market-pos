@@ -773,7 +773,8 @@ class VariantsRelationManager extends RelationManager
                                 ->label(__('inventory.quantity'))
                                 ->numeric()
                                 ->required()
-                                ->minValue(0.001),
+                                ->step('any')
+                                ->rules(['min:0.001']),
 
                             Select::make('reason')
                                 ->label(__('inventory.reason'))

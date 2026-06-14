@@ -279,7 +279,7 @@ class SaleInvoiceForm
                                         ->numeric()
                                         ->required()
                                         ->default(1)
-                                        ->step(1)
+                                        ->step('any')
                                         ->hint(function (Get $get) {
                                             $priceType = $get('price_type');
                                             $priceTypeValue = PriceType::toString($priceType);
@@ -334,6 +334,7 @@ class SaleInvoiceForm
                                         ->label(__('sale_invoice.unit_price'))
                                         ->numeric()
                                         ->required()
+                                        ->step('any')
                                         ->prefix($user->company->currency_symbol ?? 'ج.م')
                                         ->minValue(function (Get $get) {
                                             $variant = self::getCachedVariant($get('product_variant_id'));
@@ -412,7 +413,7 @@ class SaleInvoiceForm
                                         ->label(__('sale_invoice.unit_discount_amount'))
                                         ->numeric()
                                         ->minValue(0)
-                                        ->step(0.01)
+                                        ->step('any')
                                         ->required(fn (Get $get) => filled($get('discount_type')))
                                         ->helperText(fn (Get $get) => self::isDiscountDisabled($get) ? __('sale_invoice.discount_disabled_helper_text') : __('sale_invoice.unit_discount_helper_text'))
                                         ->disabled(fn (Get $get) => self::isDiscountDisabled($get) || blank($get('discount_type')))
@@ -641,7 +642,7 @@ class SaleInvoiceForm
                                 ->helperText(__('sale_invoice.global_discount_amount_helper'))
                                 ->numeric()
                                 ->minValue(0)
-                                ->step(0.01)
+                                ->step('any')
                                 ->required(fn (Get $get) => filled($get('discount_type')))
                                 ->disabled(fn (Get $get) => blank($get('discount_type')))
                                 ->dehydrated()
