@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Store;
 use App\Models\UnitOfMeasure;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,11 +21,19 @@ class ProductVariantFactory extends Factory
      */
     public function definition(): array
     {
-        $retailPrice = fake()->randomFloat(2, 10, 500);
-        $purchasePrice = round($retailPrice * fake()->randomFloat(2, 0.4, 0.8), 2);
+        $retailPrice = fake()->randomFloat(2, 10, 1000);
+        $purchasePrice = $retailPrice * 0.7; // 30% margin
 
         return [
             'product_id' => Product::factory(),
+            'company_id' => function (array $attributes) {
+                $product = Product::find($attributes['product_id']);
+                return $product ? $product->company_id : Company::factory();
+            },
+            'store_id' => function (array $attributes) {
+                $product = Product::find($attributes['product_id']);
+                return $product ? $product->store_id : Store::factory();
+            },
             'uom_id' => UnitOfMeasure::factory(),
             'name_en' => fake()->unique()->words(2, true),
             'name_ar' => 'متغير '.fake()->unique()->word(),

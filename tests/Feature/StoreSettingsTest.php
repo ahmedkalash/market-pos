@@ -116,6 +116,7 @@ class StoreSettingsTest extends TestCase
 
         Livewire::test(StoreSettingsPage::class)
             ->fillForm([
+                'phone' => '123456789',
                 'whatsapp_number' => '987654',
                 'receipt_header' => 'Branch Header',
                 'receipt_show_logo' => '0',

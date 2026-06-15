@@ -58,6 +58,7 @@ class SaleInvoiceServiceTest extends TestCase
         ]);
 
         $product = Product::factory()->create([
+            'company_id' => $company->id,
             'store_id' => $this->store->id,
             'category_id' => $category->id,
             'tax_class_id' => $taxClass->id,
@@ -169,7 +170,7 @@ class SaleInvoiceServiceTest extends TestCase
         ]);
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage(__('sale_invoice.no_items'));
+        $this->expectExceptionMessage(__('sale_invoice.no_items_or_extras'));
 
         $this->service->finalize($invoice);
     }
@@ -217,6 +218,7 @@ class SaleInvoiceServiceTest extends TestCase
         $otherStore = Store::factory()->create(['company_id' => $this->user->company_id]);
 
         $otherProduct = Product::factory()->create([
+            'company_id' => $this->user->company_id,
             'store_id' => $otherStore->id,
         ]);
 

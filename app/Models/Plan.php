@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\PlanFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,5 +55,11 @@ class Plan extends Model
     public function isFree(): bool
     {
         return $this->price <= 0;
+    }
+
+    #[Scope]
+    public function active(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
     }
 }

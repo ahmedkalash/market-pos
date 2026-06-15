@@ -244,9 +244,10 @@ class SaleInvoiceService
                 $variant = $item->variant;
 
                 // Guard: ensure the variant actually belongs to the same store as the invoice
-                if (! $variant->product || (int) $variant->product->store_id !== (int) $invoice->store_id) {
+                if (! $variant || ! $variant->product || (int) $variant->product->store_id !== (int) $invoice->store_id) {
                     throw new \RuntimeException(
-                        "Variant [{$variant->id}] does not belong to store [{$invoice->store_id}]."
+                        // todo translate this msg
+                        "Variant [{$item->product_variant_id}] does not belong to store [{$invoice->store_id}]."
                     );
                 }
 
