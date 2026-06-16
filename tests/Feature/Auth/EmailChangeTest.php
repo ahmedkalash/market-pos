@@ -47,6 +47,10 @@ class EmailChangeTest extends TestCase
         app(OtpService::class)->generate('new@example.com');
         $otp = OtpVerification::where('identifier', 'new@example.com')->first();
 
+        \Illuminate\Support\Facades\RateLimiter::shouldReceive('tooManyAttempts')->andReturn(false);
+        \Illuminate\Support\Facades\RateLimiter::shouldReceive('hit')->andReturn(true);
+        \Illuminate\Support\Facades\RateLimiter::shouldReceive('clear')->andReturn(true);
+
         // Attempt with wrong OTP
         Livewire::test(EditProfile::class)
             ->set('data.email', 'new@example.com')
