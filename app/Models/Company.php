@@ -5,9 +5,8 @@ namespace App\Models;
 use App\Enums\CurrencyPosition;
 use App\Enums\RoundingRule;
 use App\Models\Concerns\HandlesFileStorage;
+use App\Models\Concerns\HasActiveScope;
 use Database\Factories\CompanyFactory;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +19,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Company extends Model implements HasMedia
 {
     /** @use HasFactory<CompanyFactory> */
-    use HandlesFileStorage, HasFactory, InteractsWithMedia, SoftDeletes;
+    use HandlesFileStorage, HasActiveScope, HasFactory, InteractsWithMedia, SoftDeletes;
 
     /**
      * @var list<string>
@@ -162,11 +161,5 @@ class Company extends Model implements HasMedia
     public function isOnTrial(): bool
     {
         return $this->plan?->isTrial() ?? false;
-    }
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
     }
 }

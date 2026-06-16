@@ -4,16 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use App\Models\Concerns\HasActiveScope;
 use Database\Factories\ShippingDestinationFactory;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ShippingDestination extends Model
 {
     /** @use HasFactory<ShippingDestinationFactory> */
-    use BelongsToCompany, BelongsToStore, HasFactory;
+    use BelongsToCompany, BelongsToStore, HasActiveScope, HasFactory;
 
     protected $fillable = [
         'company_id',
@@ -27,10 +26,4 @@ class ShippingDestination extends Model
         'is_active' => 'boolean',
         'cost' => 'decimal:2',
     ];
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
-    }
 }

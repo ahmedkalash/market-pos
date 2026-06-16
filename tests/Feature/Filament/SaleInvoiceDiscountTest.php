@@ -42,6 +42,7 @@ class SaleInvoiceDiscountTest extends TestCase
         ]);
 
         $product = Product::factory()->create([
+            'company_id' => $this->company->id,
             'store_id' => $this->store->id,
         ]);
 
@@ -55,28 +56,34 @@ class SaleInvoiceDiscountTest extends TestCase
 
     public function test_it_can_apply_item_level_fixed_discount()
     {
-        Livewire::actingAs($this->user)
+        $res = Livewire::actingAs($this->user)
             ->test(CreateSaleInvoice::class)
             ->fillForm([
                 'store_id' => $this->store->id,
                 'payment_method' => 'cash',
-                'subtotal_amount' => 200.00,
             ])
             ->set('data.items', [
-                [
+                'test-item-1' => [
                     'product_variant_id' => $this->variant->id,
                     'price_type' => PriceType::Retail->value,
                     'quantity' => 2,
                     'unit_price' => 100.00,
-                    'discount_type' => DiscountType::Fixed->value,
-                    'unit_discount_amount' => 10.00,
-                    'line_total_discount' => 20.00,
                     'subtotal' => 200.00,
-                    'line_total' => 180.00,
+                    'line_total' => 200.00,
                 ],
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->set('data.items.test-item-1.discount_type', DiscountType::Fixed->value)
+            ->set('data.items.test-item-1.unit_discount_amount', 10.00)
+            // Need to set line totals manually if the livewire recalculation is skipped or we just provide them
+            ->set('data.items.test-item-1.line_total_discount', 20.00)
+            ->set('data.items.test-item-1.line_total', 180.00)
+            ->set('data.subtotal_amount', 200.00)
+            ->set('data.total_amount', 180.00)
+            ->call('create');
+        if ($res->errors()->isNotEmpty()) {
+            dump($res->errors());
+        }
+        $res->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('sale_invoice_items', [
             'product_variant_id' => $this->variant->id,
@@ -93,12 +100,11 @@ class SaleInvoiceDiscountTest extends TestCase
 
     public function test_it_prevents_item_discount_below_minimum_price()
     {
-        Livewire::actingAs($this->user)
+        $res = Livewire::actingAs($this->user)
             ->test(CreateSaleInvoice::class)
             ->fillForm([
                 'store_id' => $this->store->id,
                 'payment_method' => 'cash',
-                'subtotal_amount' => 100.00,
             ])
             ->set('data.items', [
                 [
@@ -106,15 +112,16 @@ class SaleInvoiceDiscountTest extends TestCase
                     'price_type' => PriceType::Retail->value,
                     'quantity' => 1,
                     'unit_price' => 100.00,
+                    'subtotal' => 100.00,
                     'discount_type' => DiscountType::Fixed->value,
                     'unit_discount_amount' => 30.00, // Min retail price is 80, this would make it 70
                     'line_total_discount' => 30.00,
-                    'subtotal' => 100.00,
                     'line_total' => 70.00,
                 ],
             ])
-            ->call('create')
-            ->assertHasFormErrors(['items.0.unit_discount_amount']);
+            ->call('create');
+
+        $res->assertHasFormErrors(['items.0.unit_discount_amount']);
     }
 
     public function test_it_can_apply_global_invoice_discount()
@@ -124,13 +131,9 @@ class SaleInvoiceDiscountTest extends TestCase
             ->fillForm([
                 'store_id' => $this->store->id,
                 'payment_method' => 'cash',
-                'discount_type' => DiscountType::Fixed->value,
-                'subtotal_amount' => 100.00,
-                'total_amount' => 85.00,
             ])
-            ->set('data.discount_amount', 15.00)
             ->set('data.items', [
-                [
+                'test-item-1' => [
                     'product_variant_id' => $this->variant->id,
                     'price_type' => PriceType::Retail->value,
                     'quantity' => 1,
@@ -140,7 +143,14 @@ class SaleInvoiceDiscountTest extends TestCase
                     'line_total' => 100.00,
                 ],
             ])
+            ->set('data.subtotal_amount', 100.00)
+            ->set('data.discount_type', DiscountType::Fixed->value)
+            ->set('data.discount_amount', 15.00)
+            ->set('data.total_amount', 85.00)
             ->call('create');
+        if ($res->errors()->isNotEmpty()) {
+            dump($res->errors());
+        }
         $res->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('sale_invoices', [
@@ -157,22 +167,21 @@ class SaleInvoiceDiscountTest extends TestCase
             ->fillForm([
                 'store_id' => $this->store->id,
                 'payment_method' => 'cash',
-                'discount_type' => DiscountType::Fixed->value,
                 'subtotal_amount' => 100.00,
-                'total_amount' => 75.00,
-            ])
-            ->set('data.discount_amount', 25.00)
-            ->set('data.items', [
-                [
-                    'product_variant_id' => $this->variant->id,
-                    'price_type' => PriceType::Retail->value,
-                    'quantity' => 1,
-                    'unit_price' => 100.00,
-                    'line_total_discount' => 0.00,
-                    'subtotal' => 100.00,
-                    'line_total' => 100.00,
+                'items' => [
+                    'test-item-1' => [
+                        'product_variant_id' => $this->variant->id,
+                        'price_type' => PriceType::Retail->value,
+                        'quantity' => 1,
+                        'unit_price' => 100.00,
+                        'line_total_discount' => 0.00,
+                        'subtotal' => 100.00,
+                        'line_total' => 100.00,
+                    ],
                 ],
             ])
+            ->set('data.discount_type', DiscountType::Fixed->value)
+            ->set('data.discount_amount', 25.00) // This will drop it below min_retail_price (80)
             ->call('create')
             ->assertHasFormErrors(['discount_amount']);
     }

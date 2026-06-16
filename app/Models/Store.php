@@ -4,9 +4,8 @@ namespace App\Models;
 
 use App\Actions\SeedDefaultStoreCatalogSettingsAction;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasActiveScope;
 use Database\Factories\StoreFactory;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +17,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Store extends Model implements HasMedia
 {
     /** @use HasFactory<StoreFactory> */
-    use BelongsToCompany, HasFactory, InteractsWithMedia;
+    use BelongsToCompany, HasActiveScope, HasFactory, InteractsWithMedia;
 
     protected static function booted(): void
     {
@@ -138,11 +137,5 @@ class Store extends Model implements HasMedia
         return Attribute::make(
             get: fn () => $this->{lang_suffix('name')},
         );
-    }
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
     }
 }

@@ -540,13 +540,9 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ]- implement Audit Logs / Transfer History for moving users between stores
 - [ ] phone login and notifications
 - [ ] soft deletes
-- [ ] **delete store process: handle what should happen when deleting a store from a company**
-- [ ] **delete user process: handle what should happen when deleting a user from a company or a store**
-- [ ] **delete product process: handle what should happen when deleting a product**
 - [ ] metadata for ETA E-invoicing (V2/Regional)
 - [ ] ability to scan barcodes vai camera 
 - [ ] `variant_price_tiers` table: Support for multiple price tiers per variant (e.g., VIP price, special contract price). Prerequisite for PROMO-008 (Multiple price lists configurable per customer type).
-- [ ] Exportable/Printable filter results: Add export action to Products & Variants tables that exports the currently filtered results to CSV/Excel.
 - [ ] **Price change audit log: Track every price change with a `price_audit_logs` table (variant_id, field_changed, old_value, new_value, changed_by, changed_at) to prevent fraud and provide historical pricing data.**
 - [ ] Low Stock Alerts — Dashboard widget + in-app notifications for items hitting their threshold. Quick win once the ledger exists.
 - [ ] Concurrency control(prices, stock qty,...etc)
@@ -554,8 +550,6 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
     - [ ] When we build the Point of Sale (POS) checkout and the Purchasing/Receiving flows, they will hook directly into InventoryService::recordMovement(MovementType::Sale) and MovementType::StockIn.
 - [ ] COGS (Cost of Goods Sold) Tracking (Later):
     - [ ] Link movements to purchase prices so the system can calculate accurate profit margins over time based on inventory flow (FIFO/LIFO).
-- [ ] Polymorphic Reference Linking (V2):
-    - [ ] Enhance `InventoryMovementResource` to provide clickable links to source documents (Invoices, POs, Transfers) once those modules are built.
 - [ ] Visual Inventory Trends (Charts) — The "Wow" Factor
     The Idea: Humans are bad at reading tables but great at reading charts.
     The Feature: Add a small "Performance Chart" at the top of the ledger. It shows a line graph of the stock level for the selected variant over the last 30 days.
@@ -564,9 +558,6 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
     The Idea: Periodic counting is a nightmare for staff.
     The Feature: A specialized view where they scan items and enter the "Physical Count." The system automatically calculates the difference and creates the "Manual Edit" records for them.
     The Result: It turns a 5-hour job into a 30-minute job.
-- [ ] **Instant Exporting (Excel/PDF)**
-    The Idea: Accountants need the data outside the app.
-    The Feature: A "Export Audit Log" button that generates a professional Excel file with all current filters applied.
 - [ ] Implement ShouldQueue on the NotifyLowStock notification. This offloads the delivery to your queue workers (Redis/Database), keeping the POS interface lightning fast.
 - [ ] Real-Time: Instant Alerts (Zero Polling):
       You recently updated the polling to 60s. In a high-traffic supermarket, 60 seconds might be too long for a critical stock alert.
@@ -584,7 +575,6 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 
 - [ ] Advanced Barcode Parsing (Weighted Items)
       In the Arab region (and globally), deli counters and butchers use scales that print a specific barcode (e.g., starts with 20 or 21, followed by the PLU code, then the weight/price). While your plan says "We do not need to support complex scale-generated barcodes", adding a smart barcode parser that automatically extracts weight and calculates price at the POS screen is a massive selling point for a premium supermarket POS.
-- [ ] add discounts feature to the purchase invoices and also handle it their return
 - [ ] **Streamlined Localization UI & Nullable English Fields (V2):**
       - Make all English columns (`name_en`, `description_en`, etc.) nullable in the database, as many users in the Arabic market may not require English data.
       - Refactor the UI (tables and forms) to consolidate the display of localized names. Instead of separate columns for Arabic and English, display the primary Arabic name prominently with the English name underneath it as a secondary description, saving horizontal space and simplifying the interface.
@@ -592,8 +582,6 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
       - **Decimal Support:** Add an `allow_decimals` toggle. If enabled, allow the user to specify the `allowed_decimals` count (e.g., 2 for Meters, 3 for Grams). This ensures a clean UX (preventing cashiers from selling "1.5 Pieces") while cleanly handling weight/length measurements.
       - **Base Units & Conversions (V2):** Allow defining base units (e.g., Piece) and related composite units (e.g., Carton = 24 Pieces, Box = 12 Pieces) for advanced purchasing and inventory breakdown.
       - **Active/Inactive Status:** A toggle to disable unused units from appearing in dropdowns without deleting them and breaking historical records.
-- [ ] **Hide Tax-Related UI Elements (Temporary):**
-      - Temporarily disable and hide all tax-related fields, columns, and settings across the entire application (e.g., Tax Classes on Products, Tax breakdowns on invoices). This will prevent user confusion and conflicts until the full tax engine is ready for deployment in later phases.
 - [ ] **Edit Finalized Invoices (Non-Financial Data):**
       - Allow authorized users to edit non-financial and non-inventory data on finalized invoices (Purchase, Sale, and Returns) without needing to process a refund or alter quantities.
       - Editable fields may include notes, customer, shipping destination, shipping cost, and vendor.
@@ -609,12 +597,22 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
       - **Implementation Detail:** Read the `product_name` and `barcodes` directly from the `$state` array (which should be hydrated beforehand) to completely avoid N+1 database queries. Use Filament's native `Blade::render('<x-filament::badge ...>')` method to draw them beautifully and efficiently as UI badges without using heavy PHP components or writing raw HTML strings.
 - [ ] - use field set and disable all form on wire load event to prevent overwriting
         the form data in the browser by the one coming back from the server in all invoices forms
-- [ ] -  static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
-- [ ] -  static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
-- [ ] - for item label of a repeater consider displaying product name and barcodes via the badge() function in all invoices
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
-- [ ] - some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
-
+- --------------------------------
+- [ ] some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
+- [ ] Export/printing invoices to Excel/pdf / printer
+- [ ] Export other items like "inventory movement", ...etc
+- [ ] Bulk import products via Excel/CSV
+- [ ] Export product list to Excel/CSV
+- [ ] **Hide Tax-Related UI Elements (Temporary):**
+- [ ] Polymorphic Reference Linking (V2):
+- [ ] Enhance `InventoryMovementResource` to provide clickable links to source documents (Invoices, POs, Transfers) once those modules are built.
+- [ ] Transfer products across branches feature
+- [ ] static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
+- [ ] static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
+- [ ] **delete store process: handle what should happen when deleting a store from a company**
+- [ ] **delete user process: handle what should happen when deleting a user from a company or a store**
+- [ ] **delete product process: handle what should happen when deleting a product**
 
 ### Performance & Database Optimization
 - [ ] **Optimize `max_returnable` Calculation in Returns (N+1 Prevention):**

@@ -5,8 +5,8 @@ namespace App\Models;
 use App\Enums\PriceType;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use App\Models\Concerns\HasActiveScope;
 use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductVariant extends Model
 {
-    use BelongsToCompany, BelongsToStore, HasFactory;
+    use BelongsToCompany, BelongsToStore, HasActiveScope, HasFactory;
 
     /** @var list<string> */
     protected $fillable = [
@@ -212,11 +212,5 @@ class ProductVariant extends Model
     public function getAllBarcodesAsArray(): array
     {
         return $this->barcodes->pluck('barcode')->toArray();
-    }
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
     }
 }

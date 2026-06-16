@@ -7,9 +7,7 @@ use App\Filament\Resources\Products\RelationManagers\VariantsRelationManager;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\ProductCategory;
 use App\Models\Store;
-use App\Models\TaxClass;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -22,7 +20,9 @@ class ProductTenantTest extends TestCase
     use RefreshDatabase;
 
     private User $companyUser;
+
     private Store $store;
+
     private Company $company;
 
     protected function setUp(): void
@@ -32,7 +32,7 @@ class ProductTenantTest extends TestCase
 
         $this->company = Company::factory()->create();
         $this->store = Store::factory()->create(['company_id' => $this->company->id]);
-        
+
         $this->companyUser = User::factory()->create([
             'company_id' => $this->company->id,
             'store_id' => null,
@@ -46,7 +46,7 @@ class ProductTenantTest extends TestCase
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
         ]);
-        
+
         $uom = UnitOfMeasure::factory()->create([
             'company_id' => $this->company->id,
         ]);
@@ -56,17 +56,17 @@ class ProductTenantTest extends TestCase
                 'ownerRecord' => $product,
                 'pageClass' => EditProduct::class,
             ])
-        ->callTableAction('create', data: [
-            'name_en' => 'Test Variant',
-            'name_ar' => 'Test Variant AR',
-            'uom_id' => $uom->id,
-            'purchase_price' => 10,
-            'retail_price' => 20,
-            'quantity' => 0,
-            'barcodes' => [],
-            'variant_attributes' => [],
-        ])
-        ->assertHasNoTableActionErrors();
+            ->callTableAction('create', data: [
+                'name_en' => 'Test Variant',
+                'name_ar' => 'Test Variant AR',
+                'uom_id' => $uom->id,
+                'purchase_price' => 10,
+                'retail_price' => 20,
+                'quantity' => 0,
+                'barcodes' => [],
+                'variant_attributes' => [],
+            ])
+            ->assertHasNoTableActionErrors();
 
         $this->assertDatabaseHas('product_variants', [
             'product_id' => $product->id,
@@ -92,9 +92,9 @@ class ProductTenantTest extends TestCase
         ]);
 
         $this->actingAs($this->companyUser);
-        
+
         $products = Product::all();
-        
+
         $this->assertCount(1, $products);
         $this->assertEquals($this->company->id, $products->first()->company_id);
     }
@@ -102,7 +102,7 @@ class ProductTenantTest extends TestCase
     public function test_product_query_is_scoped_to_user_store()
     {
         $otherStore = Store::factory()->create(['company_id' => $this->company->id]);
-        
+
         $storeUser = User::factory()->create([
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
@@ -120,9 +120,9 @@ class ProductTenantTest extends TestCase
         ]);
 
         $this->actingAs($storeUser);
-        
+
         $products = Product::all();
-        
+
         $this->assertCount(1, $products);
         $this->assertEquals($this->store->id, $products->first()->store_id);
     }
@@ -155,9 +155,9 @@ class ProductTenantTest extends TestCase
         ]);
 
         $this->actingAs($this->companyUser);
-        
+
         $variants = ProductVariant::all();
-        
+
         $this->assertCount(1, $variants);
         $this->assertEquals($this->company->id, $variants->first()->company_id);
     }
@@ -165,7 +165,7 @@ class ProductTenantTest extends TestCase
     public function test_product_variant_query_is_scoped_to_user_store()
     {
         $otherStore = Store::factory()->create(['company_id' => $this->company->id]);
-        
+
         $storeUser = User::factory()->create([
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
@@ -194,9 +194,9 @@ class ProductTenantTest extends TestCase
         ]);
 
         $this->actingAs($storeUser);
-        
+
         $variants = ProductVariant::all();
-        
+
         $this->assertCount(1, $variants);
         $this->assertEquals($this->store->id, $variants->first()->store_id);
     }

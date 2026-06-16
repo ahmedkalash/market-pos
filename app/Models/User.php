@@ -5,12 +5,11 @@ namespace App\Models;
 use App\Enums\Roles;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use App\Models\Concerns\HasActiveScope;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,7 +22,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
 {
     /** @use HasFactory<UserFactory> */
-    use BelongsToCompany, BelongsToStore, HasFactory, HasRoles, InteractsWithMedia, Notifiable;
+    use BelongsToCompany, BelongsToStore, HasActiveScope, HasFactory, HasRoles, InteractsWithMedia, Notifiable;
 
     /**
      * @var list<string>
@@ -219,11 +218,5 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasMedia
         // They are allowed to manage any store-level user natively, OR any peer company-level user
         // (Given they have the correct Spatie permissions)
         return true;
-    }
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
     }
 }

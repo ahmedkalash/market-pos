@@ -3,7 +3,6 @@
 namespace Tests\Feature\Filament;
 
 use App\Enums\ExtraItemActionType;
-use App\Enums\Roles;
 use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
 use App\Filament\Resources\SaleReturnInvoices\Pages\CreateSaleReturnInvoice;
@@ -15,9 +14,9 @@ use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
 use App\Models\Store;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use Spatie\Permission\Models\Role as SpatieRole;
 use Tests\TestCase;
 
 class SaleReturnNegativeTotalValidationTest extends TestCase
@@ -40,6 +39,8 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(RolesAndPermissionsSeeder::class);
+
         $this->company = Company::factory()->create();
         $this->store = Store::factory()->create(['company_id' => $this->company->id]);
         $this->user = User::factory()->create([
@@ -47,8 +48,13 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
             'store_id' => $this->store->id,
         ]);
 
-        $role = SpatieRole::create(['name' => Roles::SUPER_ADMIN->value]);
-        $this->user->assignRole($role);
+        $this->user->givePermissionTo([
+            'view_any_sale_return_invoice',
+            'view_sale_return_invoice',
+            'create_sale_return_invoice',
+            'update_sale_return_invoice',
+            'finalize_sale_return_invoice',
+        ]);
 
         $customer = Customer::factory()->create(['company_id' => $this->company->id]);
 
@@ -60,8 +66,8 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
             'return_status' => SaleInvoiceReturnStatus::None,
         ]);
 
-        $product = Product::factory()->create(['store_id' => $this->store->id]);
-        $this->variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $product = Product::factory()->create(['store_id' => $this->store->id, 'company_id' => $this->company->id]);
+        $this->variant = ProductVariant::factory()->create(['product_id' => $product->id, 'store_id' => $this->store->id, 'company_id' => $this->company->id]);
 
         $this->invoiceItem = SaleInvoiceItem::factory()->create([
             'sale_invoice_id' => $this->invoice->id,

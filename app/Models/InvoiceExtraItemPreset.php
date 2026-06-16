@@ -6,6 +6,7 @@ use App\Enums\ExtraItemActionType;
 use App\Enums\InvoiceType;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use App\Models\Concerns\HasActiveScope;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class InvoiceExtraItemPreset extends Model
 {
-    use BelongsToCompany, BelongsToStore, HasFactory;
+    use BelongsToCompany, BelongsToStore, HasActiveScope, HasFactory;
 
     /** @var list<string> */
     protected $fillable = [
@@ -38,12 +39,6 @@ class InvoiceExtraItemPreset extends Model
             'amount' => 'decimal:2',
             'is_active' => 'boolean',
         ];
-    }
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
     }
 
     #[Scope]

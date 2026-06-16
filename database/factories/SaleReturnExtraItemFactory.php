@@ -24,7 +24,6 @@ class SaleReturnExtraItemFactory extends Factory
             'name' => $this->faker->words(3, true),
             'action_type' => $this->faker->randomElement([ExtraItemActionType::Addition, ExtraItemActionType::Subtraction]),
             'amount' => $this->faker->randomFloat(2, 5, 50),
-            'is_refundable' => false,
             'notes' => $this->faker->optional()->sentence(),
         ];
     }

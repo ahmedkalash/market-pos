@@ -28,10 +28,12 @@ class ProductVariantFactory extends Factory
             'product_id' => Product::factory(),
             'company_id' => function (array $attributes) {
                 $product = Product::find($attributes['product_id']);
+
                 return $product ? $product->company_id : Company::factory();
             },
             'store_id' => function (array $attributes) {
                 $product = Product::find($attributes['product_id']);
+
                 return $product ? $product->store_id : Store::factory();
             },
             'uom_id' => UnitOfMeasure::factory(),

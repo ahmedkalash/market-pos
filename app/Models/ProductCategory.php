@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\BelongsToStore;
+use App\Models\Concerns\HasActiveScope;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 class ProductCategory extends Model implements HasMedia
 {
-    use BelongsToCompany, BelongsToStore, HasFactory, HasRecursiveRelationships, InteractsWithMedia;
+    use BelongsToCompany, BelongsToStore, HasActiveScope, HasFactory, HasRecursiveRelationships, InteractsWithMedia;
 
     protected $fillable = [
         'company_id',
@@ -53,12 +54,6 @@ class ProductCategory extends Model implements HasMedia
     public function enableCycleDetection(): bool
     {
         return true;
-    }
-
-    #[Scope]
-    public function active(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
     }
 
     #[Scope]
