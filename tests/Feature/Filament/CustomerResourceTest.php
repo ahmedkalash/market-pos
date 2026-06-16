@@ -4,9 +4,7 @@ namespace Tests\Feature\Filament;
 
 use App\Actions\CreateDefaultCompanyRolesAction;
 use App\Enums\Roles;
-use App\Filament\Resources\Customers\Pages\CreateCustomer;
-use App\Filament\Resources\Customers\Pages\EditCustomer;
-use App\Filament\Resources\Customers\Pages\ListCustomers;
+use App\Filament\Resources\Customers\Pages\ManageCustomers;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
@@ -55,7 +53,7 @@ class CustomerResourceTest extends TestCase
         $otherCompany = Company::factory()->create(['is_active' => true]);
         $otherCustomer = Customer::factory()->create(['company_id' => $otherCompany->id]);
 
-        Livewire::test(ListCustomers::class)
+        Livewire::test(ManageCustomers::class)
             ->assertCanSeeTableRecords($customers)
             ->assertCanNotSeeTableRecords([$otherCustomer]);
     }
@@ -67,8 +65,8 @@ class CustomerResourceTest extends TestCase
 
         $this->actingAs($admin);
 
-        Livewire::test(CreateCustomer::class)
-            ->fillForm([
+        Livewire::test(ManageCustomers::class)
+            ->callAction('create', data: [
                 'name' => 'John Doe',
                 'email' => 'john@example.com',
                 'phone' => '1234567890',
@@ -76,8 +74,7 @@ class CustomerResourceTest extends TestCase
                 'address' => '123 Main St',
                 'is_active' => true,
             ])
-            ->call('create')
-            ->assertHasNoFormErrors();
+            ->assertHasNoActionErrors();
 
         $this->assertDatabaseHas('customers', [
             'name' => 'John Doe',
@@ -96,14 +93,11 @@ class CustomerResourceTest extends TestCase
 
         $customer = Customer::factory()->create(['company_id' => $company->id]);
 
-        Livewire::test(EditCustomer::class, [
-            'record' => $customer->getRouteKey(),
-        ])
-            ->fillForm([
+        Livewire::test(ManageCustomers::class)
+            ->callTableAction('edit', $customer, data: [
                 'name' => 'Jane Doe',
             ])
-            ->call('save')
-            ->assertHasNoFormErrors();
+            ->assertHasNoTableActionErrors();
 
         $this->assertDatabaseHas('customers', [
             'id' => $customer->id,

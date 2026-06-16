@@ -49,11 +49,11 @@ class SaleReturnNegativeTotalValidationTest extends TestCase
         ]);
 
         $this->user->givePermissionTo([
-            'view_any_sale_return_invoice',
-            'view_sale_return_invoice',
-            'create_sale_return_invoice',
-            'update_sale_return_invoice',
-            'finalize_sale_return_invoice',
+            'view_any_sale_return',
+            'view_sale_return',
+            'create_sale_return',
+            'update_sale_return',
+            'finalize_sale_return',
         ]);
 
         $customer = Customer::factory()->create(['company_id' => $this->company->id]);

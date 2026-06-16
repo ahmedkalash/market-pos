@@ -250,8 +250,9 @@ class SaleInvoiceForm
                                         ->disableOptionWhen(function (string $value, Get $get) {
                                             if ($value === PriceType::Wholesale->value) {
                                                 $variantId = $get('product_variant_id');
+                                                $variant = self::getCachedVariant($variantId);
 
-                                                return ! self::getCachedVariant($variantId)?->wholesale_enabled;
+                                                return $variant ? ! $variant->wholesale_enabled : false;
                                             }
 
                                             return false;
@@ -309,6 +310,8 @@ class SaleInvoiceForm
                                         ->disabled(fn (Get $get) => ! $get('product_variant_id'))
                                         ->rules([
                                             'min:0.001',
+                                        ])
+                                        ->rule(
                                             function (Get $get) {
                                                 return function (string $attribute, $value, \Closure $fail) use ($get) {
                                                     $priceType = $get('price_type');
@@ -321,8 +324,8 @@ class SaleInvoiceForm
                                                         }
                                                     }
                                                 };
-                                            },
-                                        ])
+                                            }
+                                        )
                                         ->live(debounce: 1000)
                                         ->afterStateUpdated(function (Get $get, Set $set) {
                                             self::recalculateLine($get, $set);

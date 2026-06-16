@@ -61,6 +61,7 @@ class SaleInvoiceResourceTest extends TestCase
         ]);
 
         $product = Product::factory()->create([
+            'company_id' => $company->id,
             'store_id' => $this->store->id,
             'category_id' => $category->id,
             'tax_class_id' => $taxClass->id,

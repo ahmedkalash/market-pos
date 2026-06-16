@@ -27,7 +27,7 @@ class ForgotPasswordTest extends TestCase
 
     public function test_forgot_password_page_is_accessible(): void
     {
-        $this->get(route('filament.company.auth.password-reset.request'))
+        $this->get(route('filament.app.auth.password-reset.request'))
             ->assertSuccessful();
     }
 

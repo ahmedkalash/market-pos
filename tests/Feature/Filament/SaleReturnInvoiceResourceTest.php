@@ -33,6 +33,7 @@ class SaleReturnInvoiceResourceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
 
         $this->company = Company::factory()->create();
         $this->store = Store::factory()->create(['company_id' => $this->company->id]);
@@ -41,8 +42,10 @@ class SaleReturnInvoiceResourceTest extends TestCase
             'store_id' => $this->store->id,
         ]);
 
-        $role = SpatieRole::create(['name' => Roles::SUPER_ADMIN->value]);
-        $this->user->assignRole($role);
+        app(\App\Actions\CreateDefaultCompanyRolesAction::class)->execute($this->company);
+        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($this->company->id);
+
+        $this->user->assignRole(\App\Enums\Roles::COMPANY_ADMIN->value);
     }
 
     public function test_create_sets_return_number_and_created_by(): void
@@ -60,8 +63,15 @@ class SaleReturnInvoiceResourceTest extends TestCase
             'return_status' => SaleInvoiceReturnStatus::None,
         ]);
 
-        $product = Product::factory()->create(['store_id' => $this->store->id]);
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $product = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id
+        ]);
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $product->id
+        ]);
 
         $invoiceItem = SaleInvoiceItem::factory()->create([
             'sale_invoice_id' => $invoice->id,
@@ -72,8 +82,8 @@ class SaleReturnInvoiceResourceTest extends TestCase
         ]);
 
         Livewire::test(CreateSaleReturnInvoice::class)
-            ->set('data.invoice_number_input', $invoice->invoice_number)
             ->fillForm([
+                'invoice_number_input' => $invoice->invoice_number,
                 'store_id' => $this->store->id,
                 'customer_id' => $invoice->customer_id,
                 'return_reason' => 'Defective',
@@ -114,7 +124,9 @@ class SaleReturnInvoiceResourceTest extends TestCase
         ]);
 
         Livewire::test(CreateSaleReturnInvoice::class)
-            ->set('data.invoice_number_input', $invoice->invoice_number)
+            ->fillForm([
+                'invoice_number_input' => $invoice->invoice_number,
+            ])
             ->assertFormSet([
                 'original_invoice_id' => null, // Should not be populated
             ])
@@ -134,7 +146,9 @@ class SaleReturnInvoiceResourceTest extends TestCase
         ]);
 
         Livewire::test(CreateSaleReturnInvoice::class)
-            ->set('data.invoice_number_input', $invoice->invoice_number)
+            ->fillForm([
+                'invoice_number_input' => $invoice->invoice_number,
+            ])
             ->assertFormSet([
                 'original_invoice_id' => null, // Should not be populated
             ])

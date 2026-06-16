@@ -599,7 +599,7 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
         the form data in the browser by the one coming back from the server in all invoices forms
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
 - --------------------------------
-- [ ] some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
+- [x] some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
 - [ ] Export/printing invoices to Excel/pdf / printer
 - [ ] Export other items like "inventory movement", ...etc
 - [ ] Bulk import products via Excel/CSV

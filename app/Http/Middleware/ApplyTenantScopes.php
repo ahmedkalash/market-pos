@@ -34,7 +34,7 @@ class ApplyTenantScopes
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('filament.company.auth.login')
+            return redirect()->route('filament.app.auth.login')
                 ->with('error', __('app.suspended_msg'));
         }
 
@@ -43,7 +43,7 @@ class ApplyTenantScopes
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('filament.company.auth.login')
+            return redirect()->route('filament.app.auth.login')
                 ->with('error', __('app.expired_msg'));
         }
 
