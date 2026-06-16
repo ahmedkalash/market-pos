@@ -22,6 +22,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class ShippingDestinationResource extends Resource
@@ -53,7 +55,7 @@ class ShippingDestinationResource extends Resource
         return [
             Select::make('store_id')
                 ->label(__('app.store'))
-                ->relationship('store', lang_suffix('name'))
+                ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
                 ->required()
                 ->searchable(['name_en', 'name_ar'])
                 ->preload()
@@ -116,7 +118,7 @@ class ShippingDestinationResource extends Resource
             ->filters([
                 SelectFilter::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', lang_suffix('name'))
+                    ->relationship('store', lang_suffix('name'), fn (Builder $query) => $query->active())
                     ->searchable(['name_en', 'name_ar'])
                     ->preload()
                     ->visible(fn () => $user->isCompanyLevel()),

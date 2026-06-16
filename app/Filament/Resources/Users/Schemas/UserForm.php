@@ -11,6 +11,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 
@@ -112,7 +114,8 @@ class UserForm
                             // 1. TENANT ISOLATION:
                             // Ensure the dropdown only lists stores that belong to the
                             // authenticated user's company. (Super Admins bypass this).
-                            ->relationship('store', 'name_en', function ($query) use ($authUser) {
+                            ->relationship('store', 'name_en', function (Builder $query, ?Model $record) use ($authUser) {
+                                $query->active($record?->store_id);
                                 if (! $authUser->isSuperAdmin()) {
                                     $query->where('company_id', $authUser->company_id);
                                 }

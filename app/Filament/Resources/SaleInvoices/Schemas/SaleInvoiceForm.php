@@ -63,7 +63,7 @@ class SaleInvoiceForm
 
                             Select::make('store_id')
                                 ->label(__('sale_invoice.store'))
-                                ->relationship('store', lang_suffix('name'))
+                                ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
                                 ->default(fn (): ?int => $user->store_id)
                                 ->required()
                                 ->searchable(['name_en', 'name_ar'])
@@ -81,7 +81,7 @@ class SaleInvoiceForm
 
                             Select::make('customer_id')
                                 ->label(__('customer.model_label'))
-                                ->relationship('customer', 'name')
+                                ->relationship('customer', 'name', fn (Builder $query, ?Model $record) => $query->active($record?->customer_id))
                                 ->searchable()
                                 ->preload()
                                 ->createOptionForm([
@@ -749,7 +749,7 @@ class SaleInvoiceForm
                         ->schema([
                             Select::make('shipping_destination_id')
                                 ->label(__('shipping.destination'))
-                                ->relationship('shippingDestination', 'name', fn (Builder $query) => $query->active())
+                                ->relationship('shippingDestination', 'name', fn (Builder $query, ?Model $record) => $query->active($record?->shipping_destination_id))
                                 ->searchable()
                                 ->preload()
                                 ->createOptionForm([
@@ -973,7 +973,6 @@ class SaleInvoiceForm
                 ->body(__('sale_invoice.deductions_exceed_total_message'))
                 ->send();
         }
-
 
         // The grand total discount is the aggregate of all item discounts PLUS the global invoice discount
         $grandTotalDiscount = $itemDiscountsSum + $globalDiscountAmount;

@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\UnitOfMeasures\Schemas;
 
 use App\Models\User;
-use Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class UnitOfMeasureForm
 {
@@ -20,7 +22,7 @@ class UnitOfMeasureForm
             ->components([
                 Select::make('store_id')
                     ->label(__('app.store'))
-                    ->relationship('store', lang_suffix('name'))
+                    ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
                     ->required(fn () => $user->isCompanyLevel())
                     ->searchable(['name_en', 'name_ar'])
                     ->preload()

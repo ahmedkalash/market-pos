@@ -9,6 +9,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class ProductForm
@@ -55,7 +57,7 @@ class ProductForm
                     ->schema([
                         Select::make('store_id')
                             ->label(__('app.store'))
-                            ->relationship('store', lang_suffix('name'))
+                            ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
                             ->required()
                             ->searchable(['name_en', 'name_ar'])
                             ->preload()
@@ -68,10 +70,11 @@ class ProductForm
                             ->visible(fn () => $user->isStoreLevel())
                             ->disabled(fn (string $operation): bool => $operation === 'edit')
                             ->dehydrated(fn (string $operation): bool => $operation !== 'edit'),
+
                         Select::make('category_id')
                             ->label(__('product_category.category'))
                             ->helperText(__('product_category.category_helper'))
-                            ->relationship('category', lang_suffix('name'))
+                            ->relationship('category', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->category_id))
                             ->searchable(['name_en', 'name_ar'])
                             ->preload()
                             ->nullable(),
@@ -86,7 +89,7 @@ class ProductForm
 
                         Select::make('brand_id')
                             ->label(__('brand.brand'))
-                            ->relationship('brand', lang_suffix('name'))
+                            ->relationship('brand', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->brand_id))
                             ->searchable(['name_en', 'name_ar'])
                             ->preload()
                             ->nullable(),

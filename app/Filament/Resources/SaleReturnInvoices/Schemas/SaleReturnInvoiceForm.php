@@ -23,6 +23,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
@@ -119,7 +120,7 @@ class SaleReturnInvoiceForm
                                     ->native(false)
                                     ->columnSpan(1)
                                     ->label(__('app.customer'))
-                                    ->relationship('customer', 'name')
+                                    ->relationship('customer', 'name', fn (Builder $query, ?Model $record) => $query->active($record?->customer_id))
                                     ->default(function () {
                                         $invoiceId = self::getOriginalInvoiceIdFromRequest();
 
@@ -134,7 +135,7 @@ class SaleReturnInvoiceForm
                                     ->native(false)
                                     ->columnSpan(1)
                                     ->label(__('app.store'))
-                                    ->relationship('store', lang_suffix('name'))
+                                    ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
                                     ->preload()
                                     ->default(function () {
                                         $invoiceId = self::getOriginalInvoiceIdFromRequest();
@@ -315,7 +316,7 @@ class SaleReturnInvoiceForm
                                             ->step('any')
                                             ->maxValue(fn (Get $get) => (float) $get('max_returnable'))
                                             ->extraInputAttributes(fn (Get $get) => [
-                                                'oninvalid' => "this.setCustomValidity('" . __('sale_return.exceeds_returnable_quantity', ['max' => $get('max_returnable'),]) . "')",
+                                                'oninvalid' => "this.setCustomValidity('".__('sale_return.exceeds_returnable_quantity', ['max' => $get('max_returnable')])."')",
                                                 'oninput' => "this.setCustomValidity('')", // Clears the error when they start typing again
                                             ])
                                             ->live(debounce: 1000)

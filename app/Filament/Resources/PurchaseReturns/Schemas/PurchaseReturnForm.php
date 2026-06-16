@@ -23,6 +23,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
@@ -97,7 +98,7 @@ class PurchaseReturnForm
 
                             Select::make('vendor_id')
                                 ->label(__('purchase_return.vendor'))
-                                ->relationship('vendor', 'name')
+                                ->relationship('vendor', 'name', fn (Builder $query, ?Model $record) => $query->active($record?->vendor_id))
                                 ->default(function () {
                                     // TODO: Refactor this to use a centralized getCachedOriginalInvoice method like SaleReturnInvoiceForm
                                     $invoiceId = static::getOriginalInvoiceIdFromRequest();
@@ -266,7 +267,7 @@ class PurchaseReturnForm
                                         ->hint(fn (Get $get) => __('purchase_return.max_suffix').' '.$get('max_returnable'))
                                         ->maxValue(fn (Get $get) => (float) $get('max_returnable'))
                                         ->extraInputAttributes(fn (Get $get) => [
-                                            'oninvalid' => "this.setCustomValidity('" . __('purchase_return.exceeds_returnable_quantity', ['max' => $get('max_returnable'),]) . "')",
+                                            'oninvalid' => "this.setCustomValidity('".__('purchase_return.exceeds_returnable_quantity', ['max' => $get('max_returnable')])."')",
                                             'oninput' => "this.setCustomValidity('')", // Clears the error when they start typing again
                                         ])
                                         ->rules(['min:0.001'])
@@ -611,7 +612,7 @@ class PurchaseReturnForm
 
         return Select::make('store_id')
             ->label(__('purchase_return.store'))
-            ->relationship('store', lang_suffix('name'))
+            ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
             ->searchable(['name_en', 'name_ar'])
             ->preload()
             ->default(function () {

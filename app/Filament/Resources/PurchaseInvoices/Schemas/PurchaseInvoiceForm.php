@@ -21,6 +21,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
@@ -50,7 +51,7 @@ class PurchaseInvoiceForm
                             static::getStoreIDInput($user),
                             Select::make('vendor_id')
                                 ->label(__('purchase_invoice.vendor'))
-                                ->relationship('vendor', 'name')
+                                ->relationship('vendor', 'name', fn (Builder $query, ?Model $record) => $query->active($record?->vendor_id))
                                 ->searchable()
                                 ->preload()
                                 ->nullable(),
@@ -732,7 +733,7 @@ class PurchaseInvoiceForm
 
         return Select::make('store_id')
             ->label(__('purchase_invoice.store'))
-            ->relationship('store', lang_suffix('name'))
+            ->relationship('store', lang_suffix('name'), fn (Builder $query, ?Model $record) => $query->active($record?->store_id))
             ->preload()
             ->required()
             ->searchable(['name_en', 'name_ar'])
