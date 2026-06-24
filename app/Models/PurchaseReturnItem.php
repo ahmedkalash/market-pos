@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -33,12 +34,18 @@ class PurchaseReturnItem extends Model
             'quantity' => 'decimal:3',
             'unit_cost' => 'decimal:4',
             'unit_discount_amount' => 'decimal:4',
-            'line_total_discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
         ];
+    }
+
+    protected function lineTotalDiscount(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): float => (float) ($this->unit_discount_amount * $this->quantity),
+        );
     }
 
     public function subtotalBeforeItemDiscount(): float

@@ -608,6 +608,7 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] Polymorphic Reference Linking (V2):
 - [ ] Enhance `InventoryMovementResource` to provide clickable links to source documents (Invoices, POs, Transfers) once those modules are built.
 - [ ] Transfer products across branches feature
+- [ ] Delete un used fields and db columns from the company/store settings
 - [ ] static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
 - [ ] static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
 - [ ] **delete store process: handle what should happen when deleting a store from a company**
