@@ -25,7 +25,6 @@ class PrintInvoiceController extends Controller
 
         $invoice = $modelClass::with([
             'store',
-            'company',
             'items.variant.product',
             'createdBy',
             'extraItems',
@@ -49,7 +48,6 @@ class PrintInvoiceController extends Controller
             'invoice' => $invoice,
             'type' => $type,
             'store' => $invoice->store,
-            'company' => $invoice->company,
             'isThermal' => $size === 'thermal',
         ]);
     }

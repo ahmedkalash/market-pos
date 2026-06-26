@@ -131,12 +131,11 @@
 
 @yield('content')
 
+@if($store && $store->receipt_footer)
 <div class="text-center mt-2 border-top pt-2" style="font-size: 11px;">
-    <div class="font-bold">{{ __('app.thank_you_visit') }}</div>
-    @if($store && $store->receipt_footer)
-        <div class="mt-1" style="color: #666;">{!! nl2br(e($store->receipt_footer)) !!}</div>
-    @endif
+    <div class="mt-1" style="color: #666;">{!! nl2br(e($store->receipt_footer)) !!}</div>
 </div>
+@endif
 
 <script>
     window.addEventListener('load', function() {
