@@ -204,6 +204,7 @@ return [
     'total_refund_amount' => 'إجمالي مبلغ الاسترداد',
     'return_number' => 'رقم المرتجع',
     'original_invoice_id' => 'الفاتورة الأصلية',
+    'original_invoice' => 'الفاتورة الأصلية',
     'status' => 'الحالة',
     'finalized_at' => 'تاريخ الاعتماد',
     'item' => 'العنصر',

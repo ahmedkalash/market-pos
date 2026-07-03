@@ -203,6 +203,7 @@ return [
     'total_refund_amount' => 'Total Refund Amount',
     'return_number' => 'Return Number',
     'original_invoice_id' => 'Original Invoice',
+    'original_invoice' => 'Original Invoice',
     'status' => 'Status',
     'finalized_at' => 'Finalized At',
     'item' => 'Item',
