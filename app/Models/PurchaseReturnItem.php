@@ -34,6 +34,7 @@ class PurchaseReturnItem extends Model
             'quantity' => 'decimal:3',
             'unit_cost' => 'decimal:4',
             'unit_discount_amount' => 'decimal:4',
+            'effective_unit_refund' => 'decimal:4',
             'subtotal' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',

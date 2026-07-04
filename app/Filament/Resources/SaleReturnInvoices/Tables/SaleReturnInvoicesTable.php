@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SaleReturnInvoices\Tables;
 
+use App\Enums\InvoiceType;
 use App\Enums\SaleReturnStatus;
 use App\Models\SaleReturnInvoice;
 use App\Models\User;
@@ -353,6 +354,13 @@ class SaleReturnInvoicesTable
                         }),
                     ViewAction::make()
                         ->authorize('view_sale_return'),
+
+                    Action::make('print_thermal')
+                        ->label(__('app.print_receipt'))
+                        ->icon('heroicon-o-receipt-refund')
+                        ->color('gray')
+                        ->url(fn (SaleReturnInvoice $record): string => route('invoice.print', ['type' => InvoiceType::SaleReturn->value, 'id' => $record->id, 'size' => 'thermal']))
+                        ->openUrlInNewTab(),
                     EditAction::make()
                         ->visible(fn ($record) => $record->status === SaleReturnStatus::Draft),
                     DeleteAction::make()

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseReturns\Pages;
 
+use App\Enums\InvoiceType;
 use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
 use App\Models\PurchaseReturn;
 use App\Services\PurchaseInvoiceService;
@@ -49,6 +50,13 @@ class ViewPurchaseReturn extends ViewRecord
                         'total_amount',
                     ]);
                 }),
+
+            Action::make('print_thermal')
+                ->label(__('app.print_receipt'))
+                ->icon('heroicon-o-receipt-refund')
+                ->color('gray')
+                ->url(fn (PurchaseReturn $record): string => route('invoice.print', ['type' => InvoiceType::PurchaseReturn->value, 'id' => $record->id, 'size' => 'thermal']))
+                ->openUrlInNewTab(),
 
             Action::make('edit')
                 ->label(__('filament-actions::edit.single.label'))

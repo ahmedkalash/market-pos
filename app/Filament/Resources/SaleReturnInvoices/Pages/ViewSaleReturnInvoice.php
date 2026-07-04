@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SaleReturnInvoices\Pages;
 
+use App\Enums\InvoiceType;
 use App\Filament\Resources\SaleReturnInvoices\SaleReturnInvoiceResource;
 use App\Models\SaleReturnInvoice;
 use App\Services\SaleInvoiceService;
@@ -53,6 +54,13 @@ class ViewSaleReturnInvoice extends ViewRecord
                         'total_refund_amount',
                     ]);
                 }),
+
+            Action::make('print_thermal')
+                ->label(__('app.print_receipt'))
+                ->icon('heroicon-o-receipt-refund')
+                ->color('gray')
+                ->url(fn (SaleReturnInvoice $record): string => route('invoice.print', ['type' => InvoiceType::SaleReturn->value, 'id' => $record->id, 'size' => 'thermal']))
+                ->openUrlInNewTab(),
 
             EditAction::make()
                 ->authorize('update_sale_return')

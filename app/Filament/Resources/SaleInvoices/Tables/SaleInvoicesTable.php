@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SaleInvoices\Tables;
 
+use App\Enums\InvoiceType;
 use App\Enums\PaymentMethod;
 use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
@@ -485,6 +486,13 @@ class SaleInvoicesTable
 
                     ViewAction::make()
                         ->authorize('view_sale_invoice'),
+
+                    Action::make('print_thermal')
+                        ->label(__('app.print_receipt'))
+                        ->icon('heroicon-o-receipt-refund')
+                        ->color('gray')
+                        ->url(fn (SaleInvoice $record): string => route('invoice.print', ['type' => InvoiceType::SaleInvoice->value, 'id' => $record->id, 'size' => 'thermal']))
+                        ->openUrlInNewTab(),
                     Action::make('create_return')
                         ->label(__('app.create_return'))
                         ->icon('heroicon-o-arrow-uturn-left')

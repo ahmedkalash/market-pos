@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PurchaseInvoices\Tables;
 
 use App\Enums\InvoiceReturnStatus;
+use App\Enums\InvoiceType;
 use App\Enums\PurchaseInvoiceStatus;
 use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
 use App\Models\PurchaseInvoice;
@@ -470,6 +471,13 @@ class PurchaseInvoicesTable
                         ->url(fn (PurchaseInvoice $record): string => PurchaseReturnResource::getUrl('index', [
                             'invoice_id' => $record->id,
                         ])),
+
+                    Action::make('print_thermal')
+                        ->label(__('app.print_receipt'))
+                        ->icon('heroicon-o-receipt-refund')
+                        ->color('gray')
+                        ->url(fn (PurchaseInvoice $record): string => route('invoice.print', ['type' => InvoiceType::PurchaseInvoice->value, 'id' => $record->id, 'size' => 'thermal']))
+                        ->openUrlInNewTab(),
 
                     ViewAction::make()
                         ->authorize('view_purchase_invoice'),

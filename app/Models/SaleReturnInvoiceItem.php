@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -37,6 +38,13 @@ class SaleReturnInvoiceItem extends Model
             'effective_unit_refund' => 'decimal:4',
             'item_refund_total' => 'decimal:2',
         ];
+    }
+
+    protected function lineTotalDiscount(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): float => (float) ($this->unit_discount_amount * $this->quantity),
+        );
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseReturns\Tables;
 
+use App\Enums\InvoiceType;
 use App\Enums\PurchaseReturnStatus;
 use App\Models\PurchaseReturn;
 use App\Models\User;
@@ -308,6 +309,14 @@ class PurchaseReturnsTable
                                 throw (new Halt)->rollBackDatabaseTransaction(true);
                             }
                         }),
+
+                    Action::make('print_thermal')
+                        ->label(__('app.print_receipt'))
+                        ->icon('heroicon-o-receipt-refund')
+                        ->color('gray')
+                        ->url(fn (PurchaseReturn $record): string => route('invoice.print', ['type' => InvoiceType::PurchaseReturn->value, 'id' => $record->id, 'size' => 'thermal']))
+                        ->openUrlInNewTab(),
+
                     ViewAction::make()
                         ->authorize('view_purchase_return'),
                     EditAction::make()

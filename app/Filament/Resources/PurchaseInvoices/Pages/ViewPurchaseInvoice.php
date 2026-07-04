@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseInvoices\Pages;
 
+use App\Enums\InvoiceType;
 use App\Filament\Resources\PurchaseInvoices\PurchaseInvoiceResource;
 use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
 use App\Models\PurchaseInvoice;
@@ -64,6 +65,12 @@ class ViewPurchaseInvoice extends ViewRecord
                 ->visible(fn (PurchaseInvoice $record): bool => $record->isDraft()),
 
             // ----- Finalized-only actions (return management) -----
+            Action::make('print_thermal')
+                ->label(__('app.print_receipt'))
+                ->icon('heroicon-o-receipt-refund')
+                ->color('gray')
+                ->url(fn (PurchaseInvoice $record): string => route('invoice.print', ['type' => InvoiceType::PurchaseInvoice->value, 'id' => $record->id, 'size' => 'thermal']))
+                ->openUrlInNewTab(),
             Action::make('returnItems')
                 ->label(__('purchase_invoice.return_items'))
                 ->icon('heroicon-o-arrow-uturn-left')
