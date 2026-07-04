@@ -56,7 +56,7 @@
 
     @if($invoice->extraItems && $invoice->extraItems->count() > 0)
         <div class="text-center font-bold py-1"
-             style="font-size: 11px; border-bottom: 1px dashed #000; margin-bottom: 4px;">
+             style="font-size: 11px; margin-bottom: 4px;">
             {{ __('app.extra_items') }}
         </div>
         <table class="mb-2 border-bottom w-full" style="padding-bottom: 4px;">
@@ -81,7 +81,7 @@
     <table class="totals-table py-1 w-full">
         <tr>
             <td class="font-bold">{{ __('app.subtotal') }}</td>
-            <td class="text-right">{{ number_format($type === InvoiceType::SaleReturn->value ? $invoice->items_refund_total : $invoice->items->sum('line_total'), 2) }}</td>
+            <td class="text-right">{{ number_format($type === InvoiceType::SaleReturn->value ? $invoice->items_refund_total : $invoice->subtotal, 2) }}</td>
         </tr>
         @if($invoice->extra_items_total != 0)
             <tr>
