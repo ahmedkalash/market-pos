@@ -71,6 +71,11 @@ class PurchaseReturn extends Model
         return $this->status === PurchaseReturnStatus::Finalized;
     }
 
+    public function isDraft(): bool
+    {
+        return $this->status === PurchaseReturnStatus::Draft;
+    }
+
     /**
      * @return BelongsTo<PurchaseInvoice, $this>
      */

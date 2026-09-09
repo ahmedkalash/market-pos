@@ -240,4 +240,5 @@ return [
     'grand_total' => 'الإجمالي الكلي',
     'thank_you_business' => 'شكراً لتعاملكم معنا!',
     'thank_you_visit' => 'شكراً لزيارتكم!',
+    'draft_invoice_disclaimer' => 'مسودة / ليست فاتورة نهائية',
 ];

@@ -603,16 +603,16 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 
 - [x] some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
 - [x] printing invoices to printer
-- [ ] Missing Granular Authorization Checks:
+- [x] Missing Granular Authorization Checks:
     Route invoice.print only requires 'auth'. It does not check whether the authenticated user has permissions like view_purchase_invoice or view_sale_invoice.
     Filament actions (Action::make('print_thermal')) also lack ->authorize(...).
     Impact: A cashier who is restricted from viewing purchase invoices could manually type /print/invoice/purchase_invoice/1 and view/print confidential supplier costs and vendor details.
 
-- [ ] Draft Invoices Lack "DRAFT / مسودة" Warning:
+- [x] Draft Invoices Lack "DRAFT / مسودة" Warning:
 Currently, an invoice in draft status can be printed, and looks identical to a finalized invoice.
 Impact: In retail, cashiers can print a draft, take customer cash, and delete/cancel the draft invoice. A prominent DRAFT / مسودة watermark/banner is standard practice unless draft printing is restricted.
 
-- [ ] No Document Type Heading on Paper:
+- [x] No Document Type Heading on Paper:
 Neither invoicesprints a title heading (e.g., "Sale Invoice / فاتورة مبيعات" or "Sale Return / مرتجع مبيعات"). The document type is only inside the HTML <head><title>, so the physical paper receipt doesn't explicitly state what kind of document it is.
 
 - [ ] Shipping Cost Missing from Totals Breakdown:

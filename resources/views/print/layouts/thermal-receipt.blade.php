@@ -124,8 +124,18 @@
     @if($store)
         <div class="font-bold" style="font-size: 18px; margin-bottom: 4px;">{{ $store->name }}</div>
         @if($store->receipt_header)
-            <div style="font-size: 11px;">{!! nl2br(e($store->receipt_header)) !!}</div>
+            <div style="font-size: 11px; margin-bottom: 8px;">{!! nl2br(e($store->receipt_header)) !!}</div>
         @endif
+    @endif
+
+    <div class="font-bold pb-1" style="font-size: 15px; margin-top: 8px; margin-bottom: 4px;">
+        {{ __('invoice.type_' . $type) }}
+    </div>
+
+    @if($invoice->isDraft())
+        <div style="text-align: center; font-weight: bold; font-size: 14px; border: 2px dashed #000; padding: 5px; margin-top: 8px; margin-bottom: 4px;">
+            *** {{ __('app.draft_invoice_disclaimer') }} ***
+        </div>
     @endif
 </div>
 

@@ -33,7 +33,7 @@ class PrintInvoiceAuthorizationTest extends TestCase
 
     public function test_invalid_invoice_type_returns_404()
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('invoice.print', [
@@ -46,7 +46,7 @@ class PrintInvoiceAuthorizationTest extends TestCase
 
     public function test_user_without_permission_cannot_print_sale_invoice()
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = User::factory()->create();
         $store = Store::factory()->create(['company_id' => $user->company_id]);
         $invoice = SaleInvoice::factory()->create(['store_id' => $store->id, 'company_id' => $user->company_id]);
@@ -61,7 +61,7 @@ class PrintInvoiceAuthorizationTest extends TestCase
 
     public function test_user_with_permission_can_print_sale_invoice()
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = User::factory()->create();
         $user->givePermissionTo('view_sale_invoice');
 
@@ -79,7 +79,7 @@ class PrintInvoiceAuthorizationTest extends TestCase
 
     public function test_user_cannot_print_invoice_from_another_company()
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = User::factory()->create();
         $user->givePermissionTo('view_sale_invoice');
 

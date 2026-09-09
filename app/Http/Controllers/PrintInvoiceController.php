@@ -7,9 +7,7 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseReturn;
 use App\Models\SaleInvoice;
 use App\Models\SaleReturnInvoice;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class PrintInvoiceController extends Controller
@@ -56,7 +54,6 @@ class PrintInvoiceController extends Controller
             'isThermal' => $size === 'thermal',
         ]);
     }
-
 
     private function checkPermission(string $invoiceType)
     {
