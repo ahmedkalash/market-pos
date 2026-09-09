@@ -522,6 +522,7 @@ settings
 - [ ] VAT report
 - [ ] Z/X reports
 - [ ] PDF + Excel export
+- [ ] Export invoices to Excel
 - [ ] Historical Tax Snapshotting on Orders (For later, but important)
 When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few years ago), merchants simply update their tax_classes rate. However, past orders must not change. Recommendation: When we design the orders and order_items tables (later in the plan), we must ensure we save the exact tax_rate and tax_amount as static numbers on the order row at the moment of sale. We cannot just calculate it on the fly using the current product's tax class.
 
@@ -599,8 +600,33 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
         the form data in the browser by the one coming back from the server in all invoices forms
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
 - --------------------------------
+
 - [x] some models has an `active` col we should make sure that this toggle correctly used and applied to db queries
-- [ ] Export/printing invoices to Excel/pdf / printer
+- [x] printing invoices to printer
+- [ ] Missing Granular Authorization Checks:
+    Route invoice.print only requires 'auth'. It does not check whether the authenticated user has permissions like view_purchase_invoice or view_sale_invoice.
+    Filament actions (Action::make('print_thermal')) also lack ->authorize(...).
+    Impact: A cashier who is restricted from viewing purchase invoices could manually type /print/invoice/purchase_invoice/1 and view/print confidential supplier costs and vendor details.
+
+- [ ] Draft Invoices Lack "DRAFT / مسودة" Warning:
+Currently, an invoice in draft status can be printed, and looks identical to a finalized invoice.
+Impact: In retail, cashiers can print a draft, take customer cash, and delete/cancel the draft invoice. A prominent DRAFT / مسودة watermark/banner is standard practice unless draft printing is restricted.
+
+- [ ] No Document Type Heading on Paper:
+Neither invoicesprints a title heading (e.g., "Sale Invoice / فاتورة مبيعات" or "Sale Return / مرتجع مبيعات"). The document type is only inside the HTML <head><title>, so the physical paper receipt doesn't explicitly state what kind of document it is.
+
+- [ ] Shipping Cost Missing from Totals Breakdown:
+    In SaleInvoiceService.php total_amount includes shipping_cost.
+    In invoice.blade.ph, shipping_cost is never displayed. If an invoice has shipping, the printed subtotal and total will mathematically not add up.
+- [ ] Customer Display for Walk-in Retail:
+    When a sale has no customer (customer_id is null), it prints Customer: followed by an empty line. It should say "Walk-in Customer / عميل نقدي" or be hidden.
+- [ ] Currency Code/Symbol:
+    Totals and prices are displayed as raw numbers (e.g., 150.00) without currency symbols or codes.
+- [ ] Null Fallback for Return Items:
+    In return.blade.php, $item->variant?->full_qualified_name is missing the ?? __('app.unknown_product') null safety fallback that is present in invoice.blade.php.
+
+
+- [ ] Export invoices to Excel
 - [ ] Export other items like "inventory movement", ...etc
 - [ ] Bulk import products via Excel/CSV
 - [ ] Export product list to Excel/CSV
