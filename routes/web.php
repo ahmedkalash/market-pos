@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PrintInvoiceController;
+use App\Http\Middleware\ApplyTenantScopes;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -9,4 +10,4 @@ Route::get('/', function () {
 
 Route::get('/print/invoice/{type}/{id}', PrintInvoiceController::class)
     ->name('invoice.print')
-    ->middleware(['web', 'auth']);
+    ->middleware(['auth', ApplyTenantScopes::class]);
