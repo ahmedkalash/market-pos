@@ -505,7 +505,7 @@ class PurchaseInvoiceForm
                                                 return;
                                             }
 
-                                            $initialLinesTotalSum = $get('items_lines_totals');
+                                            $initialLinesTotalSum = collect($items)->sum('line_total');
 
                                             if ($discountType === DiscountType::Fixed &&
                                                 round((float) $value, 2) > round($initialLinesTotalSum, 2)) {

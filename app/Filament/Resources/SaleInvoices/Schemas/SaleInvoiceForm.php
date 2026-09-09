@@ -706,7 +706,7 @@ class SaleInvoiceForm
                                                 return;
                                             }
 
-                                            $initialLinesTotalSum = $get('items_lines_totals');
+                                            $initialLinesTotalSum = static::itemsLinesTotalsSum($items);
 
                                             // 2. Reject fixed discounts that exceed the total invoice amount
                                             if ($discountType === DiscountType::Fixed &&

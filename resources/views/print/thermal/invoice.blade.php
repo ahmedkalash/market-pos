@@ -8,7 +8,9 @@
         <div><span class="font-bold">{{ __('app.cashier') }}:</span> {{ $invoice->createdBy?->name ?? 'System' }}</div>
 
         @if($type === InvoiceType::SaleInvoice->value)
-            <div><span class="font-bold">{{ __('app.customer') }}:</span> {{ $invoice->customer?->name }}</div>
+            @if($invoice->customer)
+                <div><span class="font-bold">{{ __('app.customer') }}:</span> {{ $invoice->customer->name }}</div>
+            @endif
             <div><span class="font-bold">{{ __('sale_invoice.payment_method') }}:</span> {{ $invoice->payment_method?->getLabel() }}</div>
         @elseif($type === InvoiceType::PurchaseInvoice->value)
             <div><span class="font-bold">{{ __('vendor.vendor') }}:</span> {{ $invoice->vendor?->name }}</div>
@@ -82,6 +84,12 @@
         <tr>
             <td>{{ __('app.extra_adjustments') }}</td>
             <td class="text-right">{{ $invoice->extra_items_total > 0 ? '+' : '' }}{{ number_format($invoice->extra_items_total, 2) }}</td>
+        </tr>
+        @endif
+        @if(isset($invoice->shipping_cost) && $invoice->shipping_cost > 0)
+        <tr>
+            <td>{{ __('app.shipping') }}</td>
+            <td class="text-right">+{{ number_format($invoice->shipping_cost, 2) }}</td>
         </tr>
         @endif
         <tr class="border-top font-bold" style="font-size: 14px;">
