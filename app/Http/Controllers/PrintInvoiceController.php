@@ -8,6 +8,7 @@ use App\Models\PurchaseReturn;
 use App\Models\SaleInvoice;
 use App\Models\SaleReturnInvoice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PrintInvoiceController extends Controller
 {
@@ -22,6 +23,15 @@ class PrintInvoiceController extends Controller
             InvoiceType::PurchaseReturn->value => PurchaseReturn::class,
             default => abort(404, 'Invalid invoice type'),
         };
+
+        $permission = match ($type) {
+            InvoiceType::SaleInvoice->value => 'view_sale_invoice',
+            InvoiceType::SaleReturn->value => 'view_sale_return',
+            InvoiceType::PurchaseInvoice->value => 'view_purchase_invoice',
+            InvoiceType::PurchaseReturn->value => 'view_purchase_return',
+        };
+
+        Gate::authorize($permission);
 
         $invoice = $modelClass::with([
             'store',

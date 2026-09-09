@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Filament;
 
+use App\Actions\CreateDefaultCompanyRolesAction;
 use App\Enums\Roles;
 use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
@@ -15,9 +16,10 @@ use App\Models\SaleInvoiceItem;
 use App\Models\SaleReturnInvoice;
 use App\Models\Store;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class SaleReturnInvoiceResourceTest extends TestCase
@@ -33,7 +35,7 @@ class SaleReturnInvoiceResourceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
+        $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->company = Company::factory()->create();
         $this->store = Store::factory()->create(['company_id' => $this->company->id]);
@@ -42,10 +44,10 @@ class SaleReturnInvoiceResourceTest extends TestCase
             'store_id' => $this->store->id,
         ]);
 
-        app(\App\Actions\CreateDefaultCompanyRolesAction::class)->execute($this->company);
-        app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId($this->company->id);
+        app(CreateDefaultCompanyRolesAction::class)->execute($this->company);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->company->id);
 
-        $this->user->assignRole(\App\Enums\Roles::COMPANY_ADMIN->value);
+        $this->user->assignRole(Roles::COMPANY_ADMIN->value);
     }
 
     public function test_create_sets_return_number_and_created_by(): void
@@ -65,12 +67,12 @@ class SaleReturnInvoiceResourceTest extends TestCase
 
         $product = Product::factory()->create([
             'company_id' => $this->company->id,
-            'store_id' => $this->store->id
+            'store_id' => $this->store->id,
         ]);
         $variant = ProductVariant::factory()->create([
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
-            'product_id' => $product->id
+            'product_id' => $product->id,
         ]);
 
         $invoiceItem = SaleInvoiceItem::factory()->create([

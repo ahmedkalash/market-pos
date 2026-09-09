@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -47,9 +48,9 @@ class EmailChangeTest extends TestCase
         app(OtpService::class)->generate('new@example.com');
         $otp = OtpVerification::where('identifier', 'new@example.com')->first();
 
-        \Illuminate\Support\Facades\RateLimiter::shouldReceive('tooManyAttempts')->andReturn(false);
-        \Illuminate\Support\Facades\RateLimiter::shouldReceive('hit')->andReturn(true);
-        \Illuminate\Support\Facades\RateLimiter::shouldReceive('clear')->andReturn(true);
+        RateLimiter::shouldReceive('tooManyAttempts')->andReturn(false);
+        RateLimiter::shouldReceive('hit')->andReturn(true);
+        RateLimiter::shouldReceive('clear')->andReturn(true);
 
         // Attempt with wrong OTP
         Livewire::test(EditProfile::class)
