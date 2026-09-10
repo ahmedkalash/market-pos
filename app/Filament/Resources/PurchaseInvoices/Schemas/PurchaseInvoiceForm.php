@@ -703,6 +703,8 @@ class PurchaseInvoiceForm
             'quantity' => 1,
             'unit_cost' => $unitCost,
             'subtotal' => round($unitCost, 2),
+            'discount_type' => null,
+            'unit_discount_amount' => null,
             'line_total_discount' => 0,
             'line_total' => round($unitCost, 2),
             'notes' => null,
