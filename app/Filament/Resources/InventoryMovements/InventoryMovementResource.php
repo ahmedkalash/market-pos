@@ -6,6 +6,11 @@ use App\Enums\AdjustmentReason;
 use App\Enums\MovementDirection;
 use App\Enums\MovementType;
 use App\Filament\Resources\InventoryMovements\Pages\ManageInventoryMovements;
+use App\Filament\Resources\PurchaseInvoices\PurchaseInvoiceResource;
+use App\Filament\Resources\PurchaseReturns\PurchaseReturnResource;
+use App\Filament\Resources\SaleInvoices\SaleInvoiceResource;
+use App\Filament\Resources\SaleReturnInvoices\SaleReturnInvoiceResource;
+use App\Filament\Resources\Users\UserResource;
 use App\Models\InventoryMovement;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
@@ -67,12 +72,26 @@ class InventoryMovementResource extends Resource
         return false;
     }
 
+    public static function getTranslatedReferenceType(string $type): string
+    {
+        $basename = class_basename($type);
+
+        return match ($basename) {
+            'SaleInvoice' => __('sale_invoice.sale_invoice'),
+            'PurchaseInvoice' => __('purchase_invoice.purchase_invoice'),
+            'SaleReturnInvoice' => __('app.sale_return'),
+            'PurchaseReturn' => __('purchase_return.purchase_return'),
+            default => $basename,
+        };
+    }
+
     public static function table(Table $table): Table
     {
         /** @var User $user */
         $user = auth()->user();
 
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('reference'))
             ->columns([
                 TextColumn::make('created_at')
                     ->label(__('app.created_at'))
@@ -112,19 +131,46 @@ class InventoryMovementResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('reference_type')
-                    ->label(__('inventory.reference_type'))
-                    ->formatStateUsing(fn (string $state) => class_basename($state))
-                    ->placeholder('—'),
-                // todo: remove this and add a link to the reference_type for the related item
-                TextColumn::make('reference_id')
-                    ->label(__('inventory.reference_id'))
+                    ->label(__('inventory.reference'))
+                    ->formatStateUsing(function (string $state, InventoryMovement $record) {
+                        if (! $record->reference_type || ! $record->reference_id) {
+                            return '—';
+                        }
+                        $translated = self::getTranslatedReferenceType($state);
+
+                        $documentNumber = match (class_basename($state)) {
+                            'SaleInvoice', 'PurchaseInvoice' => $record->reference?->invoice_number,
+                            'SaleReturnInvoice', 'PurchaseReturn' => $record->reference?->return_number,
+                            default => $record->reference_id,
+                        };
+
+                        $documentNumber = $documentNumber ?? $record->reference_id;
+
+                        return "{$translated} #{$documentNumber}";
+                    })
+                    ->url(function (InventoryMovement $record): ?string {
+                        if (! $record->reference_type || ! $record->reference_id) {
+                            return null;
+                        }
+
+                        return match (class_basename($record->reference_type)) {
+                            'SaleInvoice' => SaleInvoiceResource::getUrl('view', ['record' => $record->reference_id]),
+                            'PurchaseInvoice' => PurchaseInvoiceResource::getUrl('view', ['record' => $record->reference_id]),
+                            'SaleReturnInvoice' => SaleReturnInvoiceResource::getUrl('view', ['record' => $record->reference_id]),
+                            'PurchaseReturn' => PurchaseReturnResource::getUrl('view', ['record' => $record->reference_id]),
+                            default => null,
+                        };
+                    })
+                    ->color('primary')
                     ->placeholder('—'),
 
                 TextColumn::make('user.name')
                     ->label(__('inventory.user'))
                     ->placeholder('—')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->url(fn (InventoryMovement $record): ?string => $record->user_id ? UserResource::getUrl('edit', ['record' => $record->user_id]) : null)
+                    ->color('primary'),
 
                 TextColumn::make('notes')
                     ->label(__('inventory.notes'))
@@ -185,7 +231,7 @@ class InventoryMovementResource extends Resource
                                     ->whereNotNull('reference_type')
                                     ->distinct()
                                     ->pluck('reference_type')
-                                    ->mapWithKeys(fn ($type) => [$type => class_basename($type)]);
+                                    ->mapWithKeys(fn ($type) => [$type => self::getTranslatedReferenceType($type)]);
                             })
                             ->placeholder(__('app.all')),
                     ])
@@ -198,7 +244,7 @@ class InventoryMovementResource extends Resource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['reference_type'] ?? null) {
-                            $indicators[] = __('inventory.reference_type').': '.class_basename($data['reference_type']);
+                            $indicators[] = __('inventory.reference_type').': '.self::getTranslatedReferenceType($data['reference_type']);
                         }
 
                         return $indicators;

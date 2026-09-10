@@ -58,4 +58,5 @@ return [
     'view_product' => 'عرض المنتج',
     'low_stock' => 'مخزون منخفض',
     'low_stock_threshold' => 'حد انخفاض المخزون',
+    'reference' => 'المرجع',
 ];

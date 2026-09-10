@@ -431,32 +431,13 @@ settings
 - [ ] POS User Experience (UX)
     - [ ] Hotkeys: The cashier interface must be fully navigable via keyboard (F-keys, arrows, Enter) without ever touching a mouse.
 
-### Phase 4.1 — Sales & Returns Invoices
-- [x] Sale Invoices basic CRUD
-- [x] Invoice items repeater (variants, qty, prices)
-- [x] Dynamic unit pricing based on variant selection
-- [x] Subtotal, tax, shipping, and total calculations
-- [x] Shipping destination and cost integration
-- [x] Draft & Finalized states
-- [x] Validate stock availability before finalizing
-- [x] Deduct inventory upon invoice finalization
-- [x] Sale Return Invoices CRUD
-- [x] Link returns to original sale invoice
-- [x] Restock inventory upon sale return
-- [x] printing invoices to printer
-- [x] Missing Granular Authorization Checks:
-    Route invoice.print only requires 'auth'. It does not check whether the authenticated user has permissions like view_purchase_invoice or view_sale_invoice.
-    Filament actions (Action::make('print_thermal')) also lack ->authorize(...).
-- [x] Draft Invoices Lack "DRAFT / مسودة" Warning:
-Currently, an invoice in draft status can be printed, and looks identical to a finalized invoice.
-- [x] No Document Type Heading on Paper:
-Neither invoicesprints a title heading (e.g., "Sale Invoice / فاتورة مبيعات" or "Sale Return / مرتجع مبيعات"). The document type is only inside the HTML <head><title>, so the physical paper receipt doesn't explicitly state what kind of document it is.
-- [x] Shipping Cost Missing from Totals Breakdown:
-    In SaleInvoiceService.php total_amount includes shipping_cost.
-    In invoice.blade.ph, shipping_cost is never displayed. If an invoice has shipping, the printed subtotal and total will mathematically not add up.
-- [x] Customer Display for Walk-in Retail:
-    When a sale has no customer (customer_id is null), it prints Customer: followed by an empty line. It should say "Walk-in Customer / عميل نقدي" or be hidden
-- [x] Invoices printing
+### Phase 3.1 — imports and Exports
+- [ ] Export other items like "inventory movement", ...etc
+- [ ] Bulk import products via Excel
+- [ ] Export product list to Excel
+
+### Phase 3.2 — interactions between stores/branches
+- [ ] Transfer products across branches feature
 
 ### Phase 4.2 — Advanced Procurement (V2 / Later)
 - [ ] Discrepancy flagging: ordered qty vs. received qty variance report
@@ -485,12 +466,18 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] Deployment
 - [ ] Tenant onboarding flow
 
+
+### Phase x — Octane optimization
+- [ ] static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
+- [ ] static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
+
+
 ### Phase 8 - todo
 - [ ] Activity logs
 - [ ] **Purchase Returns Unit Cost Override:** Allow users with a specific custom permission to override the `unit_cost` when returning items in a Purchase Return.
       - Add this custom permission to the company permissions.
       - Handle any side effects (e.g., recalculating totals, accounting for discrepancies) and further required actions.
-- [ ]- implement Audit Logs / Transfer History for moving users between stores
+- [ ] implement Audit Logs / Transfer History for moving users between stores
 - [ ] phone login and notifications
 - [ ] soft deletes
 - [ ] metadata for ETA E-invoicing (V2/Regional)
@@ -541,9 +528,8 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
       - **Security:** This feature MUST be protected by custom granular permissions so the admin can strictly control which users are allowed to make these post-finalization changes.
       - **Audit Trail:** Any change made to an already finalized invoice (even if non-financial) must be immutably logged in the `finalized_invoices_audit_logs` table with a clear description of what was modified.
       - **Financial Consistency:** If a financial field like `shipping_cost` is edited, the system MUST trigger `recalculateTotals()` on the invoice so that `total_amount` stays consistent with the updated data.
-- [ ] **Non-Inventory / Service Products (V2):**
-      - Add support for service-based businesses by allowing the creation of non-inventory products or service products (e.g., labor fees, repair fees, delivery services).
-      - These items will bypass inventory deduction logic in the `InventoryService` while still acting as standard invoice line items with proper taxation and pricing support.
+
+
 - [ ] **Optimize Repeater Grid Space & UI in all Invoice Forms:**
       - Like what we did in `SaleReturnInvoiceForm`, completely remove the `product_name` text input from the repeater item schemas in `SaleInvoiceForm`, `PurchaseInvoiceForm`, and `PurchaseReturnInvoiceForm` to free up significant grid space.
       - Instead of a text input, render the Product Name and Barcodes directly in the repeater's `itemLabel()` header.
@@ -552,24 +538,14 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
         the form data in the browser by the one coming back from the server in all invoices forms
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
 - --------------------------------
-- [ ] Export other items like "inventory movement", ...etc
-- [ ] Bulk import products via Excel
-- [ ] Export product list to Excel
 - [ ] **Hide Tax-Related UI Elements (Temporary):**
-- [ ] Polymorphic Reference Linking (V2):
-- [ ] Enhance `InventoryMovementResource` to provide clickable links to source documents (Invoices, POs, Transfers) once those modules are built.
-- [ ] Transfer products across branches feature
-- [ ] Delete un used fields and db columns from the company/store settings
-- [ ] static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
-- [ ] static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
+- [ ] Polymorphic Reference Linking :
+- [ ] Enhance `InventoryMovementResource` to provide clickable links to source documents (Invoices, Transfers) once those modules are built.
+
+
 - [ ] **delete store process: handle what should happen when deleting a store from a company**
 - [ ] **delete user process: handle what should happen when deleting a user from a company or a store**
 - [ ] **delete product process: handle what should happen when deleting a product**
-
-### Performance & Database Optimization
-- [ ] **Optimize `max_returnable` Calculation in Returns (N+1 Prevention):**
-      - In `SaleReturnInvoiceForm`, the `max_returnable` is currently calculated dynamically by querying the database for the original `SaleInvoiceItem` inside a repeater loop, causing N+1 queries.
-      - **Solution:** Instead of saving `max_returnable` to the database (which risks stale data and race conditions if multiple returns are made), implement a static array cache inside the form to eager-load and store the original items in memory during request execution.
 
 
 
@@ -579,23 +555,34 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 
 The following will be planned for **v2.0 and beyond**:
 
-| Feature                                    | Target Version |
-|--------------------------------------------|----------------|
-| Export invoices to Excel                     | v2.0           |
-| Loyalty points program                     | v2.0           |
-| Online ordering / delivery                 | v2.0           |
-| Mobile app                                 | v2.0           |
-| Card terminal integration (HyperPay, etc.) | v2.0           |
-| Automated subscription billing             | v2.0           |
-| Self-checkout kiosk                        | v3.0           |
-| AI demand forecasting                      | v3.0           |
-| E-commerce integration                     | v2.0           |
-| HR / Payroll                               | v2.0           |
-| ERP integration                            | v3.0           |
-| Offline support                            | v3.0           |
-| other countries except egypt               | v3.0           |
+Feature                                      
+-------------------------------------------
+- Export invoices to Excel                   
+- Loyalty points program                     
+- Online ordering / delivery                 
+- Mobile app                                 
+- Card terminal integration (HyperPay, etc.) 
+- Automated subscription billing             
+- Self-checkout kiosk                        
+- AI demand forecasting                      
+- E-commerce integration                     
+- HR / Payroll                               
+- ERP integration                            
+- Offline support                            
+- other countries except egypt               
+- Performance & Database Optimization
+  - **Optimize `max_returnable` Calculation in Returns (N+1 Prevention):**
+        - In `SaleReturnInvoiceForm`, the `max_returnable` is currently calculated dynamically by querying the database for the original `SaleInvoiceItem` inside a repeater loop, causing N+1 queries.
+        - **Solution:** Instead of saving `max_returnable` to the database (which risks stale data and race conditions if multiple returns are made), implement a static array cache inside the form to eager-load and store the original items in memory during request execution
+- Non-Inventory / Service Products
+      - Add support for service-based businesses by allowing the creation of non-inventory products or service products (e.g., labor fees, repair fees, delivery services).
+      - These items will bypass inventory deduction logic in the `InventoryService` while still acting as standard invoice line items with proper taxation and pricing support.
 
----
+
+
+
+
+
 
 ## 11. Assumptions
 

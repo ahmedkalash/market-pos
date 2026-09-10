@@ -61,4 +61,5 @@ return [
     'view_product' => 'View Product',
     'low_stock' => 'Low Stock',
     'low_stock_threshold' => 'Low Stock Threshold',
+    'reference' => 'Reference',
 ];
