@@ -18,6 +18,7 @@ class SaleReturnInvoiceItem extends Model
         'original_item_id',
         'quantity',
         'unit_price',
+        'purchase_price',
         'unit_discount_amount',
         'unit_prorated_global_discount',
         'effective_unit_refund',

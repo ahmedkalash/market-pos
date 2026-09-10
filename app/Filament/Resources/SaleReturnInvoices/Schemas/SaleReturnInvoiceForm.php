@@ -301,6 +301,7 @@ class SaleReturnInvoiceForm
                                     ->schema([
                                         Hidden::make('original_item_id')->required(),
                                         Hidden::make('product_variant_id')->required(),
+                                        Hidden::make('purchase_price'),
                                         Hidden::make('max_returnable')->dehydrated(false),
                                         Hidden::make('unit_discount_amount')->default(0),
                                         Hidden::make('unit_prorated_global_discount')->default(0),
@@ -532,6 +533,7 @@ class SaleReturnInvoiceForm
         $items[$key] = [
             'original_item_id' => $originalItem->id,
             'product_variant_id' => $originalItem->product_variant_id,
+            'purchase_price' => $originalItem->purchase_price,
             'barcodes' => $barcodes,
             'product_name' => $fullName,
             'quantity' => 1,
@@ -641,6 +643,7 @@ class SaleReturnInvoiceForm
                 $items[$key] = [
                     'original_item_id' => $originalItem->id,
                     'product_variant_id' => $originalItem->product_variant_id,
+                    'purchase_price' => $originalItem->purchase_price,
                     'barcodes' => $barcodes,
                     'product_name' => $originalItem->variant->full_qualified_name,
                     'max_returnable' => $maxReturnable,

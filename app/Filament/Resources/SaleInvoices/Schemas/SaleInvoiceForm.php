@@ -240,6 +240,7 @@ class SaleInvoiceForm
                                 ->compact()
                                 ->schema([
                                     Hidden::make('product_variant_id')->required(),
+                                    Hidden::make('purchase_price'),
 
                                     Select::make('price_type')
                                         ->label(__('sale_invoice.price_type'))
@@ -1102,6 +1103,7 @@ class SaleInvoiceForm
 
         $items[$newKey] = [
             'product_variant_id' => $variant->id,
+            'purchase_price' => $variant->purchase_price,
             'price_type' => PriceType::Retail->value,
             'barcodes' => $barcodes,
             'product_name' => $fullName,

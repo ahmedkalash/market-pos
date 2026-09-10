@@ -21,6 +21,7 @@ class SaleInvoiceItem extends Model
         'price_type',
         'quantity',
         'unit_price',
+        'purchase_price',
         'subtotal',
         'tax_rate',
         'tax_amount',

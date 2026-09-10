@@ -467,23 +467,13 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] Tenant onboarding flow
 
 
-### Phase x — Octane optimization
-- [ ] static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
-- [ ] static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
+
 
 
 ### Phase 8 - todo
-- [ ] Activity logs
 - [ ] **Purchase Returns Unit Cost Override:** Allow users with a specific custom permission to override the `unit_cost` when returning items in a Purchase Return.
       - Add this custom permission to the company permissions.
       - Handle any side effects (e.g., recalculating totals, accounting for discrepancies) and further required actions.
-- [ ] implement Audit Logs / Transfer History for moving users between stores
-- [ ] phone login and notifications
-- [ ] soft deletes
-- [ ] metadata for ETA E-invoicing (V2/Regional)
-- [ ] ability to scan barcodes vai camera 
-- [ ] `variant_price_tiers` table: Support for multiple price tiers per variant (e.g., VIP price, special contract price). Prerequisite for PROMO-008 (Multiple price lists configurable per customer type).
-- [ ] **Price change audit log: Track every price change with a `price_audit_logs` table (variant_id, field_changed, old_value, new_value, changed_by, changed_at) to prevent fraud and provide historical pricing data.**
 - [ ] Low Stock Alerts — Dashboard widget + in-app notifications for items hitting their threshold. Quick win once the ledger exists.
 - [ ] Concurrency control(prices, stock qty,...etc)
 - [ ] Future POS Integration:
@@ -494,55 +484,20 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
     The Idea: Humans are bad at reading tables but great at reading charts.
     The Feature: Add a small "Performance Chart" at the top of the ledger. It shows a line graph of the stock level for the selected variant over the last 30 days.
     The Result: A manager can instantly see: "Oh, we are selling this faster than we are buying it; we will run out in 3 days."
-- [ ] Smart Reconciliation (Stocktake Mode)
-    The Idea: Periodic counting is a nightmare for staff.
-    The Feature: A specialized view where they scan items and enter the "Physical Count." The system automatically calculates the difference and creates the "Manual Edit" records for them.
-    The Result: It turns a 5-hour job into a 30-minute job.
 - [ ] Implement ShouldQueue on the NotifyLowStock notification. This offloads the delivery to your queue workers (Redis/Database), keeping the POS interface lightning fast.
-- [ ] Real-Time: Instant Alerts (Zero Polling):
-      You recently updated the polling to 60s. In a high-traffic supermarket, 60 seconds might be too long for a critical stock alert.
-      Suggestion: Use Laravel Reverb (WebSockets). Instead of the browser "asking" if there are new alerts every minute, the server "pushes" them instantly. This makes the app feel alive and responsive.
 - [ ] Robustness Check: Are we missing anything? see: **.z\stock_notifications_for_bulk_importing.md**
       One small edge case in the industry is Bulk Updates. If a manager imports 500 products at once, they might get 500 individual notifications.
       Enterprise standard: We could implement a "Buffer" or "Digest" system where, if more than X alerts fire in a minute, we send a single summary notification: "15 items hit low stock in Store A."
-- [ ] **Standardized Currency Codes (Native Money Formatting):** Migrate `currency_symbol` across the application to a standard ISO 4217 `currency_code` (e.g., USD, EGP, EUR). Update Company Settings to use a predefined list of codes rather than free text symbols. This will allow the application to fully utilize Filament's native `->money()` field and PHP's `NumberFormatter` for automatic locale-aware symbol formatting across the entire app.
-- [ ] **Advanced Payment Methods & Tracking (V2):** 
-      Allow company admins/store managers to create and manage various payment methods (Bank Transfer, Vodafone Cash, Credit Card, etc.).
-      - Require a unique **Receiver Identifier** for each method (e.g., last 4 digits of a bank account, mobile wallet number) to track exactly where funds are deposited.
-      - Require a **Source Identifier** (e.g., buyer's bank account, mobile wallet, or card number) for transactions to verify the sender.
-      - Add comprehensive payment tracking and auditing to ensure every single payment succeeds and prevent fraud/theft.
-      - Alter the invoices and receipts to display the received payment account identifier (where the money was deposited).
-
-- [ ] Advanced Barcode Parsing (Weighted Items)
-      In the Arab region (and globally), deli counters and butchers use scales that print a specific barcode (e.g., starts with 20 or 21, followed by the PLU code, then the weight/price). While your plan says "We do not need to support complex scale-generated barcodes", adding a smart barcode parser that automatically extracts weight and calculates price at the POS screen is a massive selling point for a premium supermarket POS.
 - [ ] **Streamlined Localization UI & Nullable English Fields (V2):**
       - Make all English columns (`name_en`, `description_en`, etc.) nullable in the database, as many users in the Arabic market may not require English data.
       - Refactor the UI (tables and forms) to consolidate the display of localized names. Instead of separate columns for Arabic and English, display the primary Arabic name prominently with the English name underneath it as a secondary description, saving horizontal space and simplifying the interface.
-- [ ] **Unit of Measurement Enhancements:**
-      - **Decimal Support:** Add an `allow_decimals` toggle. If enabled, allow the user to specify the `allowed_decimals` count (e.g., 2 for Meters, 3 for Grams). This ensures a clean UX (preventing cashiers from selling "1.5 Pieces") while cleanly handling weight/length measurements.
-      - **Base Units & Conversions (V2):** Allow defining base units (e.g., Piece) and related composite units (e.g., Carton = 24 Pieces, Box = 12 Pieces) for advanced purchasing and inventory breakdown.
-      - **Active/Inactive Status:** A toggle to disable unused units from appearing in dropdowns without deleting them and breaking historical records.
-- [ ] **Edit Finalized Invoices (Non-Financial Data):**
-      - Allow authorized users to edit non-financial and non-inventory data on finalized invoices (Purchase, Sale, and Returns) without needing to process a refund or alter quantities.
-      - Editable fields may include notes, customer, shipping destination, shipping cost, and vendor.
-      - **Security:** This feature MUST be protected by custom granular permissions so the admin can strictly control which users are allowed to make these post-finalization changes.
-      - **Audit Trail:** Any change made to an already finalized invoice (even if non-financial) must be immutably logged in the `finalized_invoices_audit_logs` table with a clear description of what was modified.
-      - **Financial Consistency:** If a financial field like `shipping_cost` is edited, the system MUST trigger `recalculateTotals()` on the invoice so that `total_amount` stays consistent with the updated data.
-
 
 - [ ] **Optimize Repeater Grid Space & UI in all Invoice Forms:**
-      - Like what we did in `SaleReturnInvoiceForm`, completely remove the `product_name` text input from the repeater item schemas in `SaleInvoiceForm`, `PurchaseInvoiceForm`, and `PurchaseReturnInvoiceForm` to free up significant grid space.
-      - Instead of a text input, render the Product Name and Barcodes directly in the repeater's `itemLabel()` header.
-      - **Implementation Detail:** Read the `product_name` and `barcodes` directly from the `$state` array (which should be hydrated beforehand) to completely avoid N+1 database queries. Use Filament's native `Blade::render('<x-filament::badge ...>')` method to draw them beautifully and efficiently as UI badges without using heavy PHP components or writing raw HTML strings.
 - [ ] - use field set and disable all form on wire load event to prevent overwriting
         the form data in the browser by the one coming back from the server in all invoices forms
 - [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
 - --------------------------------
 - [ ] **Hide Tax-Related UI Elements (Temporary):**
-- [ ] Polymorphic Reference Linking :
-- [ ] Enhance `InventoryMovementResource` to provide clickable links to source documents (Invoices, Transfers) once those modules are built.
-
-
 - [ ] **delete store process: handle what should happen when deleting a store from a company**
 - [ ] **delete user process: handle what should happen when deleting a user from a company or a store**
 - [ ] **delete product process: handle what should happen when deleting a product**
@@ -577,6 +532,53 @@ Feature
 - Non-Inventory / Service Products
       - Add support for service-based businesses by allowing the creation of non-inventory products or service products (e.g., labor fees, repair fees, delivery services).
       - These items will bypass inventory deduction logic in the `InventoryService` while still acting as standard invoice line items with proper taxation and pricing support.
+
+- Advanced Barcode Parsing (Weighted Items)
+      In the Arab region (and globally), deli counters and butchers use scales that print a specific barcode (e.g., starts with 20 or 21, followed by the PLU code, then the weight/price). While your plan says "We do not need to support complex scale-generated barcodes", adding a smart barcode parser that automatically extracts weight and calculates price at the POS screen is a massive selling point for a premium supermarket POS.
+
+- **Standardized Currency Codes (Native Money Formatting):** Migrate `currency_symbol` across the application to a standard ISO 4217 `currency_code` (e.g., USD, EGP, EUR). Update Company Settings to use a predefined list of codes rather than free text symbols. This will allow the application to fully utilize Filament's native `->money()` field and PHP's `NumberFormatter` for automatic locale-aware symbol formatting across the entire app.
+
+- [ ] Real-Time: Instant Alerts (Zero Polling):
+      You recently updated the polling to 60s. In a high-traffic supermarket, 60 seconds might be too long for a critical stock alert.
+      Suggestion: Use Laravel Reverb (WebSockets). Instead of the browser "asking" if there are new alerts every minute, the server "pushes" them instantly. This makes the app feel alive and responsive.
+
+- [ ] **Edit Finalized Invoices (Non-Financial Data):**
+      - Allow authorized users to edit non-financial and non-inventory data on finalized invoices (Purchase, Sale, and Returns) without needing to process a refund or alter quantities.
+      - Editable fields may include notes, customer, shipping destination, shipping cost, and vendor.
+      - **Security:** This feature MUST be protected by custom granular permissions so the admin can strictly control which users are allowed to make these post-finalization changes.
+      - **Audit Trail:** Any change made to an already finalized invoice (even if non-financial) must be immutably logged in the `finalized_invoices_audit_logs` table with a clear description of what was modified.
+      - **Financial Consistency:** If a financial field like `shipping_cost` is edited, the system MUST trigger `recalculateTotals()` on the invoice so that `total_amount` stays consistent with the updated data.
+
+- [ ] **Advanced Payment Methods & Tracking (V2):** 
+      Allow company admins/store managers to create and manage various payment methods (Bank Transfer, Vodafone Cash, Credit Card, etc.).
+      - Require a unique **Receiver Identifier** for each method (e.g., last 4 digits of a bank account, mobile wallet number) to track exactly where funds are deposited.
+      - Require a **Source Identifier** (e.g., buyer's bank account, mobile wallet, or card number) for transactions to verify the sender.
+      - Add comprehensive payment tracking and auditing to ensure every single payment succeeds and prevent fraud/theft.
+      - Alter the invoices and receipts to display the received payment account identifier (where the money was deposited).
+
+- [ ] Smart Reconciliation (Stocktake Mode)
+    The Idea: Periodic counting is a nightmare for staff.
+    The Feature: A specialized view where they scan items and enter the "Physical Count." The system automatically calculates the difference and creates the "Manual Edit" records for them.
+    The Result: It turns a 5-hour job into a 30-minute job.
+
+- [ ] implement Audit Logs / Transfer History for moving users between stores
+- [ ] phone login and notifications
+- [ ] soft deletes
+- [ ] metadata for ETA E-invoicing (V2/Regional)
+- [ ] ability to scan barcodes vai camera 
+- [ ] `variant_price_tiers` table: Support for multiple price tiers per variant (e.g., VIP price, special contract price). Prerequisite for PROMO-008 (Multiple price lists configurable per customer type).
+- [ ] **Price change audit log: Track every price change with a `price_audit_logs` table (variant_id, field_changed, old_value, new_value, changed_by, changed_at) to prevent fraud and provide historical pricing data.**
+
+— Octane optimization
+    - [] static $cache = [] in getCachedOriginalInvoice will leak between requests under Octane consider using non-static property
+    - [] static $cache = [] in SaleInvoiceForm.php will leak between requests under Octane consider using non-static property
+
+- [ ] Activity logs
+
+- [ ] **Unit of Measurement Enhancements:**
+      - **Decimal Support:** Add an `allow_decimals` toggle. If enabled, allow the user to specify the `allowed_decimals` count (e.g., 2 for Meters, 3 for Grams). This ensures a clean UX (preventing cashiers from selling "1.5 Pieces") while cleanly handling weight/length measurements.
+      - **Base Units & Conversions (V2):** Allow defining base units (e.g., Piece) and related composite units (e.g., Carton = 24 Pieces, Box = 12 Pieces) for advanced purchasing and inventory breakdown.
+      - **Active/Inactive Status:** A toggle to disable unused units from appearing in dropdowns without deleting them and breaking historical records.
 
 
 
