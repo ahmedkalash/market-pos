@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Terminal UI/UX Preview</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons (Modern, clean icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#4f46e5', // Indigo 600
+                        primaryHover: '#4338ca', // Indigo 700
+                        surface: '#ffffff',
+                        background: '#f8fafc', // Slate 50
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for a polished, app-like feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Prevent text selection on UI elements to feel like a native app */
+        .no-select {
+            user-select: none;
+        }
+        
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-background text-slate-800 h-screen w-screen overflow-hidden flex flex-col font-sans">
+
+    <header class="bg-surface border-b border-slate-200 h-16 flex items-center justify-between px-4 shrink-0 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] z-30 overflow-x-auto">
+        <div class="flex items-center gap-3 shrink-0">
+            <!-- Logo area -->
+            <div class="bg-primary text-white p-1.5 rounded-lg shadow-sm">
+                <i class="ph ph-storefront text-xl"></i>
+            </div>
+            
+            <!-- Register Status -->
+            <div class="flex items-center gap-2 mr-2">
+                <span class="font-bold text-slate-800 text-sm">Register</span>
+                <div class="flex items-center gap-1.5 border border-rose-200 bg-rose-50 rounded px-2 py-0.5 text-[10px] font-bold text-rose-600 uppercase tracking-wider">
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Closed
+                </div>
+            </div>
+
+            <!-- Header Dropdowns -->
+            <button class="flex items-center gap-2 bg-indigo-50 border border-primary/20 rounded-xl px-4 py-1.5 text-sm font-bold hover:bg-indigo-100 transition-colors text-primary">
+                <i class="ph ph-warehouse text-lg"></i> Warehouse 1 <i class="ph ph-caret-down text-primary/70 ml-1"></i>
+            </button>
+            <button class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors text-slate-600">
+                <i class="ph ph-folder text-primary/60 text-lg"></i> All Categories <i class="ph ph-caret-down text-slate-400 ml-1"></i>
+            </button>
+            <button class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors text-slate-600">
+                <i class="ph ph-tag text-primary/60 text-lg"></i> All Brands <i class="ph ph-caret-down text-slate-400 ml-1"></i>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+            <!-- Customer Selector (Styled as Pill) -->
+            <button class="flex items-center gap-3 bg-rose-50/40 border border-rose-100 rounded-full pl-1.5 pr-4 py-1 hover:bg-rose-50 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-emerald-400 text-white flex items-center justify-center text-sm font-bold shadow-sm">W</div>
+                <div class="flex flex-col items-start leading-none">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase mb-0.5">Customer</span>
+                    <span class="text-sm font-bold text-rose-600">walk-in-customer</span>
+                </div>
+                <i class="ph ph-caret-down text-slate-400 ml-1"></i>
+            </button>
+
+            <!-- Tool Icons -->
+            <div class="flex items-center gap-1 border-x border-slate-200 px-3 mx-1">
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-user-plus text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-money text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-arrow-u-up-left text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-gear text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-globe text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-desktop text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-receipt text-xl"></i></button>
+                <button class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><i class="ph ph-scan text-xl"></i></button>
+            </div>
+
+            <!-- User Profile -->
+            <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white shadow-sm ring-2 ring-primary/20 cursor-pointer">
+                <i class="ph ph-user text-base font-bold"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- ================= LEFT PANEL (Cart - 40%) ================= -->
+        <section class="w-[40%] flex flex-col bg-surface border-r border-slate-200 shadow-[4px_0_15px_-3px_rgba(0,0,0,0.03)] z-20">
+            
+            <!-- Cart Header -->
+            <div class="px-5 py-4 flex items-center justify-between border-b border-slate-100 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-50 text-primary rounded-xl flex items-center justify-center border border-indigo-100"><i class="ph ph-shopping-cart text-xl"></i></div>
+                    <div>
+                        <h2 class="font-bold text-slate-800 text-lg leading-tight">Current Cart</h2>
+                        <p class="text-xs text-slate-500 font-medium"><span id="cartItemCount">0</span> items</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-5">
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total</p>
+                        <p class="font-extrabold text-slate-800 text-lg leading-none" id="cartHeaderTotal">$ 0.00</p>
+                    </div>
+                    <button class="w-9 h-9 rounded-lg text-rose-500 border border-rose-100 hover:bg-rose-50 flex items-center justify-center transition-colors shadow-sm" onclick="clearCart()" title="Clear Cart">
+                        <i class="ph ph-trash text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cart Items Container -->
+            <div class="flex-1 overflow-y-auto p-3" id="cartContainer">
+                <!-- Items injected via JS -->
+            </div>
+
+            <!-- Cart Calculations Footer -->
+            <div class="px-5 pt-3 pb-4 border-t border-slate-200 bg-slate-50/50 shrink-0">
+                <!-- Inputs Row -->
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Tax %</label>
+                        <div class="relative">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">%</span>
+                            <input type="number" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-semibold focus:ring-1 focus:ring-primary focus:border-primary outline-none bg-white shadow-sm" value="0">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Discount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">$</span>
+                            <input type="number" id="globalDiscountInput" class="w-full border border-slate-200 rounded-lg pl-7 p-2.5 text-sm font-semibold focus:ring-1 focus:ring-primary focus:border-primary outline-none bg-white shadow-sm" value="0" onchange="updateGlobalDiscount(this.value)">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Shipping</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">$</span>
+                            <input type="number" class="w-full border border-slate-200 rounded-lg pl-7 p-2.5 text-sm font-semibold focus:ring-1 focus:ring-primary focus:border-primary outline-none bg-white shadow-sm" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Points -->
+                <div class="flex items-center justify-between mb-5 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                    <span class="text-xs text-slate-500 font-semibold px-2">Available Points <span class="text-primary font-bold ml-1 text-sm">0</span></span>
+                    <div class="flex gap-2">
+                        <input type="number" class="w-16 border border-slate-200 rounded-lg text-center text-sm font-semibold focus:outline-none focus:border-primary bg-slate-50" value="0">
+                        <button class="bg-primary text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-primaryHover transition-colors shadow-sm">Convert</button>
+                    </div>
+                </div>
+
+                <!-- Totals Display -->
+                <div class="space-y-2 mb-5 px-1 text-sm">
+                    <div class="flex justify-between items-center text-slate-600 font-semibold">
+                        <span>Subtotal</span>
+                        <span id="cartSubtotalBottom" class="text-slate-800 font-bold">$ 0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center text-slate-500 font-medium">
+                        <span>Tax</span>
+                        <span>$ 0.00</span>
+                    </div>
+                </div>
+
+                <!-- Promo Code -->
+                <div class="mb-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Promo code</label>
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="Enter code" class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white shadow-sm">
+                        <button class="bg-primary text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-primaryHover transition-colors shadow-sm">Apply</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Action Bar (Drafts/Hold) -->
+            <div class="px-5 py-3 border-t border-slate-200 bg-white flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-2 text-emerald-600 text-[11px] font-bold tracking-wide uppercase">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div> Online - synced
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-3 py-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5 transition-colors"><i class="ph ph-house text-lg"></i> Home</button>
+                    <button class="px-3 py-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5 transition-colors" onclick="clearCart()"><i class="ph ph-arrows-counter-clockwise text-lg"></i> Reset</button>
+                    <button class="px-3 py-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5 transition-colors"><i class="ph ph-files text-lg"></i> Recent Drafts</button>
+                    <button class="px-3 py-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5 transition-colors" onclick="holdCart()"><i class="ph ph-pause-circle text-lg"></i> Hold</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= RIGHT PANEL (Products - 60%) ================= -->
+        <section class="w-[60%] flex flex-col bg-slate-50 relative z-10">
+            
+            <!-- Top Search Bar -->
+            <div class="p-4 bg-white border-b border-slate-200 shrink-0 flex gap-3 z-10">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i class="ph ph-scan text-xl"></i>
+                    </div>
+                    <input type="text" id="searchInput" 
+                        class="block w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-50/50 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm font-medium shadow-inner" 
+                        placeholder="Scan/Search Product by Code Or Name">
+                </div>
+                <button class="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+                    <i class="ph ph-barcode text-lg"></i> Scan
+                </button>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="flex-1 overflow-y-auto p-5">
+                <div id="productContainer" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-10">
+                    <!-- Products injected via JS -->
+                </div>
+            </div>
+
+            <!-- Bottom Pay Bar & Pagination -->
+            <div class="bg-white border-t border-slate-200 shrink-0 flex items-center justify-between px-6 py-4 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.02)]">
+                
+                <!-- Pagination -->
+                <div class="flex items-center gap-6">
+                    <button class="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors"><i class="ph ph-caret-left font-bold"></i></button>
+                    <div class="text-center">
+                        <p class="text-primary font-bold text-sm">Page 1</p>
+                        <p class="text-xs text-slate-500 font-medium">20 products</p>
+                    </div>
+                    <div class="flex gap-1.5 ml-2">
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-sm font-bold shadow-sm cursor-default">1</button>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-bold transition-colors">2</button>
+                    </div>
+                    <button class="w-8 h-8 flex items-center justify-center border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors"><i class="ph ph-caret-right font-bold"></i></button>
+                </div>
+
+                <!-- Pay Now -->
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Payable</p>
+                        <p class="text-2xl font-extrabold text-slate-800 leading-none tracking-tight" id="totalPayable">$ 0.00</p>
+                    </div>
+                    <button class="bg-primary hover:bg-primaryHover text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 transform active:scale-[0.98]" onclick="processPayment()">
+                        <i class="ph ph-check-bold text-xl"></i> Pay Now
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Payment Success Modal Overlay (Hidden) -->
+    <div id="paymentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center transform scale-95 transition-transform duration-300" id="paymentModalContent">
+            <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-500">
+                <i class="ph ph-check-circle text-5xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Payment Successful!</h2>
+            <p class="text-slate-500 mb-6">Invoice #<span id="invoiceNumber">INV-001</span> generated.</p>
+            <p class="text-3xl font-extrabold text-slate-800 mb-8"><span id="paidAmount">0.00</span> EGP</p>
+            
+            <button class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-colors" onclick="closePaymentModal()">
+                New Sale (Enter)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Mock Database (Updated Images for white-card aesthetic) ---
+        const products = [
+            { id: 1, barcode: '71934224', name: 'pineapple', price: 20.00, weight: '20.00 kg', stock: 150, img: 'https://placehold.co/200x200/ffffff/d97706?text=🍍' },
+            { id: 2, barcode: '80256894', name: 'Orange', price: 23.00, weight: '20.00 pc', stock: 42, img: 'https://placehold.co/200x200/ffffff/ea580c?text=🍊' },
+            { id: 3, barcode: '53755648', name: 'Strawberry', price: 10.00, weight: '20.00 kg', stock: 12, img: 'https://placehold.co/200x200/ffffff/dc2626?text=🍓' },
+            { id: 4, barcode: '70171822', name: 'Banana', price: 7.00, weight: '20.00 kg', stock: 85, img: 'https://placehold.co/200x200/ffffff/f59e0b?text=🍌' },
+            { id: 5, barcode: '82747852', name: 'Limon', price: 20.00, weight: '20.00 kg', stock: 20, img: 'https://placehold.co/200x200/ffffff/eab308?text=🍋' },
+            { id: 6, barcode: '71887180', name: 'Avocat', price: 15.00, weight: '20.00 kg', stock: 18, img: 'https://placehold.co/200x200/ffffff/65a30d?text=🥑' },
+            { id: 7, barcode: '89311349', name: 'unpaired gray sneaker', price: 25.00, weight: '20.00 pc', stock: 33, img: 'https://placehold.co/200x200/ffffff/475569?text=👟' },
+            { id: 8, barcode: '11755448', name: 'Unpaired red nike sneaker', price: 18.00, weight: '39.00 pc', stock: 50, img: 'https://placehold.co/200x200/ffffff/ef4444?text=👟' },
+            { id: 9, barcode: '86182192', name: 'Macbook pro', price: 1500.00, weight: '20.00 pc', stock: 110, img: 'https://placehold.co/200x200/ffffff/64748b?text=💻' },
+            { id: 10, barcode: '63417341', name: 'earphones', price: 34.00, weight: '20.00 pc', stock: 60, img: 'https://placehold.co/200x200/ffffff/94a3b8?text=🎧' },
+            { id: 11, barcode: '88311349', name: 'Macbook pro', price: 25.00, weight: '51.00 pc', stock: 5, img: 'https://placehold.co/200x200/ffffff/334155?text=💻' },
+            { id: 12, barcode: '87716743', name: 'sunglasses', price: 34.00, weight: '20.00 pc', stock: 24, img: 'https://placehold.co/200x200/ffffff/1e293b?text=🕶️' },
+        ];
+
+        let cart = [];
+        let searchQuery = '';
+        let globalDiscount = 0; 
+        let invoiceCounter = 1240;
+
+        function init() {
+            renderProducts();
+            
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderProducts();
+            });
+
+            document.getElementById('searchInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const code = e.target.value.trim();
+                    if(code) {
+                        scanBarcode(code);
+                        e.target.value = '';
+                    }
+                }
+            });
+            document.getElementById('searchInput').focus();
+            
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !document.getElementById('paymentModal').classList.contains('hidden')) {
+                    closePaymentModal();
+                }
+            });
+        }
+
+        function renderProducts() {
+            let filtered = products.filter(p => {
+                return p.name.toLowerCase().includes(searchQuery) || p.barcode.includes(searchQuery);
+            });
+
+            const elProductContainer = document.getElementById('productContainer');
+
+            if (filtered.length === 0) {
+                elProductContainer.innerHTML = '<div class="col-span-full py-12 text-center text-slate-400 font-medium">No products found</div>';
+                return;
+            }
+
+            elProductContainer.innerHTML = filtered.map(p => `
+                <div class="bg-white rounded-[16px] p-3.5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col hover:shadow-md hover:border-primary/20 cursor-pointer h-[200px] transition-all group" onclick="addToCart(${p.id})">
+                    <div class="flex-1 flex items-center justify-center mb-3 overflow-hidden rounded-lg bg-slate-50/50">
+                        <img src="${p.img}" alt="${p.name}" class="max-h-[80px] object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-sm">
+                    </div>
+                    <div class="mt-auto">
+                        <h3 class="text-sm font-bold text-slate-800 leading-tight truncate">${p.name}</h3>
+                        <div class="text-[10px] font-semibold text-slate-400 mt-1 mb-3 tracking-wide">SKU ${p.barcode} <span class="text-slate-200 mx-1">•</span> ${p.weight}</div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div class="font-extrabold text-primary text-[15px]">$ ${p.price.toFixed(2)}</div>
+                            <button class="w-7 h-7 rounded-[8px] bg-indigo-50 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors shadow-sm">
+                                <i class="ph ph-plus font-bold text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function scanBarcode(code) {
+            const product = products.find(p => p.barcode === code);
+            if (product) addToCart(product.id);
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            const existingItem = cart.find(item => item.product.id === productId);
+            if (existingItem) {
+                existingItem.qty += 1;
+            } else {
+                cart.unshift({ product: product, qty: 1, discount: 0 });
+            }
+            renderCart();
+        }
+
+        function updateQty(index, delta) {
+            cart[index].qty += delta;
+            if (cart[index].qty <= 0) cart.splice(index, 1);
+            renderCart();
+        }
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            globalDiscount = 0;
+            document.getElementById('globalDiscountInput').value = "0";
+            renderCart();
+        }
+
+        function updateGlobalDiscount(val) {
+            let num = parseFloat(val);
+            if(isNaN(num) || num < 0) num = 0;
+            globalDiscount = num;
+            renderCart();
+        }
+        
+        function promptItemDiscount(index) {
+            const currentItem = cart[index];
+            const amount = prompt(`Enter discount for ${currentItem.product.name} ($):`, currentItem.discount);
+            if(amount !== null) {
+                const parsed = parseFloat(amount);
+                if(!isNaN(parsed) && parsed >= 0) {
+                    cart[index].discount = parsed;
+                    renderCart();
+                }
+            }
+        }
+
+        function renderCart() {
+            const elCartContainer = document.getElementById('cartContainer');
+            document.getElementById('cartItemCount').innerText = cart.reduce((sum, item) => sum + item.qty, 0);
+            
+            if (cart.length === 0) {
+                elCartContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                            <i class="ph ph-shopping-cart text-3xl text-slate-300"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-600 mb-1">Cart is empty</p>
+                        <p class="text-xs text-slate-400">Scan products to add</p>
+                    </div>`;
+            } else {
+                elCartContainer.innerHTML = cart.map((item, index) => {
+                    const itemTotal = (item.product.price * item.qty) - item.discount;
+                    return `
+                    <div class="bg-white border-b border-slate-100 p-3.5 mb-1.5 rounded-xl shadow-sm hover:shadow-md transition-shadow group relative">
+                        <div class="flex gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 shrink-0 flex items-center justify-center overflow-hidden">
+                                <img src="${item.product.img}" class="w-8 h-8 object-contain">
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-[13px] font-bold text-slate-800 leading-tight mb-0.5 pr-12 truncate">${item.product.name}</h4>
+                                <div class="text-[10px] text-slate-400 font-bold tracking-wide uppercase">SKU ${item.product.barcode}</div>
+                                
+                                <div class="flex items-center justify-between mt-3">
+                                    <div class="flex items-center gap-2.5">
+                                        <!-- Qty Controls -->
+                                        <div class="flex items-center bg-white border border-slate-200 rounded-md overflow-hidden h-7 shadow-sm">
+                                            <button class="w-7 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors" onclick="updateQty(${index}, -1)">
+                                                <i class="ph ph-minus text-[10px] font-bold"></i>
+                                            </button>
+                                            <div class="w-7 text-center text-xs font-bold text-slate-800 border-x border-slate-200 h-full flex items-center justify-center select-none bg-slate-50">
+                                                ${item.qty}
+                                            </div>
+                                            <button class="w-7 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors" onclick="updateQty(${index}, 1)">
+                                                <i class="ph ph-plus text-[10px] font-bold"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="text-[11px] font-bold text-slate-500 flex items-center gap-2">
+                                            <span class="text-slate-300">×</span> $ ${item.product.price.toFixed(2)}
+                                            
+                                            <div class="relative hidden sm:block group/select">
+                                                <select class="text-[10px] font-bold border border-slate-200 rounded-md bg-white text-slate-700 py-1 pl-2 pr-5 focus:outline-none focus:border-primary appearance-none cursor-pointer shadow-sm hover:bg-slate-50 transition-colors">
+                                                    <option>Retail Price</option>
+                                                    <option>Wholesale Price</option>
+                                                </select>
+                                                <i class="ph ph-caret-down absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="font-bold text-slate-800 text-[13px]">$ ${itemTotal.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Floating Actions (Edit/Delete) -->
+                        <div class="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="w-6 h-6 rounded bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition-colors" onclick="promptItemDiscount(${index})" title="Edit Discount"><i class="ph ph-pencil-simple text-xs"></i></button>
+                            <button class="w-6 h-6 rounded bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors" onclick="removeItem(${index})" title="Remove"><i class="ph ph-x text-xs"></i></button>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+            
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+            cart.forEach(item => { subtotal += (item.product.price * item.qty) - item.discount; });
+
+            if (globalDiscount > subtotal) globalDiscount = subtotal;
+            const total = subtotal - globalDiscount;
+            const totalStr = `$ ${total.toFixed(2)}`;
+
+            document.getElementById('cartHeaderTotal').innerText = totalStr;
+            document.getElementById('cartSubtotalBottom').innerText = `$ ${subtotal.toFixed(2)}`;
+            document.getElementById('totalPayable').innerText = totalStr;
+        }
+
+        function holdCart() {
+            if (cart.length === 0) return;
+            alert("Cart placed on hold. (Simulated)");
+            clearCart();
+        }
+
+        function processPayment() {
+            if (cart.length === 0) return;
+            
+            const totalStr = document.getElementById('totalPayable').innerText;
+            const modal = document.getElementById('paymentModal');
+            const modalContent = document.getElementById('paymentModalContent');
+            
+            document.getElementById('invoiceNumber').innerText = `INV-${invoiceCounter++}`;
+            document.getElementById('paidAmount').innerText = totalStr;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+            
+            clearCart();
+        }
+        
+        function closePaymentModal() {
+            const modal = document.getElementById('paymentModal');
+            const modalContent = document.getElementById('paymentModalContent');
+            
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('searchInput').focus();
+            }, 300);
+        }
+
+        init();
+    </script>
+</body>
+</html>
