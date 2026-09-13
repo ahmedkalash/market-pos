@@ -386,8 +386,6 @@ Since the system targets the Arab region:
 ---
 
 ## 8. Database — Key Tables
-
-```
 tenants
 stores
 users
@@ -411,7 +409,6 @@ promotions
 promotion_rules
 tax_categories
 settings
-```
 
 ---
 
@@ -421,6 +418,30 @@ settings
 
 
 ### Phase 3 — POS Terminal (Weeks 8–11)
+1. Price Type Selection (Retail vs. Wholesale)
+    ✅ Implemented: We successfully added the Retail/Wholesale toggle buttons directly on each cart item in the previous step.
+2. Unit Item Discount (Type & Value)
+    ❌ Missing: Currently, clicking the discount button (<button @click="promptItemDiscount(index)">) just opens a basic browser prompt() asking for a fixed dollar amount.
+    What needs to be built: We need a proper modal or popover for the item that allows the cashier to select the Discount Type (Percentage % vs. Fixed Amount $) and enter the Discount Value.
+3. Adding Extra Items
+    ❌ Missing: The POS currently only supports adding actual inventory products to the cart via the product grid.
+    What needs to be built: We need an "Add Extra Item" button (perhaps near the cart header) that opens a modal to add non-inventory charges (e.g., installation fees, delivery fees). This should ideally allow selecting from pre-configured InvoiceExtraItemPresets or entering a custom name and price.
+4. Global / Overall Invoice Discount
+    ❌ Missing (Partially): We currently have a simple numeric input for globalDiscount at the bottom of the cart, but it assumes a fixed dollar amount (it has a hardcoded $ sign).
+    What needs to be built: We need a selector next to the input to toggle the Global Discount Type between Percentage % and Fixed Amount $, and the Alpine.js cartTotal calculation needs to be updated to handle percentage math.
+5. Shipping Cost & Pre-configured Templates
+    ❌ Missing: We only have a manual numeric input for shippingCost.
+    What needs to be built: We need to replace or enhance this input with a dropdown/modal that loads the pre-configured Shipping Destinations/Templates. Selecting a template should auto-fill the shipping cost and ideally capture the shipping address for the invoice.
+6. Detailed Summary Display
+    ❌ Missing: The current cart footer only displays Subtotal (which already has item discounts subtracted) and Total Payable.
+    What needs to be built: The summary section needs to be expanded to explicitly show:
+    Total Before Discount (Gross sum of all items)
+    Overall Extra Items Value (Sum of all extra items added)
+    Overall Discount (Sum of unit discounts + global discount)
+    Final Grand Total
+
+
+
 - [ ] Cashier login
 - [ ] Barcode scanning
 - [ ] Cart management
@@ -429,7 +450,7 @@ settings
 - [ ] Cash management (shift open/close)
 - [ ] Transaction hold/recall
 - [ ] POS User Experience (UX)
-    - [ ] Hotkeys: The cashier interface must be fully navigable via keyboard (F-keys, arrows, Enter) without ever touching a mouse.
+- [ ] Hotkeys: The cashier interface must be fully navigable via keyboard (F-keys, arrows, Enter) without ever touching a mouse.
 
 ### Phase 3.1 — imports and Exports
 - [ ] Export other items like "inventory movement", ...etc
@@ -495,7 +516,7 @@ When a government changes a tax rate (e.g., KSA changing from 5% to 15% a few ye
 - [ ] **Optimize Repeater Grid Space & UI in all Invoice Forms:**
 - [ ] - use field set and disable all form on wire load event to prevent overwriting
         the form data in the browser by the one coming back from the server in all invoices forms
-- [ ] - Add `purchase_price` to all invoice item models/tables (SaleInvoiceItem, SaleReturnInvoiceItem, PurchaseInvoiceItem, PurchaseReturnItem) for accurate profit calculation and historical records.
+
 - --------------------------------
 - [ ] **Hide Tax-Related UI Elements (Temporary):**
 - [ ] **delete store process: handle what should happen when deleting a store from a company**
