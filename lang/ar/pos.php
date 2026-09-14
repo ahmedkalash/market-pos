@@ -35,4 +35,39 @@ return [
     'checkout_failed' => 'فشل الدفع',
     'cart_held_success' => 'تم تعليق السلة بنجاح',
     'cart_hold_failed' => 'فشل تعليق السلة',
+
+    // Discount Modal
+    'item_discount' => 'خصم العنصر',
+    'discount_type' => 'نوع الخصم',
+    'discount_amount' => 'قيمة الخصم',
+    'fixed_amount' => 'مبلغ ثابت ($)',
+    'percentage' => 'نسبة مئوية (%)',
+    'apply_discount' => 'تطبيق',
+    'clear_discount' => 'إلغاء الخصم',
+    'global_discount' => 'خصم الفاتورة',
+
+    // Extra Items Modal
+    'extra_items' => 'إضافات',
+    'add_extra_item' => 'إضافة عنصر',
+    'select_preset' => 'اختر قالب',
+    'custom_item' => 'عنصر مخصص',
+    'addition' => 'إضافة',
+    'subtraction' => 'خصم',
+
+    // Shipping Modal
+    'shipping_destination' => 'وجهة الشحن',
+    'shipping_cost' => 'تكلفة الشحن',
+    'shipping_address' => 'عنوان الشحن',
+    'select_destination' => 'اختر الوجهة',
+    'custom_shipping' => 'شحن مخصص',
+    'clear_shipping' => 'إلغاء الشحن',
+
+    // Summary
+    'gross_total' => 'الإجمالي الإجمالي',
+    'total_discounts' => 'إجمالي الخصومات',
+    'extra_items_total' => 'الإضافات',
+    'grand_total' => 'الإجمالي النهائي',
+
+    'add' => 'إضافة',
+    'search_product_barcode' => 'البحث عن منتج أو باركود',
 ];

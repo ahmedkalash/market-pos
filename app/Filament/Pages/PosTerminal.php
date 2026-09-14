@@ -3,8 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Models\Customer;
+use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
+use App\Models\ShippingDestination;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\PosCheckoutService;
@@ -160,9 +162,19 @@ class PosTerminal extends Page
             'initialData' => [
                 'storeId' => $storeId,
                 'storeName' => $activeStore['name'] ?? __('pos.main_store'),
+                'currencySymbol' => $user->company->currency_symbol ?? 'ج.م',
                 'stores' => $stores,
                 'categories' => $categories,
                 'customers' => $customers,
+                'shippingDestinations' => ShippingDestination::query()
+                    ->where('is_active', true)
+                    ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+                    ->get(['id', 'name', 'cost'])
+                    ->map(fn ($d) => [
+                        'id' => $d->id,
+                        'name' => $d->name,
+                        'cost' => (float) $d->cost,
+                    ]),
                 // Products array is now empty in initialData since we render via Blade,
                 // but we might still need some data for barcodes.
                 // However, barcode scanning will be harder if products are paginated.
@@ -224,5 +236,24 @@ class PosTerminal extends Page
 
             $this->halt(true);
         }
+    }
+
+    public function getExtraItemPresets(): array
+    {
+        $companyId = auth()->user()->company_id;
+
+        return InvoiceExtraItemPreset::query()
+            ->forSaleInvoice()
+            ->where('is_active', true)
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->get(['id', 'name', 'action_type', 'amount', 'notes'])
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'action_type' => $p->action_type->value,
+                'amount' => (float) $p->amount,
+                'notes' => $p->notes,
+            ])
+            ->toArray();
     }
 }

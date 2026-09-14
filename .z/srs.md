@@ -418,27 +418,30 @@ settings
 
 
 ### Phase 3 — POS Terminal (Weeks 8–11)
-1. Price Type Selection (Retail vs. Wholesale)
-    ✅ Implemented: We successfully added the Retail/Wholesale toggle buttons directly on each cart item in the previous step.
-2. Unit Item Discount (Type & Value)
-    ❌ Missing: Currently, clicking the discount button (<button @click="promptItemDiscount(index)">) just opens a basic browser prompt() asking for a fixed dollar amount.
-    What needs to be built: We need a proper modal or popover for the item that allows the cashier to select the Discount Type (Percentage % vs. Fixed Amount $) and enter the Discount Value.
-3. Adding Extra Items
-    ❌ Missing: The POS currently only supports adding actual inventory products to the cart via the product grid.
-    What needs to be built: We need an "Add Extra Item" button (perhaps near the cart header) that opens a modal to add non-inventory charges (e.g., installation fees, delivery fees). This should ideally allow selecting from pre-configured InvoiceExtraItemPresets or entering a custom name and price.
-4. Global / Overall Invoice Discount
-    ❌ Missing (Partially): We currently have a simple numeric input for globalDiscount at the bottom of the cart, but it assumes a fixed dollar amount (it has a hardcoded $ sign).
-    What needs to be built: We need a selector next to the input to toggle the Global Discount Type between Percentage % and Fixed Amount $, and the Alpine.js cartTotal calculation needs to be updated to handle percentage math.
-5. Shipping Cost & Pre-configured Templates
-    ❌ Missing: We only have a manual numeric input for shippingCost.
-    What needs to be built: We need to replace or enhance this input with a dropdown/modal that loads the pre-configured Shipping Destinations/Templates. Selecting a template should auto-fill the shipping cost and ideally capture the shipping address for the invoice.
-6. Detailed Summary Display
-    ❌ Missing: The current cart footer only displays Subtotal (which already has item discounts subtracted) and Total Payable.
-    What needs to be built: The summary section needs to be expanded to explicitly show:
-    Total Before Discount (Gross sum of all items)
-    Overall Extra Items Value (Sum of all extra items added)
-    Overall Discount (Sum of unit discounts + global discount)
-    Final Grand Total
+1. we should display the currency symbol / the percentage symbol for all inputs that is related to them,
+2. We also must handle. The   displaying  The final amount. For example. For, uh, discounters. Or etcetera. Items that allow the user to choose whether they entered amount will be a fixed amount of money Or a percentage So there should be another  Input or field In that uh model. Or in that place. That show the final amount of money. Based on whether it is a fixed amount or it is a percentage of something else. 
+3. we need to display the measurement unit next to the qty as well
+4. Unit Item Discount (Type & Value)
+    - we need to display the original price and the discounted price for each item
+    - we need to display the min allowed price or if the price is no negotiable and enforce this rule at the client side as well.
+    - We should make it clear for the user that the unit item discount. Is Considered, Or will apply at the unit discount. 
+      This mean the amount the user enter for the discount. Will not be, calculated or will not be considered as the whole Item count discount. 
+      It will be considered as the unit item discount. Also, we need to display that in a clear and elegant and professional way. Uh. That is clear and,  obvious. And also. Does not clutter the page or destroy the design.
+    - 
+5. Adding Extra Items
+    - the extra items form should allow add manually with the need to chose predefined template, 
+        currently the form is enabled only when i chose a template. These templates. Are used for auto filling. 
+        They are not attached. They only used for auto filling.
+    - we should display the currency symbol or the percentage symbol for Amount input,
+
+6. Global / Overall Invoice Discount
+
+7. Shipping Cost & Pre-configured Templates
+    - I have noticed. A bug in the shipping cost model. Which is the Destination or the address is not populated is not populated to the address  from the pre designed template or when I chose a template the address is not populated to the form. 
+    - Also, I noticed that in the  sale invoice Page. The user Can it change the shipping cost  After selecting a shipping dist  from the drop-down menu of the shipping destination. But this is not  the case in the Point of sale terminal. The the shipping cost  in the modal is disabled after i chose  A shipping destination. Please check it also. 
+8. Detailed Summary Display
+
+9. translation, we should translate each word in that page and its related modals.
 
 
 

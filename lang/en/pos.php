@@ -35,4 +35,39 @@ return [
     'checkout_failed' => 'Checkout Failed',
     'cart_held_success' => 'Cart Held Successfully',
     'cart_hold_failed' => 'Cart Hold Failed',
+
+    // Discount Modal
+    'item_discount' => 'Item Discount',
+    'discount_type' => 'Discount Type',
+    'discount_amount' => 'Discount Amount',
+    'fixed_amount' => 'Fixed ($)',
+    'percentage' => 'Percentage (%)',
+    'apply_discount' => 'Apply',
+    'clear_discount' => 'Clear Discount',
+    'global_discount' => 'Invoice Discount',
+
+    // Extra Items Modal
+    'extra_items' => 'Extra Items',
+    'add_extra_item' => 'Add Extra Item',
+    'select_preset' => 'Select Preset',
+    'custom_item' => 'Custom Item',
+    'addition' => 'Addition',
+    'subtraction' => 'Subtraction',
+
+    // Shipping Modal
+    'shipping_destination' => 'Shipping Destination',
+    'shipping_cost' => 'Shipping Cost',
+    'shipping_address' => 'Shipping Address',
+    'select_destination' => 'Select Destination',
+    'custom_shipping' => 'Custom Shipping',
+    'clear_shipping' => 'Clear Shipping',
+
+    // Summary
+    'gross_total' => 'Gross Total',
+    'total_discounts' => 'Total Discounts',
+    'extra_items_total' => 'Extra Items',
+    'grand_total' => 'Grand Total',
+
+    'add' => 'Add',
+    'search_product_barcode' => 'Search product or barcode',
 ];

@@ -155,21 +155,23 @@
             <section class="w-2/5 flex flex-col bg-white border-e border-gray-200 shadow-[4px_0_15px_-3px_rgba(0,0,0,0.03)] z-20">
 
                 <!-- Cart Header -->
-                <div class="px-5 py-4 flex items-center justify-between border-b border-gray-100 shrink-0">
+                <div class="p-5 flex items-center justify-between border-b border-gray-200 bg-white shrink-0 shadow-sm relative z-20">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center border border-primary-100"><i class="ph ph-shopping-cart text-xl"></i></div>
+                        <div class="w-10 h-10 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center shadow-inner">
+                            <i class="ph ph-shopping-bag text-xl font-bold"></i>
+                        </div>
                         <div>
-                            <h2 class="font-bold text-gray-800 text-lg leading-tight">{{ __('pos.current_cart') }}</h2>
-                            <p class="text-xs text-gray-500 font-medium"><span x-text="cartItemCount"></span> {{ __('pos.items') }}</p>
+                            <h2 class="text-lg font-extrabold text-gray-800 leading-tight">{{ __('pos.current_cart') }}</h2>
+                            <p class="text-xs font-bold text-gray-400"><span x-text="cartItemCount"></span> {{ __('pos.items') }}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-5">
-                        <div class="text-end">
-                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">{{ __('pos.total') }}</p>
-                            <p class="font-extrabold text-gray-800 text-lg leading-none" x-text="'$ ' + cartTotal.toFixed(2)"></p>
-                        </div>
-                        <button class="w-9 h-9 rounded-lg text-danger-500 border border-danger-100 hover:bg-danger-50 flex items-center justify-center transition-colors shadow-sm" @click="clearCart()" title="Clear Cart">
-                            <i class="ph ph-trash text-lg"></i>
+                    <div class="flex items-center gap-2">
+                        <button @click="openExtraItemsModal()" class="w-9 h-9 flex items-center justify-center text-primary-600 bg-primary-50 rounded-xl border border-primary-100 hover:bg-primary-100 hover:border-primary-200 transition-all shadow-sm group relative" title="{{ __('pos.extra_items') }}">
+                            <i class="ph ph-plus-minus font-bold text-lg group-hover:scale-110 transition-transform"></i>
+                            <span x-show="extraItems.length > 0" class="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-danger-500 text-[9px] font-bold text-white ring-2 ring-white"></span>
+                        </button>
+                        <button @click="clearCart()" class="w-9 h-9 flex items-center justify-center text-gray-500 bg-gray-50 rounded-xl border border-gray-200 hover:text-danger-600 hover:bg-danger-50 hover:border-danger-200 transition-all shadow-sm group" title="{{ __('pos.clear') }}">
+                            <i class="ph ph-trash font-bold text-lg group-hover:scale-110 transition-transform"></i>
                         </button>
                     </div>
                 </div>
@@ -191,8 +193,8 @@
                                     </template>
                                 </div>
                                 <div class="text-end">
-                                    <span class="font-extrabold text-primary-600 text-sm block" x-text="'$ ' + ((item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price) * item.qty - (item.discount * item.qty)).toFixed(2)"></span>
-                                    <span class="text-[10px] text-gray-400 font-bold" x-text="'$ ' + (item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price).toFixed(2) + ' / ea'"></span>
+                                    <span class="font-extrabold text-primary-600 text-sm block" x-text="currencySymbol + ' ' + ((item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price) * item.qty - (item.discountType === 'percentage' ? ((item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price) * (item.discountAmount/100) * item.qty) : (item.discountAmount * item.qty))).toFixed(2)"></span>
+                                    <span class="text-[10px] text-gray-400 font-bold" x-text="currencySymbol + ' ' + (item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price).toFixed(2) + ' / ea'"></span>
                                 </div>
                             </div>
 
@@ -203,9 +205,9 @@
                                     <button @click="updateQty(index, 1)" class="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"><i class="ph ph-plus font-bold text-xs"></i></button>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button @click="promptItemDiscount(index)" class="flex items-center gap-1 text-[11px] font-bold text-warning-600 bg-warning-50 px-2 py-1.5 rounded-lg border border-warning-100 hover:bg-warning-100 transition-colors" :class="item.discount > 0 ? 'bg-warning-100 border-warning-200' : ''">
+                                    <button @click="promptItemDiscount(index)" class="flex items-center gap-1 text-[11px] font-bold text-warning-600 bg-warning-50 px-2 py-1.5 rounded-lg border border-warning-100 hover:bg-warning-100 transition-colors" :class="item.discountAmount > 0 ? 'bg-warning-100 border-warning-200' : ''">
                                         <i class="ph ph-tag"></i>
-                                        <span x-text="item.discount > 0 ? '-$'+item.discount : 'Disc'"></span>
+                                        <span x-text="item.discountAmount > 0 ? (item.discountType === 'percentage' ? item.discountAmount + '%' : currencySymbol + item.discountAmount) : 'Disc'"></span>
                                     </button>
                                 </div>
                             </div>
@@ -220,29 +222,35 @@
 
                 <!-- Cart Calculations Footer -->
                 <div class="px-5 pt-3 pb-4 border-t border-gray-200 bg-gray-50/50 shrink-0">
-                    <!-- Inputs Row -->
+                    <!-- Modals Buttons Row -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">{{ __('pos.discount') }}</label>
-                            <div class="relative">
-                                <span class="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
-                                <input type="number" x-model.number="globalDiscount" class="w-full border border-gray-200 rounded-lg ps-7 p-2.5 text-sm font-semibold focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white shadow-sm" min="0">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5 block">{{ __('pos.shipping') }}</label>
-                            <div class="relative">
-                                <span class="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
-                                <input type="number" x-model.number="shippingCost" class="w-full border border-gray-200 rounded-lg ps-7 p-2.5 text-sm font-semibold focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white shadow-sm" min="0">
-                            </div>
-                        </div>
+                        <button @click="openGlobalDiscountModal()" class="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-semibold hover:border-primary-300 transition-colors text-start shadow-sm" :class="globalDiscountAmount > 0 ? 'border-primary-300 bg-primary-50/50' : ''">
+                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ __('pos.discount') }}</span>
+                            <span class="text-gray-800 font-bold" x-text="globalDiscountAmount > 0 ? (globalDiscountType === 'percentage' ? globalDiscountAmount + '%' : currencySymbol + globalDiscountAmount) : '{{ __('pos.add') }}'"></span>
+                        </button>
+                        <button @click="openShippingModal()" class="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-semibold hover:border-primary-300 transition-colors text-start shadow-sm" :class="shippingCost > 0 ? 'border-primary-300 bg-primary-50/50' : ''">
+                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ __('pos.shipping') }}</span>
+                            <span class="text-gray-800 font-bold" x-text="shippingCost > 0 ? currencySymbol + shippingCost : '{{ __('pos.add') }}'"></span>
+                        </button>
                     </div>
 
                     <!-- Totals Display -->
-                    <div class="space-y-2 mb-2 px-1 text-sm">
-                        <div class="flex justify-between items-center text-gray-600 font-semibold">
-                            <span>{{ __('pos.subtotal') }}</span>
-                            <span class="text-gray-800 font-bold" x-text="'$ ' + cartSubtotal.toFixed(2)"></span>
+                    <div class="space-y-1.5 mb-2 px-1 text-xs">
+                        <div class="flex justify-between items-center text-gray-500 font-semibold">
+                            <span>{{ __('pos.gross_total') }}</span>
+                            <span x-text="currencySymbol + ' ' + cartSubtotal.toFixed(2)"></span>
+                        </div>
+                        <div x-show="cartTotalDiscounts > 0" class="flex justify-between items-center text-danger-500 font-semibold">
+                            <span>{{ __('pos.total_discounts') }}</span>
+                            <span x-text="'-' + currencySymbol + ' ' + cartTotalDiscounts.toFixed(2)"></span>
+                        </div>
+                        <div x-show="extraItemsTotal !== 0" class="flex justify-between items-center text-primary-600 font-semibold">
+                            <span>{{ __('pos.extra_items_total') }}</span>
+                            <span x-text="(extraItemsTotal > 0 ? '+' : '') + currencySymbol + ' ' + extraItemsTotal.toFixed(2)"></span>
+                        </div>
+                        <div x-show="shippingCost > 0" class="flex justify-between items-center text-gray-500 font-semibold">
+                            <span>{{ __('pos.shipping') }}</span>
+                            <span x-text="'+' + currencySymbol + ' ' + shippingCost.toFixed(2)"></span>
                         </div>
                     </div>
                 </div>
@@ -300,7 +308,7 @@
                                             </div>
 
                                             <div class="flex justify-between items-center mt-1">
-                                                <div class="text-base font-extrabold text-primary-600">$ {{ number_format($product['price'], 2) }}</div>
+                                                <div class="text-base font-extrabold text-primary-600" x-text="currencySymbol + ' ' + Number({{ $product['price'] }}).toFixed(2)"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -328,7 +336,7 @@
                     <div class="flex items-center gap-6 ms-auto">
                         <div class="text-end">
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">{{ __('pos.total_payable') }}</p>
-                            <p class="text-2xl font-extrabold text-gray-800 leading-none tracking-tight" x-text="'$ ' + cartTotal.toFixed(2)"></p>
+                            <p class="text-2xl font-extrabold text-gray-800 leading-none tracking-tight" x-text="currencySymbol + ' ' + cartTotal.toFixed(2)"></p>
                         </div>
                         <button class="bg-primary-600 hover:bg-primary-700 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                                 @click="processPayment()"
@@ -367,7 +375,7 @@
                     Invoice #<span x-text="completedInvoiceNumber" class="font-bold text-gray-800"></span> generated.
                 </p>
                 <p class="text-3xl font-extrabold text-gray-800 mb-8">
-                    $<span x-text="completedInvoiceTotal.toFixed(2)"></span>
+                    <span x-text="currencySymbol"></span><span x-text="completedInvoiceTotal.toFixed(2)"></span>
                 </p>
 
                 <button type="button"
@@ -377,6 +385,178 @@
                 </button>
             </div>
         </div>
+        <!-- Modals Container -->
+        <template x-teleport="body">
+            <div>
+                <!-- Item Discount Modal -->
+                <div x-show="activeModal === 'itemDiscount'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.outside="closeModal()">
+                        <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800">{{ __('pos.item_discount') }}</h3>
+                            <button @click="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x"></i></button>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.discount_type') }}</label>
+                                <div class="flex mt-1 border border-gray-200 rounded-lg overflow-hidden">
+                                    <button @click="modalData.type = 'percentage'" :class="modalData.type === 'percentage' ? 'bg-primary-50 text-primary-600 font-bold' : 'bg-gray-50 text-gray-600'" class="flex-1 py-2 text-sm">{{ __('pos.percentage') }}</button>
+                                    <button @click="modalData.type = 'fixed'" :class="modalData.type === 'fixed' ? 'bg-primary-50 text-primary-600 font-bold' : 'bg-gray-50 text-gray-600'" class="flex-1 py-2 text-sm border-s border-gray-200">{{ __('pos.fixed_amount') }}</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.discount_amount') }}</label>
+                                <div class="relative mt-1">
+                                    <span class="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium" x-text="modalData.type === 'fixed' ? currencySymbol : '%'"></span>
+                                    <input type="number" x-model.number="modalData.amount" class="w-full border border-gray-200 rounded-lg ps-8 p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t border-gray-100 flex gap-2">
+                            <button @click="modalData.amount = 0; applyItemDiscount()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-bold">{{ __('pos.clear_discount') }}</button>
+                            <button @click="applyItemDiscount()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-bold">{{ __('pos.apply_discount') }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Discount Modal -->
+                <div x-show="activeModal === 'globalDiscount'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.outside="closeModal()">
+                        <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800">{{ __('pos.global_discount') }}</h3>
+                            <button @click="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x"></i></button>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.discount_type') }}</label>
+                                <div class="flex mt-1 border border-gray-200 rounded-lg overflow-hidden">
+                                    <button @click="modalData.type = 'percentage'" :class="modalData.type === 'percentage' ? 'bg-primary-50 text-primary-600 font-bold' : 'bg-gray-50 text-gray-600'" class="flex-1 py-2 text-sm">{{ __('pos.percentage') }}</button>
+                                    <button @click="modalData.type = 'fixed'" :class="modalData.type === 'fixed' ? 'bg-primary-50 text-primary-600 font-bold' : 'bg-gray-50 text-gray-600'" class="flex-1 py-2 text-sm border-s border-gray-200">{{ __('pos.fixed_amount') }}</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.discount_amount') }}</label>
+                                <div class="relative mt-1">
+                                    <span class="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium" x-text="modalData.type === 'fixed' ? currencySymbol : '%'"></span>
+                                    <input type="number" x-model.number="modalData.amount" class="w-full border border-gray-200 rounded-lg ps-8 p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t border-gray-100 flex gap-2">
+                            <button @click="modalData.amount = 0; applyGlobalDiscount()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-bold">{{ __('pos.clear_discount') }}</button>
+                            <button @click="applyGlobalDiscount()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-bold">{{ __('pos.apply_discount') }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Modal -->
+                <div x-show="activeModal === 'shipping'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.outside="closeModal()">
+                        <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800">{{ __('pos.shipping') }}</h3>
+                            <button @click="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x"></i></button>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.shipping_destination') }}</label>
+                                <select x-model="modalData.destinationId" @change="if($event.target.value) { const d = shippingDestinations.find(x => x.id == $event.target.value); if(d) modalData.cost = d.cost; }" class="mt-1 w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white">
+                                    <option value="">{{ __('pos.custom_shipping') }}</option>
+                                    <template x-for="dest in shippingDestinations" :key="dest.id">
+                                        <option :value="dest.id" x-text="dest.name + ' (' + currencySymbol + dest.cost + ')'"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.shipping_cost') }}</label>
+                                <div class="relative mt-1">
+                                    <span class="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium" x-text="currencySymbol"></span>
+                                    <input type="number" x-model.number="modalData.cost" :disabled="modalData.destinationId" class="w-full border border-gray-200 rounded-lg ps-8 p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100" min="0">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.shipping_address') }}</label>
+                                <textarea x-model="modalData.address" rows="2" class="mt-1 w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"></textarea>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t border-gray-100 flex gap-2">
+                            <button @click="modalData.cost = 0; modalData.destinationId = null; modalData.address = ''; applyShipping()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-bold">{{ __('pos.clear_shipping') }}</button>
+                            <button @click="applyShipping()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2.5 rounded-lg font-bold">{{ __('pos.apply_discount') }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extra Items Modal -->
+                <div x-show="activeModal === 'extraItems'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl" @click.outside="closeModal()">
+                        <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800">{{ __('pos.extra_items') }}</h3>
+                            <button @click="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x"></i></button>
+                        </div>
+                        
+                        <div class="flex">
+                            <!-- Left: Form to add -->
+                            <div class="w-1/2 p-4 border-e border-gray-100 space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.select_preset') }}</label>
+                                    <select x-model="modalData.newItem.presetId" @change="
+                                        const p = extraItemPresets.find(pr => pr.id == $event.target.value);
+                                        if(p) { modalData.newItem.name = p.name; modalData.newItem.amount = p.amount; modalData.newItem.action_type = p.action_type; modalData.newItem.notes = p.notes; }
+                                    " class="mt-1 w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white">
+                                        <option value="">{{ __('pos.custom_item') }}</option>
+                                        <template x-for="preset in extraItemPresets" :key="preset.id">
+                                            <option :value="preset.id" x-text="preset.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="col-span-2">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Name</label>
+                                        <input type="text" x-model="modalData.newItem.name" :disabled="modalData.newItem.presetId" class="mt-1 w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Type</label>
+                                        <select x-model="modalData.newItem.action_type" :disabled="modalData.newItem.presetId" class="mt-1 w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white disabled:bg-gray-100">
+                                            <option value="addition">{{ __('pos.addition') }}</option>
+                                            <option value="subtraction">{{ __('pos.subtraction') }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Amount</label>
+                                        <input type="number" x-model.number="modalData.newItem.amount" :disabled="modalData.newItem.presetId" class="mt-1 w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100" min="0">
+                                    </div>
+                                    <div class="col-span-2">
+                                        <button @click="addExtraItem()" :disabled="!modalData.newItem.name || modalData.newItem.amount <= 0" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2.5 rounded-lg font-bold disabled:opacity-50 mt-2">{{ __('pos.add_extra_item') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right: List of added items -->
+                            <div class="w-1/2 p-4 bg-gray-50 max-h-[350px] overflow-y-auto">
+                                <template x-for="(item, idx) in modalData.items" :key="idx">
+                                    <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-2 flex justify-between items-center">
+                                        <div>
+                                            <div class="font-bold text-sm text-gray-800" x-text="item.name"></div>
+                                            <div class="text-xs font-semibold" :class="item.action_type === 'addition' ? 'text-primary-600' : 'text-danger-600'">
+                                                <span x-text="item.action_type === 'addition' ? '+' : '-'"></span> <span x-text="currencySymbol"></span><span x-text="item.amount"></span>
+                                            </div>
+                                        </div>
+                                        <button @click="removeExtraItem(idx)" class="text-gray-400 hover:text-danger-500 bg-gray-50 hover:bg-danger-50 p-2 rounded-lg transition-colors">
+                                            <i class="ph ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                <div x-show="modalData.items?.length === 0" class="text-center text-gray-400 py-10 text-sm">
+                                    No extra items added.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border-t border-gray-100 flex justify-end">
+                            <button @click="applyExtraItems()" class="bg-primary-600 hover:bg-primary-700 text-white px-8 py-2.5 rounded-lg font-bold">Apply & Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 
     <!-- Alpine.js POS State Engine -->
@@ -385,11 +565,21 @@
             Alpine.data('posSystem', (initialData) => ({
                 storeId: initialData.storeId,
                 storeName: initialData.storeName,
+                currencySymbol: initialData.currencySymbol || '$',
                 categories: initialData.categories || [],
                 customers: initialData.customers || [],
+                shippingDestinations: initialData.shippingDestinations || [],
+                extraItemPresets: [], // Loaded on demand
 
-                globalDiscount: 0,
+                globalDiscountAmount: 0,
+                globalDiscountType: 'fixed',
+                
                 shippingCost: 0,
+                shippingDestinationId: null,
+                shippingAddress: '',
+                
+                extraItems: [],
+
                 cart: [],
 
                 // Customer selection
@@ -405,16 +595,30 @@
                 completedInvoiceNumber: '',
                 completedInvoiceTotal: 0,
 
+                // New modals state
+                activeModal: null, // 'itemDiscount', 'extraItems', 'globalDiscount', 'shipping'
+                modalData: {}, // Holds temporary data for the active modal
+
                 init() {
                     window.addEventListener('keydown', (e) => {
+                        // Handle Escape to close active modal
+                        if (e.key === 'Escape') {
+                            if (this.showSuccessModal) {
+                                this.closeSuccessModal();
+                                return;
+                            }
+                            if (this.activeModal) {
+                                this.closeModal();
+                                return;
+                            }
+                        }
                         if (e.key === 'Enter' && this.showSuccessModal) {
                             this.closeSuccessModal();
                             return;
                         }
-                        if (e.key === 'Escape' && this.showSuccessModal) {
-                            this.closeSuccessModal();
-                            return;
-                        }
+                        // Don't intercept shortcuts if a modal is open
+                        if (this.activeModal || this.showSuccessModal) return;
+
                         if (e.key === 'F2') {
                             e.preventDefault();
                             this.focusSearch();
@@ -448,16 +652,35 @@
                 get cartSubtotal() {
                     return this.cart.reduce((sum, item) => {
                         let activePrice = item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price;
-                        return sum + ((activePrice - item.discount) * item.qty);
+                        let itemDiscount = item.discountType === 'percentage' 
+                            ? (activePrice * (item.discountAmount / 100))
+                            : item.discountAmount;
+                        return sum + ((activePrice - itemDiscount) * item.qty);
                     }, 0);
+                },
+
+                get extraItemsTotal() {
+                    return this.extraItems.reduce((sum, item) => {
+                        return item.action_type === 'addition' ? sum + item.amount : sum - item.amount;
+                    }, 0);
+                },
+
+                get cartTotalDiscounts() {
+                    let sub = this.cartSubtotal;
+                    let globalDiscount = this.globalDiscountType === 'percentage'
+                        ? (sub * (this.globalDiscountAmount / 100))
+                        : parseFloat(this.globalDiscountAmount) || 0;
+                    if (globalDiscount > sub) globalDiscount = sub;
+                    return globalDiscount;
                 },
 
                 get cartTotal() {
                     let sub = this.cartSubtotal;
-                    let discount = parseFloat(this.globalDiscount) || 0;
+                    let discount = this.cartTotalDiscounts;
+                    let extras = this.extraItemsTotal;
                     let shipping = parseFloat(this.shippingCost) || 0;
-                    if (discount > sub) discount = sub;
-                    return Math.max(0, (sub - discount) + shipping);
+                    
+                    return Math.max(0, (sub - discount) + extras + shipping);
                 },
 
                 get cartItemCount() {
@@ -492,7 +715,8 @@
                             priceType: 'retail', // default
                             wholesale_enabled: !!product.wholesale_enabled,
                             qty: 1,
-                            discount: 0,
+                            discountType: 'fixed',
+                            discountAmount: 0,
                         });
                     }
                 },
@@ -511,20 +735,120 @@
 
                 clearCart() {
                     this.cart = [];
-                    this.globalDiscount = 0;
+                    this.extraItems = [];
+                    this.globalDiscountAmount = 0;
+                    this.globalDiscountType = 'fixed';
                     this.shippingCost = 0;
+                    this.shippingDestinationId = null;
+                    this.shippingAddress = '';
                 },
 
+                // Modal helpers
+                openModal(name, data = {}) {
+                    this.activeModal = name;
+                    this.modalData = JSON.parse(JSON.stringify(data)); // Deep clone
+                },
+                closeModal() {
+                    this.activeModal = null;
+                    this.modalData = {};
+                },
+
+                // 1. Item Discount
                 promptItemDiscount(index) {
                     const item = this.cart[index];
                     if (!item) return;
-                    const amount = prompt(`Enter discount per unit for ${item.name} ($):`, item.discount);
-                    if (amount !== null) {
-                        const parsed = parseFloat(amount);
-                        if (!isNaN(parsed) && parsed >= 0) {
-                            item.discount = parsed;
+                    this.openModal('itemDiscount', {
+                        index: index,
+                        name: item.name,
+                        type: item.discountType || 'fixed',
+                        amount: item.discountAmount || 0,
+                        unitPrice: item.priceType === 'wholesale' ? item.wholesale_price : item.retail_price
+                    });
+                },
+                applyItemDiscount() {
+                    const idx = this.modalData.index;
+                    let amount = parseFloat(this.modalData.amount) || 0;
+                    if (this.modalData.type === 'percentage' && amount > 100) amount = 100;
+                    if (this.modalData.type === 'fixed' && amount > this.modalData.unitPrice) amount = this.modalData.unitPrice;
+                    
+                    this.cart[idx].discountType = this.modalData.type;
+                    this.cart[idx].discountAmount = amount;
+                    this.closeModal();
+                },
+
+                // 2. Extra Items
+                async openExtraItemsModal() {
+                    if (this.extraItemPresets.length === 0) {
+                        this.extraItemPresets = await this.$wire.getExtraItemPresets();
+                    }
+                    this.openModal('extraItems', {
+                        items: [...this.extraItems],
+                        newItem: { presetId: '', name: '', amount: 0, action_type: 'addition', notes: '' }
+                    });
+                },
+                addExtraItem() {
+                    let newItem = { ...this.modalData.newItem };
+                    
+                    if (newItem.presetId) {
+                        const preset = this.extraItemPresets.find(p => p.id == newItem.presetId);
+                        if (preset) {
+                            newItem = { ...preset };
                         }
                     }
+                    
+                    if (!newItem.name || parseFloat(newItem.amount) <= 0) return;
+                    
+                    newItem.amount = parseFloat(newItem.amount);
+                    this.modalData.items.push(newItem);
+                    this.modalData.newItem = { presetId: '', name: '', amount: 0, action_type: 'addition', notes: '' };
+                },
+                removeExtraItem(idx) {
+                    this.modalData.items.splice(idx, 1);
+                },
+                applyExtraItems() {
+                    this.extraItems = [...this.modalData.items];
+                    this.closeModal();
+                },
+
+                // 3. Global Discount
+                openGlobalDiscountModal() {
+                    this.openModal('globalDiscount', {
+                        type: this.globalDiscountType,
+                        amount: this.globalDiscountAmount,
+                        subtotal: this.cartSubtotal
+                    });
+                },
+                applyGlobalDiscount() {
+                    let amount = parseFloat(this.modalData.amount) || 0;
+                    if (this.modalData.type === 'percentage' && amount > 100) amount = 100;
+                    if (this.modalData.type === 'fixed' && amount > this.modalData.subtotal) amount = this.modalData.subtotal;
+                    
+                    this.globalDiscountType = this.modalData.type;
+                    this.globalDiscountAmount = amount;
+                    this.closeModal();
+                },
+
+                // 4. Shipping
+                openShippingModal() {
+                    this.openModal('shipping', {
+                        destinationId: this.shippingDestinationId,
+                        cost: this.shippingCost,
+                        address: this.shippingAddress,
+                    });
+                },
+                applyShipping() {
+                    let cost = parseFloat(this.modalData.cost) || 0;
+                    let destId = this.modalData.destinationId;
+                    
+                    if (destId) {
+                        const dest = this.shippingDestinations.find(d => d.id == destId);
+                        if (dest) cost = parseFloat(dest.cost) || 0;
+                    }
+
+                    this.shippingCost = cost;
+                    this.shippingDestinationId = destId;
+                    this.shippingAddress = this.modalData.address;
+                    this.closeModal();
                 },
 
                 focusSearch() {
@@ -549,15 +873,20 @@
                     const formattedCart = this.cart.map(item => ({
                         variant_id: item.variant_id,
                         qty: item.qty,
-                        discount: item.discount,
+                        discount_type: item.discountType,
+                        discount_amount: item.discountAmount,
                         price_type: item.priceType
                     }));
 
                     this.$wire.processCheckout(formattedCart, {
                         customer_id: this.selectedCustomerId || null,
                         store_id: this.storeId || null,
-                        global_discount: parseFloat(this.globalDiscount) || 0,
+                        global_discount_type: this.globalDiscountType,
+                        global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
+                        shipping_destination_id: this.shippingDestinationId || null,
                         shipping_cost: parseFloat(this.shippingCost) || 0,
+                        shipping_address: this.shippingAddress || null,
+                        extra_items: this.extraItems,
                     }).finally(() => {
                         this.isProcessing = false;
                     });
@@ -570,15 +899,20 @@
                     const formattedCart = this.cart.map(item => ({
                         variant_id: item.variant_id,
                         qty: item.qty,
-                        discount: item.discount,
+                        discount_type: item.discountType,
+                        discount_amount: item.discountAmount,
                         price_type: item.priceType
                     }));
 
                     this.$wire.holdCart(formattedCart, {
                         customer_id: this.selectedCustomerId || null,
                         store_id: this.storeId || null,
-                        global_discount: parseFloat(this.globalDiscount) || 0,
+                        global_discount_type: this.globalDiscountType,
+                        global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
+                        shipping_destination_id: this.shippingDestinationId || null,
                         shipping_cost: parseFloat(this.shippingCost) || 0,
+                        shipping_address: this.shippingAddress || null,
+                        extra_items: this.extraItems,
                     }).finally(() => {
                         this.isProcessing = false;
                     });
