@@ -309,12 +309,22 @@
                 <div class="px-5 pt-3 pb-4 border-t border-gray-200 bg-gray-50/50 shrink-0">
                     <!-- Modals Buttons Row -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
-                        <button @click="openGlobalDiscountModal()" class="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-semibold hover:border-primary-300 transition-colors text-start shadow-sm" :class="globalDiscountAmount > 0 ? 'border-primary-300 bg-primary-50/50' : ''" title="{{ __('pos.global_discount_tooltip') }}">
-                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ __('pos.global_discount_btn') }}</span>
+                        <button @click="openGlobalDiscountModal()" class="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-semibold hover:border-primary-300 transition-colors text-start shadow-sm" :class="globalDiscountAmount > 0 ? 'border-primary-300 bg-primary-50/50' : ''">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ __('pos.global_discount_btn') }}</span>
+                                <span class="text-gray-400 hover:text-gray-600 cursor-help" title="{{ __('pos.global_discount_tooltip') }}">
+                                    <i class="ph ph-info text-xs"></i>
+                                </span>
+                            </div>
                             <span class="text-gray-800 font-bold" x-text="globalDiscountAmount > 0 ? (globalDiscountType === 'percentage' ? globalDiscountAmount + '% (' + currencySymbol + ' ' + cartGlobalDiscount.toFixed(2) + ')' : currencySymbol + ' ' + parseFloat(globalDiscountAmount).toFixed(2)) : '{{ __('pos.add') }}'"></span>
                         </button>
-                        <button @click="openShippingModal()" class="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-semibold hover:border-primary-300 transition-colors text-start shadow-sm" :class="(shippingDestinationId || shippingCost > 0) ? 'border-primary-300 bg-primary-50/50' : ''" title="{{ __('pos.shipping_tooltip') }}">
-                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ __('pos.shipping') }}</span>
+                        <button @click="openShippingModal()" class="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm font-semibold hover:border-primary-300 transition-colors text-start shadow-sm" :class="(shippingDestinationId || shippingCost > 0) ? 'border-primary-300 bg-primary-50/50' : ''">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wide">{{ __('pos.shipping') }}</span>
+                                <span class="text-gray-400 hover:text-gray-600 cursor-help" title="{{ __('pos.shipping_tooltip') }}">
+                                    <i class="ph ph-info text-xs"></i>
+                                </span>
+                            </div>
                             <span class="text-gray-800 font-bold" x-text="(shippingDestinationId || shippingCost > 0) ? currencySymbol + ' ' + parseFloat(shippingCost || 0).toFixed(2) : '{{ __('pos.add') }}'"></span>
                         </button>
                     </div>
@@ -356,20 +366,8 @@
                             <span class="text-danger-700 text-xs font-bold" x-text="'-' + currencySymbol + ' ' + cartItemsDiscountTotal.toFixed(2)"></span>
                         </div>
 
-                        <!-- 4. Global Invoice Discount -->
-                        <div class="bg-danger-50 border border-danger-100 rounded-lg p-2 flex justify-between items-center shadow-sm">
-                            <div class="flex items-center gap-1">
-                                <span class="text-danger-600 uppercase tracking-wider">{{ __('pos.global_invoice_discount') }}</span>
-                                <span class="text-danger-400 hover:text-danger-600 cursor-help" title="{{ __('pos.global_invoice_discount_tooltip') }}">
-                                    <i class="ph ph-info text-xs"></i>
-                                </span>
-                            </div>
-                            <span class="text-danger-700 text-xs font-bold" x-text="'-' + currencySymbol + ' ' + cartGlobalDiscount.toFixed(2)"></span>
-                        </div>
-
-                        <!-- 5. Final Total Discounts -->
-                        <div class="bg-danger-50 border border-danger-200 rounded-lg p-2 flex justify-between items-center shadow-sm"
-                             :class="shippingCost > 0 ? '' : 'col-span-2'">
+                        <!-- 4. Final Total Discounts -->
+                        <div class="bg-danger-50 border border-danger-200 rounded-lg p-2 flex justify-between items-center shadow-sm">
                             <div class="flex items-center gap-1">
                                 <span class="text-danger-700 uppercase tracking-wider font-extrabold">{{ __('pos.final_total_discount') }}</span>
                                 <span class="text-danger-400 hover:text-danger-600 cursor-help" title="{{ __('pos.final_total_discount_tooltip') }}">
@@ -379,20 +377,7 @@
                             <span class="text-danger-800 text-sm font-extrabold" x-text="'-' + currencySymbol + ' ' + cartTotalDiscounts.toFixed(2)"></span>
                         </div>
 
-                        <!-- 6. Shipping (Conditional) -->
-                        <template x-if="shippingCost > 0">
-                            <div class="bg-white border border-gray-200 rounded-lg p-2 flex justify-between items-center shadow-sm">
-                                <div class="flex items-center gap-1">
-                                    <span class="text-gray-500 uppercase tracking-wider">{{ __('pos.shipping') }}</span>
-                                    <span class="text-gray-400 hover:text-gray-600 cursor-help" title="{{ __('pos.shipping_tooltip') }}">
-                                        <i class="ph ph-info text-xs"></i>
-                                    </span>
-                                </div>
-                                <span class="text-gray-800 text-xs font-bold" x-text="'+' + currencySymbol + ' ' + parseFloat(shippingCost).toFixed(2)"></span>
-                            </div>
-                        </template>
-
-                        <!-- 7. Grand Total (Full width, Green) -->
+                        <!-- 5. Grand Total (Full width, Green) -->
                         <div class="col-span-2 bg-success-50 border border-success-200 rounded-lg p-2.5 flex justify-between items-center shadow-sm ring-1 ring-success-500/20">
                             <div class="flex items-center gap-1.5">
                                 <span class="text-success-700 uppercase tracking-wider font-extrabold">{{ __('pos.grand_total') }}</span>
