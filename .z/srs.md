@@ -418,33 +418,6 @@ settings
 
 
 ### Phase 3 — POS Terminal (Weeks 8–11)
-1. we should display the currency symbol / the percentage symbol for all inputs that is related to them,
-2. We also must handle. The   displaying  The final amount. For example. For, uh, discounters. Or etcetera. Items that allow the user to choose whether they entered amount will be a fixed amount of money Or a percentage So there should be another  Input or field In that uh model. Or in that place. That show the final amount of money. Based on whether it is a fixed amount or it is a percentage of something else. 
-3. we need to display the measurement unit next to the qty as well
-4. Unit Item Discount (Type & Value)
-    - we need to display the original price and the discounted price for each item
-    - we need to display the min allowed price or if the price is no negotiable and enforce this rule at the client side as well.
-    - We should make it clear for the user that the unit item discount. Is Considered, Or will apply at the unit discount. 
-      This mean the amount the user enter for the discount. Will not be, calculated or will not be considered as the whole Item count discount. 
-      It will be considered as the unit item discount. Also, we need to display that in a clear and elegant and professional way. Uh. That is clear and,  obvious. And also. Does not clutter the page or destroy the design.
-    - 
-5. Adding Extra Items
-    - the extra items form should allow add manually with the need to chose predefined template, 
-        currently the form is enabled only when i chose a template. These templates. Are used for auto filling. 
-        They are not attached. They only used for auto filling.
-    - we should display the currency symbol or the percentage symbol for Amount input,
-
-6. Global / Overall Invoice Discount
-
-7. Shipping Cost & Pre-configured Templates
-    - I have noticed. A bug in the shipping cost model. Which is the Destination or the address is not populated is not populated to the address  from the pre designed template or when I chose a template the address is not populated to the form. 
-    - Also, I noticed that in the  sale invoice Page. The user Can it change the shipping cost  After selecting a shipping dist  from the drop-down menu of the shipping destination. But this is not  the case in the Point of sale terminal. The the shipping cost  in the modal is disabled after i chose  A shipping destination. Please check it also. 
-8. Detailed Summary Display
-
-9. translation, we should translate each word in that page and its related modals.
-
-
-
 - [ ] Cashier login
 - [ ] Barcode scanning
 - [ ] Cart management
@@ -453,7 +426,19 @@ settings
 - [ ] Cash management (shift open/close)
 - [ ] Transaction hold/recall
 - [ ] POS User Experience (UX)
-- [ ] Hotkeys: The cashier interface must be fully navigable via keyboard (F-keys, arrows, Enter) without ever touching a mouse.
+- [ ] Hotkeys: The cashier interface must be fully navigable via 
+- [ ] keyboard (F-keys, arrows, Enter) without ever touching a mouse.
+- [ ]  Implement Full Dark Mode for POS Terminal
+        **Description:**
+        The POS Terminal currently only supports light mode styling, which causes a UI bug (invisible/white text on a white background in numeric inputs) for users who have Dark Mode enabled in their Filament account preferences (like the Store Manager account). To fix this comprehensively and improve the user experience, we need to fully implement Dark Mode for the POS interface.
+
+        **Tasks:**
+        - [ ] **Add a Theme Toggle Button:** Add a light/dark mode toggle button to the POS Terminal header (e.g., near the fullscreen and user profile icons) to allow users to switch themes directly from the POS interface.
+        - [ ] **Implement Dark Mode Classes:** Update `pos-terminal.blade.php` to include Tailwind `dark:` variants for all UI elements (e.g., `dark:bg-gray-900`, `dark:text-white`, `dark:border-gray-700`).
+        - [ ] **Fix Form Inputs:** Ensure all `<input>`, `<select>`, and `<textarea>` elements correctly handle dark mode (e.g., `dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600`) so that numeric input text is always visible.
+        - [ ] **Persist Theme State:** Ensure the theme toggle interacts correctly with the user's existing Filament theme preference or Alpine.js local storage state.
+        - [ ] **Test Across Roles:** Verify the POS terminal looks correct in both modes for both Company Admin and Store Manager accounts.
+
 
 ### Phase 3.1 — imports and Exports
 - [ ] Export other items like "inventory movement", ...etc

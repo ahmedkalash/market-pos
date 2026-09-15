@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\PaymentMethod;
 use App\Models\Customer;
 use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductCategory;
@@ -21,7 +22,9 @@ class PosTerminal extends Page
     use WithPagination;
 
     public bool $isProcessing = false;
+
     public string $search = '';
+
     public ?int $categoryId = null;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
@@ -113,7 +116,7 @@ class PosTerminal extends Page
             ]);
 
         // Fetch Products (Variants) with Server-Side Pagination
-        $variantsQuery = ProductVariant::query()->with(['product.category', 'barcodes'])
+        $variantsQuery = ProductVariant::query()->with(['product.category', 'barcodes', 'unitOfMeasure'])
             ->where('is_active', true);
 
         if ($storeId) {
@@ -152,6 +155,12 @@ class PosTerminal extends Page
                 'price' => (float) $variant->retail_price,
                 'wholesale_price' => (float) $variant->wholesale_price,
                 'wholesale_enabled' => (bool) $variant->wholesale_enabled,
+                'retail_is_price_negotiable' => (bool) $variant->retail_is_price_negotiable,
+                'min_retail_price' => (float) $variant->min_retail_price,
+                'wholesale_is_price_negotiable' => (bool) $variant->wholesale_is_price_negotiable,
+                'min_wholesale_price' => (float) $variant->min_wholesale_price,
+                'wholesale_qty_threshold' => (float) $variant->wholesale_qty_threshold,
+                'uom_name' => $variant->unitOfMeasure?->{lang_suffix('name')} ?? '',
                 'stock' => (float) $variant->quantity,
                 'barcodes' => $variant->barcodes->pluck('barcode')->toArray(),
                 'image' => (method_exists($variant->product, 'getFirstMediaUrl') ? $variant->product->getFirstMediaUrl('image', 'thumb') : null) ?: null,
@@ -175,6 +184,10 @@ class PosTerminal extends Page
                         'name' => $d->name,
                         'cost' => (float) $d->cost,
                     ]),
+                'paymentMethods' => collect(PaymentMethod::cases())->map(fn ($pm) => [
+                    'value' => $pm->value,
+                    'label' => $pm->getLabel(),
+                ])->toArray(),
                 // Products array is now empty in initialData since we render via Blade,
                 // but we might still need some data for barcodes.
                 // However, barcode scanning will be harder if products are paginated.
@@ -187,7 +200,6 @@ class PosTerminal extends Page
 
     public function processCheckout(array $cartData, array $metaData)
     {
-        dd($cartData, $metaData);
         try {
             $invoice = PosCheckoutService::make()->checkout($cartData, $metaData);
 
@@ -236,6 +248,54 @@ class PosTerminal extends Page
 
             $this->halt(true);
         }
+    }
+
+    public function createShippingDestination(array $data): array
+    {
+        $user = auth()->user();
+
+        $destination = ShippingDestination::create([
+            'company_id' => $user->company_id,
+            'store_id' => $user->store_id ?? $user->company?->stores()->first()?->id,
+            'name' => trim($data['name'] ?? ''),
+            'cost' => (float) ($data['cost'] ?? 0),
+            'is_active' => true,
+        ]);
+
+        return [
+            'id' => $destination->id,
+            'name' => $destination->name,
+            'cost' => (float) $destination->cost,
+        ];
+    }
+
+    public function createCustomer(array $data): array
+    {
+        $user = auth()->user();
+
+        $validated = validator($data, [
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'address' => ['nullable', 'string', 'max:65535'],
+        ])->validate();
+
+        $customer = Customer::create([
+            'company_id' => $user->company_id,
+            'name' => trim($validated['name']),
+            'phone' => ! empty($validated['phone']) ? trim($validated['phone']) : null,
+            'email' => ! empty($validated['email']) ? trim($validated['email']) : null,
+            'address' => ! empty($validated['address']) ? trim($validated['address']) : null,
+            'is_active' => true,
+        ]);
+
+        return [
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'email' => $customer->email,
+            'address' => $customer->address,
+        ];
     }
 
     public function getExtraItemPresets(): array
