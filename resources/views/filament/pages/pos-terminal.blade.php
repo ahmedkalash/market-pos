@@ -48,6 +48,11 @@
             user-select: none;
         }
 
+        /* Ensure Filament notifications appear above modals and remain clickable */
+        .fi-no {
+            z-index: 9999 !important;
+        }
+
         /* Hide number input spinners */
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
@@ -520,7 +525,7 @@
 
         <!-- ================= PAYMENT SUCCESS MODAL ================= -->
         <div x-show="showSuccessModal"
-             class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 transition-opacity duration-300"
+             class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center opacity-0 transition-opacity duration-300"
              :class="{'opacity-100 hidden': !showSuccessModal, 'opacity-100': showSuccessModal}"
              x-cloak
              x-transition:enter="transition ease-out duration-300"
@@ -558,7 +563,7 @@
             <template x-teleport="body">
                 <div>
                 <!-- Item Discount Modal -->
-                <div x-show="activeModal === 'itemDiscount'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                <div x-show="activeModal === 'itemDiscount'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center" x-cloak>
                     <template x-if="activeModal === 'itemDiscount'">
                         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.outside="closeModal()">
                             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
@@ -658,7 +663,7 @@
                 </div>
 
                 <!-- Global Discount Modal -->
-                <div x-show="activeModal === 'globalDiscount'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                <div x-show="activeModal === 'globalDiscount'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center" x-cloak>
                     <template x-if="activeModal === 'globalDiscount'">
                         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.outside="closeModal()">
                             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
@@ -726,7 +731,7 @@
                 </div>
 
                 <!-- Shipping Modal -->
-                <div x-show="activeModal === 'shipping'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                <div x-show="activeModal === 'shipping'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center" x-cloak>
                     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.outside="closeModal()">
                             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
                                 <h3 class="font-bold text-gray-800">{{ __('pos.shipping') }}</h3>
@@ -737,7 +742,7 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
                                         <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.shipping_destination') }}</label>
-                                        <button type="button" @click="showNewDestinationForm = !showNewDestinationForm" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors">
+                                        <button type="button" @click="showNewDestinationForm = !showNewDestinationForm; modalData.error = ''" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors">
                                             <i class="ph ph-plus text-sm"></i>
                                             <span x-text="showNewDestinationForm ? '{{ __('pos.cancel') }}' : '{{ __('pos.new_destination') }}'"></span>
                                         </button>
@@ -746,6 +751,7 @@
                                     <!-- Inline New Destination Form -->
                                     <div x-show="showNewDestinationForm" x-transition class="p-3 mb-3 bg-primary-50/60 border border-primary-200 rounded-xl space-y-2.5">
                                         <div class="text-xs font-bold text-primary-800">{{ __('pos.create_shipping_destination') }}</div>
+                                        <div x-show="modalData.error" x-text="modalData.error" class="text-xs font-bold text-danger-600 bg-danger-50 p-2 rounded-lg border border-danger-200"></div>
                                         <div>
                                             <label class="text-[10px] font-bold text-gray-500 uppercase">{{ __('pos.destination_name') }}</label>
                                             <input type="text" x-model="newDestination.name" placeholder="{{ __('pos.enter_destination_name') }}" class="mt-1 w-full border border-gray-200 rounded-lg p-2 text-xs font-medium outline-none focus:border-primary-500 bg-white">
@@ -793,7 +799,7 @@
                 </div>
 
                 <!-- Extra Items Modal -->
-                <div x-show="activeModal === 'extraItems'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
+                <div x-show="activeModal === 'extraItems'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center" x-cloak>
                     <template x-if="activeModal === 'extraItems'">
                         <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl" @click.outside="closeModal()">
                             <div class="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -878,7 +884,7 @@
                 </div>
 
                 <!-- Confirm Clear Cart Modal -->
-                <div x-show="activeModal === 'confirmClearCart'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" x-cloak>
+                <div x-show="activeModal === 'confirmClearCart'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center p-4" x-cloak>
                     <template x-if="activeModal === 'confirmClearCart'">
                         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden" @click.outside="closeModal()">
                             <div class="p-6 text-center">
@@ -897,7 +903,7 @@
                 </div>
 
                 <!-- New Customer Modal -->
-                <div x-show="activeModal === 'newCustomer'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" x-cloak>
+                <div x-show="activeModal === 'newCustomer'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center p-4" x-cloak>
                     <template x-if="activeModal === 'newCustomer'">
                         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="closeModal()">
                             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -1435,6 +1441,13 @@
                 },
                 async saveNewDestination() {
                     if (!this.newDestination.name) return;
+                    this.modalData.error = '';
+
+                    if (!this.storeId) {
+                        this.modalData.error = '{{ __('pos.select_store_first') }}';
+                        return;
+                    }
+
                     try {
                         const created = await this.$wire.createShippingDestination({
                             name: this.newDestination.name,
@@ -1452,9 +1465,16 @@
                                 const selectEl = document.getElementById('shippingDestinationSelect');
                                 if (selectEl) selectEl.value = String(created.id);
                             });
+                        } else {
+                            this.modalData.error = '{{ __('pos.select_store_first') }}';
                         }
                     } catch (e) {
                         console.error('Failed to create shipping destination', e);
+                        const errorMsg = e?.data?.errors?.store_id?.[0]
+                            || e?.data?.message
+                            || e?.message
+                            || '{{ __('pos.select_store_first') }}';
+                        this.modalData.error = errorMsg;
                     }
                 },
                 applyShipping() {
