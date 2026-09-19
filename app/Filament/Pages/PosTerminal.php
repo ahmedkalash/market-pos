@@ -14,9 +14,15 @@ use App\Services\PosCheckoutService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
 
+/**
+ * @property-read User $user
+ */
 class PosTerminal extends Page
 {
     use WithPagination;
@@ -26,6 +32,26 @@ class PosTerminal extends Page
     public string $search = '';
 
     public ?int $categoryId = null;
+
+    public ?int $storeId = null;
+
+    public string $storeName = '';
+
+    public string $currencySymbol = '';
+
+    public array $storeList = [];
+
+    public array $categoryList = [];
+
+    public array $customerList = [];
+
+    public array $shippingDestinationList = [];
+
+    public array $paymentMethodList = [];
+
+    public ?int $perPage = 3;
+
+    protected static ?string $slug = 'pos';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
 
@@ -61,89 +87,52 @@ class PosTerminal extends Page
         return []; // Hide breadcrumbs to save space
     }
 
-    public function updatingSearch()
+    #[Computed]
+    public function user(): User
+    {
+        /** @var User */
+        return auth()->user();
+    }
+
+    public function mount(): void
+    {
+        $this->refreshStoreContext();
+    }
+
+    public function changeStore(int $newStoreId): void
+    {
+        if (! $this->user->isCompanyLevel()) {
+            return; // Store-level users cannot switch stores
+        }
+        // Tenant boundary validation: Ensure the store belongs to the user's company
+        $storeExists = Store::query()
+            ->where('id', $newStoreId)
+            ->exists();
+        if (! $storeExists) {
+            Notification::make()
+                ->danger()
+                ->title(__('pos.store_not_found'))
+                ->send();
+
+            return;
+        }
+
+        $this->refreshStoreContext($newStoreId);
+    }
+
+    public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    public function updatingCategoryId()
+    public function updatingCategoryId(): void
     {
         $this->resetPage();
     }
 
     protected function getViewData(): array
     {
-        /** @var User $user */
-        $user = auth()->user();
-        $companyId = $user->company_id;
-
-        $stores = Store::query()
-            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
-            ->get(['id', 'name_en', 'name_ar'])
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'name' => $s->{lang_suffix('name')},
-            ]);
-
-        // todo handel company level accounts
-        $storeId = $user->store_id
-            ?? $user->company?->stores()->first()?->id
-            ?? $stores->first()['id'] ?? null;
-
-        $activeStore = $stores->firstWhere('id', $storeId);
-
-        // Fetch Categories
-        $categoriesQuery = ProductCategory::query()->where('is_active', true);
-        if ($storeId) {
-            $categoriesQuery->where('store_id', $storeId);
-        } elseif ($companyId) {
-            $categoriesQuery->where('company_id', $companyId);
-        }
-        $categories = $categoriesQuery->get(['id', 'name_en', 'name_ar'])
-            ->map(fn ($cat) => [
-                'id' => $cat->id,
-                'name' => $cat->{lang_suffix('name')},
-            ]);
-
-        // Fetch Customers
-        $customers = Customer::query()->where('is_active', true)
-            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
-            ->get(['id', 'name', 'phone'])
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'phone' => $c->phone,
-            ]);
-
-        // Fetch Products (Variants) with Server-Side Pagination
-        $variantsQuery = ProductVariant::query()->with(['product.category', 'barcodes', 'unitOfMeasure'])
-            ->where('is_active', true);
-
-        if ($storeId) {
-            $variantsQuery->where('store_id', $storeId);
-        } elseif ($companyId) {
-            $variantsQuery->where('company_id', $companyId);
-        }
-
-        if ($this->categoryId) {
-            $variantsQuery->whereHas('product', function ($q) {
-                $q->where('category_id', $this->categoryId);
-            });
-        }
-
-        if (filled($this->search)) {
-            $variantsQuery->where(function ($query) {
-                $query->whereNameLike($this->search)
-                    ->orWhereHas('product', function ($q) {
-                        $q->whereNameLike($this->search);
-                    })
-                    ->orWhereHas('barcodes', function ($q) {
-                        $q->where('barcode', 'like', "%{$this->search}%");
-                    });
-            });
-        }
-
-        $paginatedVariants = $variantsQuery->paginate(16);
+        $paginatedVariants = $this->paginatedVariants();
 
         // Transform the collection items while keeping the paginator intact
         $paginatedVariants->getCollection()->transform(function ($variant) {
@@ -168,39 +157,19 @@ class PosTerminal extends Page
         });
 
         return [
-            'initialData' => [
-                'storeId' => $storeId,
-                'storeName' => $activeStore['name'] ?? __('pos.main_store'),
-                'currencySymbol' => $user->company->currency_symbol ?? 'ج.م',
-                'stores' => $stores,
-                'categories' => $categories,
-                'customers' => $customers,
-                'shippingDestinations' => ShippingDestination::query()
-                    ->where('is_active', true)
-                    ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
-                    ->get(['id', 'name', 'cost'])
-                    ->map(fn ($d) => [
-                        'id' => $d->id,
-                        'name' => $d->name,
-                        'cost' => (float) $d->cost,
-                    ]),
-                'paymentMethods' => collect(PaymentMethod::cases())->map(fn ($pm) => [
-                    'value' => $pm->value,
-                    'label' => $pm->getLabel(),
-                ])->toArray(),
-                // Products array is now empty in initialData since we render via Blade,
-                // but we might still need some data for barcodes.
-                // However, barcode scanning will be harder if products are paginated.
-                // For a real POS, barcode scanning usually queries an API.
-                // We will leave it empty and handle scanning differently if needed.
-            ],
             'products' => $paginatedVariants,
         ];
     }
 
-    public function processCheckout(array $cartData, array $metaData)
+    public function processCheckout(array $cartData, array $metaData): void
     {
         try {
+            if (! $this->storeId) {
+                throw new \Exception(__('pos.select_store_first'));
+            }
+
+            $metaData['store_id'] = $this->storeId;
+
             $invoice = PosCheckoutService::make()->checkout($cartData, $metaData);
 
             Notification::make()
@@ -227,9 +196,15 @@ class PosTerminal extends Page
         }
     }
 
-    public function holdCart(array $cartData, array $metaData)
+    public function holdCart(array $cartData, array $metaData): void
     {
         try {
+            if (! $this->storeId) {
+                throw new \Exception(__('pos.select_store_first'));
+            }
+
+            $metaData['store_id'] = $this->storeId;
+
             PosCheckoutService::make()->holdCart($cartData, $metaData);
 
             Notification::make()
@@ -252,27 +227,38 @@ class PosTerminal extends Page
 
     public function createShippingDestination(array $data): array
     {
-        $user = auth()->user();
+        if (! $this->storeId) {
+            Notification::make()
+                ->danger()
+                ->title(__('pos.select_store_first'))
+                ->send();
+
+            throw ValidationException::withMessages([
+                'store_id' => __('pos.select_store_first'),
+            ]);
+        }
 
         $destination = ShippingDestination::create([
-            'company_id' => $user->company_id,
-            'store_id' => $user->store_id ?? $user->company?->stores()->first()?->id,
+            'company_id' => $this->user->company_id,
+            'store_id' => $this->storeId,
             'name' => trim($data['name'] ?? ''),
             'cost' => (float) ($data['cost'] ?? 0),
             'is_active' => true,
         ]);
 
-        return [
+        $result = [
             'id' => $destination->id,
             'name' => $destination->name,
             'cost' => (float) $destination->cost,
         ];
+
+        $this->shippingDestinationList[] = $result;
+
+        return $result;
     }
 
     public function createCustomer(array $data): array
     {
-        $user = auth()->user();
-
         $validated = validator($data, [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
@@ -281,7 +267,7 @@ class PosTerminal extends Page
         ])->validate();
 
         $customer = Customer::create([
-            'company_id' => $user->company_id,
+            'company_id' => $this->user->company_id,
             'name' => trim($validated['name']),
             'phone' => ! empty($validated['phone']) ? trim($validated['phone']) : null,
             'email' => ! empty($validated['email']) ? trim($validated['email']) : null,
@@ -289,23 +275,30 @@ class PosTerminal extends Page
             'is_active' => true,
         ]);
 
-        return [
+        $result = [
             'id' => $customer->id,
             'name' => $customer->name,
             'phone' => $customer->phone,
             'email' => $customer->email,
             'address' => $customer->address,
         ];
+
+        $this->customerList[] = $result;
+
+        return $result;
     }
 
     public function getExtraItemPresets(): array
     {
-        $companyId = auth()->user()->company_id;
+        if (! $this->storeId) {
+            return [];
+        }
 
+        // todo check store id in company level user
         return InvoiceExtraItemPreset::query()
             ->forSaleInvoice()
-            ->where('is_active', true)
-            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->active()
+            ->where('store_id', $this->storeId)
             ->get(['id', 'name', 'action_type', 'amount', 'notes'])
             ->map(fn ($p) => [
                 'id' => $p->id,
@@ -315,5 +308,139 @@ class PosTerminal extends Page
                 'notes' => $p->notes,
             ])
             ->toArray();
+    }
+
+    /**
+     * Populates all public reference-data properties from the database.
+     * Called on mount() and after any action that changes the active store.
+     */
+    private function refreshStoreContext(?int $newStoreId = null): void
+    {
+        $this->resetPage();
+
+        if ($this->user->isStoreLevel()) {
+            $this->storeId = $this->user->store_id;
+        } elseif ($this->user->isCompanyLevel() && $newStoreId !== null) {
+            $this->storeId = $newStoreId;
+        }
+
+        $this->currencySymbol = $this->user->company->currency_symbol ?? '$';
+
+        $storesCollection = $this->stores();
+        $this->storeList = $storesCollection->toArray();
+
+        $activeStore = $this->storeId ? $storesCollection->firstWhere('id', $this->storeId) : null;
+        $this->storeName = $activeStore ? $activeStore['name'] : __('pos.select_store');
+
+        $this->categoryList = $this->productCategories()->toArray();
+        $this->customerList = $this->customers()->toArray();
+        $this->shippingDestinationList = $this->shippingDestinations()->toArray();
+        $this->paymentMethodList = $this->paymentMethodList()->toArray();
+    }
+
+    /**
+     * Fetch Categories
+     */
+    private function productCategories()
+    {
+        if (! $this->storeId) {
+            return collect([]);
+        }
+
+        return ProductCategory::query()->active()
+            ->where('store_id', $this->storeId)
+            ->get(['id', 'name_en', 'name_ar'])
+            ->map(fn ($cat) => [
+                'id' => $cat->id,
+                'name' => $cat->{lang_suffix('name')},
+            ]);
+    }
+
+    /**
+     * Fetch Shipping Destinations for active store
+     */
+    private function shippingDestinations(): Collection
+    {
+        if (! $this->storeId) {
+            return collect([]);
+        }
+
+        return ShippingDestination::query()
+            ->active()
+            ->where('store_id', $this->storeId)
+            ->get(['id', 'name', 'cost'])
+            ->map(fn ($d) => [
+                'id' => $d->id,
+                'name' => $d->name,
+                'cost' => (float) $d->cost,
+            ]);
+    }
+
+    /**
+     * Fetch Customers
+     */
+    private function customers()
+    {
+        return Customer::query()->active()
+            ->get(['id', 'name', 'phone'])
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'phone' => $c->phone,
+            ]);
+
+    }
+
+    private function stores()
+    {
+        $storesQuery = Store::query();
+        if ($this->user->isStoreLevel()) {
+            $storesQuery->where('id', $this->user->store_id);
+        }
+
+        return $storesQuery->get(['id', 'name_en', 'name_ar'])
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->{lang_suffix('name')},
+            ]);
+    }
+
+    private function paginatedVariants()
+    {
+        // Fetch Products (Variants) with Server-Side Pagination
+        $variantsQuery = ProductVariant::query()
+            ->active()
+            ->with(['product.category', 'barcodes', 'unitOfMeasure']);
+        if ($this->storeId) {
+            $variantsQuery->where('store_id', $this->storeId);
+        } else {
+            // Force empty results if no store is selected (Company Level admin hasn't picked yet)
+            $variantsQuery->where('id', 0);
+        }
+        if ($this->categoryId) {
+            $variantsQuery->filterByCategory($this->categoryId);
+        }
+
+        if (filled($this->search)) {
+            $variantsQuery->where(function ($query) {
+                $query->whereNameLike($this->search)
+                    ->orWhereHas('product', function ($q) {
+                        $q->whereNameLike($this->search);
+                    })
+                    ->orWhereHas('barcodes', function ($q) {
+                        $q->where('barcode', 'like', "%{$this->search}%");
+                    });
+            });
+        }
+
+        return $variantsQuery->paginate($this->perPage ?? 10);
+    }
+
+    private function paymentMethodList(): Collection
+    {
+        return collect(PaymentMethod::cases())->map(fn ($pm) => [
+            'value' => $pm->value,
+            'label' => $pm->getLabel(),
+        ]);
     }
 }

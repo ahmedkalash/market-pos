@@ -64,14 +64,10 @@
         }
     </style>
 
-    @php
-        $initialData = $this->getViewData()['initialData'];
-    @endphp
-
-    <div x-data="posSystem(@js($initialData))" class="bg-gray-50 text-gray-800 h-screen w-screen overflow-hidden flex flex-col font-sans" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+    <div x-data="posSystem()" class="bg-gray-50 text-gray-800 h-screen w-screen overflow-hidden flex flex-col font-sans" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
         <!-- ================= HEADER ================= -->
-        <header class="relative bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 shrink-0 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] z-40">
+        <header  class="relative bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 shrink-0 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] z-40">
             <div class="flex items-center gap-3 shrink-0">
                 <!-- Logo area -->
                 <div class="bg-primary-600 text-white p-1.5 rounded-lg shadow-sm">
@@ -87,9 +83,20 @@
                 </div>
 
                 <!-- Header Dropdowns -->
-                <button class="flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-4 py-1.5 text-sm font-bold hover:bg-primary-100 transition-colors text-primary-600">
-                    <i class="ph ph-warehouse text-lg"></i> <span x-text="storeName"></span> <i class="ph ph-caret-down text-primary-600/70 ms-1"></i>
-                </button>
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="$wire.storeList.length > 1 ? open = !open : null" @click.outside="open = false" class="flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-4 py-1.5 text-sm font-bold hover:bg-primary-100 transition-colors text-primary-600" :class="$wire.storeList.length > 1 ? 'cursor-pointer' : 'cursor-default'">
+                        <i class="ph ph-warehouse text-lg"></i>
+                        <span x-text="$wire.storeName"></span>
+                        <i class="ph ph-caret-down text-primary-600/70 ms-1" x-show="$wire.storeList.length > 1"></i>
+                    </button>
+                    <div x-show="open" x-transition x-cloak class="absolute top-full mt-2 left-0 min-w-[200px] bg-white border border-gray-200 shadow-lg rounded-xl z-50 py-2 max-h-64 overflow-y-auto">
+                        <template x-for="store in $wire.storeList" :key="store.id">
+                            <button @click="$wire.changeStore(store.id); cart = []; open = false" class="w-full text-start px-4 py-2 hover:bg-gray-50 text-sm font-medium" :class="$wire.storeId === store.id ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
+                                <span x-text="store.name"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
 
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" @click.outside="open = false" class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors text-gray-600">
@@ -99,7 +106,7 @@
                         <button @click="selectCategory(null); open = false" class="w-full text-start px-4 py-2 hover:bg-gray-50 text-sm font-medium" :class="!selectedCategoryId ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
                             {{ __('pos.all_categories') }}
                         </button>
-                        <template x-for="cat in categories" :key="cat.id">
+                        <template x-for="cat in $wire.categoryList" :key="cat.id">
                             <button @click="selectCategory(cat.id); open = false" class="w-full text-start px-4 py-2 hover:bg-gray-50 text-sm font-medium" :class="selectedCategoryId === cat.id ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
                                 <span x-text="cat.name"></span>
                             </button>
@@ -132,7 +139,7 @@
                             <button @click="selectCustomer(null); open = false" class="w-full text-start px-3 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium" :class="!selectedCustomerId ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
                                 {{ __('pos.walk_in') }}
                             </button>
-                            <template x-for="c in customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone && c.phone.includes(search)))" :key="c.id">
+                            <template x-for="c in $wire.customerList.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone && c.phone.includes(search)))" :key="c.id">
                                 <button @click="selectCustomer(c); open = false" class="w-full text-start px-3 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium flex justify-between items-center" :class="selectedCustomerId === c.id ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
                                     <span x-text="c.name"></span>
                                     <span class="text-xs text-gray-400" x-text="c.phone"></span>
@@ -464,8 +471,13 @@
                         @else
                             <!-- Empty State -->
                             <div class="flex flex-col items-center justify-center h-full text-gray-400 py-12">
-                                <i class="ph ph-magnifying-glass text-4xl opacity-30 mb-3 block"></i>
-                                <div class="text-[15px] font-semibold">{{ __('pos.no_products_found') }}</div>
+                                @if(!$this->storeId)
+                                    <i class="ph ph-warehouse text-4xl opacity-30 mb-3 block"></i>
+                                    <div class="text-[15px] font-semibold">{{ __('pos.select_store_first') ?? 'Please select a store' }}</div>
+                                @else
+                                    <i class="ph ph-magnifying-glass text-4xl opacity-30 mb-3 block"></i>
+                                    <div class="text-[15px] font-semibold">{{ __('pos.no_products_found') }}</div>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -542,8 +554,9 @@
             </div>
         </div>
         <!-- Modals Container -->
-        <template x-teleport="body">
-            <div>
+        <div >
+            <template x-teleport="body">
+                <div>
                 <!-- Item Discount Modal -->
                 <div x-show="activeModal === 'itemDiscount'" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center" x-cloak>
                     <template x-if="activeModal === 'itemDiscount'">
@@ -755,7 +768,7 @@
                                         @change="onShippingDestinationChange($event.target.value)"
                                         class="w-full border border-gray-200 rounded-lg p-2.5 text-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white font-medium">
                                         <option value="">{{ __('pos.select_destination') }}</option>
-                                        <template x-for="dest in shippingDestinations" :key="dest.id">
+                                        <template x-for="dest in $wire.shippingDestinationList" :key="dest.id">
                                             <option :value="String(dest.id)" :selected="String(modalData.destinationId) === String(dest.id)" x-text="dest.name + ' (' + currencySymbol + ' ' + parseFloat(dest.cost).toFixed(2) + ')'"></option>
                                         </template>
                                     </select>
@@ -934,18 +947,39 @@
                 </div>
             </div>
         </template>
+        </div>
     </div>
 
     <!-- Alpine.js POS State Engine -->
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('posSystem', (initialData) => ({
-                storeId: initialData.storeId,
-                storeName: initialData.storeName,
-                currencySymbol: initialData.currencySymbol || '$',
-                categories: initialData.categories || [],
-                customers: initialData.customers || [],
-                shippingDestinations: initialData.shippingDestinations || [],
+            Alpine.data('posSystem', () => ({
+                // Server-owned reference data — read directly from $wire (auto-synced by Livewire)
+                get storeId() {
+                    return this.$wire.storeId;
+                },
+                get storeName() {
+                    return this.$wire.storeName;
+                },
+                get currencySymbol() {
+                    return this.$wire.currencySymbol || '$';
+                },
+                get stores() {
+                    return this.$wire.storeList || [];
+                },
+                get categories() {
+                    return this.$wire.categoryList || [];
+                },
+                get customers() {
+                    return this.$wire.customerList || [];
+                },
+                get shippingDestinations() {
+                    return this.$wire.shippingDestinationList || [];
+                },
+                get paymentMethods() {
+                    return this.$wire.paymentMethodList || [];
+                },
+
                 extraItemPresets: [], // Loaded on demand
 
                 globalDiscountAmount: 0,
@@ -1037,7 +1071,7 @@
 
                 get selectedCategoryName() {
                     if (!this.selectedCategoryId) return '{{ __('pos.all_categories') }}';
-                    const cat = this.categories.find(c => c.id == this.selectedCategoryId);
+                    const cat = this.$wire.categoryList.find(c => c.id == this.selectedCategoryId);
                     return cat ? cat.name : '{{ __('pos.all_categories') }}';
                 },
 
