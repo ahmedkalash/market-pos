@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\InvoiceType;
 use App\Enums\MovementType;
 use App\Enums\PriceType;
 use App\Enums\SaleInvoiceStatus;
@@ -9,6 +10,7 @@ use App\Filament\Pages\PosTerminal;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\InventoryMovement;
+use App\Models\InvoiceExtraItemPreset;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
@@ -267,7 +269,7 @@ class PosTerminalTest extends TestCase
             ->assertRedirect();
     }
 
-    public function test_company_level_user_can_render_pos_and_checkout_with_store_fallback(): void
+    public function test_company_level_user_cannot_checkout_without_selecting_store(): void
     {
         /** @var User $companyAdmin */
         $companyAdmin = User::factory()->create([
@@ -277,8 +279,38 @@ class PosTerminalTest extends TestCase
 
         $this->actingAs($companyAdmin);
 
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price' => 20.00,
+                'qty' => 1,
+                'discount' => 0,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
         Livewire::test(PosTerminal::class)
-            ->assertSuccessful();
+            ->call('processCheckout', $cart, [
+                'global_discount' => 0,
+                'shipping_cost' => 0,
+            ]);
+
+        $this->assertDatabaseMissing('sale_invoices', [
+            'company_id' => $this->company->id,
+        ]);
+    }
+
+    public function test_company_level_user_can_switch_store_and_checkout_successfully(): void
+    {
+        /** @var User $companyAdmin */
+        $companyAdmin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null,
+        ]);
+
+        $this->actingAs($companyAdmin);
 
         $cart = [
             [
@@ -291,6 +323,7 @@ class PosTerminalTest extends TestCase
         ];
 
         Livewire::test(PosTerminal::class)
+            ->call('changeStore', $this->store->id)
             ->call('processCheckout', $cart, [
                 'global_discount' => 0,
                 'shipping_cost' => 0,
@@ -300,6 +333,147 @@ class PosTerminalTest extends TestCase
         $invoice = SaleInvoice::where('company_id', $this->company->id)->latest()->first();
         $this->assertNotNull($invoice);
         $this->assertEquals($this->store->id, $invoice->store_id);
+    }
+
+    public function test_company_level_user_cannot_hold_cart_without_selecting_store(): void
+    {
+        /** @var User $companyAdmin */
+        $companyAdmin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null,
+        ]);
+
+        $this->actingAs($companyAdmin);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price' => 20.00,
+                'qty' => 1,
+                'discount' => 0,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'global_discount' => 0,
+                'shipping_cost' => 0,
+            ]);
+
+        $this->assertDatabaseMissing('sale_invoices', [
+            'company_id' => $this->company->id,
+        ]);
+    }
+
+    public function test_company_level_user_cannot_create_shipping_destination_without_selecting_store(): void
+    {
+        /** @var User $companyAdmin */
+        $companyAdmin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null,
+        ]);
+
+        $this->actingAs($companyAdmin);
+
+        $this->expectException(ValidationException::class);
+
+        $component = Livewire::test(PosTerminal::class);
+        $component->instance()->createShippingDestination([
+            'name' => 'Downtown Express',
+            'cost' => 15.00,
+        ]);
+    }
+
+    public function test_create_shipping_destination_assigns_active_pos_store_id(): void
+    {
+        /** @var User $companyAdmin */
+        $companyAdmin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null,
+        ]);
+
+        $storeB = Store::factory()->create(['company_id' => $this->company->id]);
+
+        $this->actingAs($companyAdmin);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('changeStore', $storeB->id);
+
+        $result = $component->instance()->createShippingDestination([
+            'name' => 'Store B Delivery',
+            'cost' => 25.00,
+        ]);
+
+        $this->assertDatabaseHas('shipping_destinations', [
+            'id' => $result['id'],
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+            'name' => 'Store B Delivery',
+        ]);
+    }
+
+    public function test_shipping_destinations_and_presets_are_isolated_by_store_for_company_level_user(): void
+    {
+        /** @var User $companyAdmin */
+        $companyAdmin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null,
+        ]);
+
+        $storeA = $this->store;
+        $storeB = Store::factory()->create(['company_id' => $this->company->id]);
+
+        $destA = ShippingDestination::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeA->id,
+            'name' => 'Destination Store A',
+        ]);
+        $destB = ShippingDestination::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+            'name' => 'Destination Store B',
+        ]);
+
+        $presetA = InvoiceExtraItemPreset::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeA->id,
+            'invoice_type' => InvoiceType::SaleInvoice,
+            'name' => 'Preset Store A',
+        ]);
+        $presetB = InvoiceExtraItemPreset::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+            'invoice_type' => InvoiceType::SaleInvoice,
+            'name' => 'Preset Store B',
+        ]);
+
+        $this->actingAs($companyAdmin);
+
+        // Initial state: no store selected
+        $component = Livewire::test(PosTerminal::class);
+        $this->assertEmpty($component->get('shippingDestinationList'));
+        $this->assertEmpty($component->instance()->getExtraItemPresets());
+
+        // Select Store A
+        $component->call('changeStore', $storeA->id);
+        $destIdsA = collect($component->get('shippingDestinationList'))->pluck('id')->all();
+        $presetIdsA = collect($component->instance()->getExtraItemPresets())->pluck('id')->all();
+        $this->assertContains($destA->id, $destIdsA);
+        $this->assertNotContains($destB->id, $destIdsA);
+        $this->assertContains($presetA->id, $presetIdsA);
+        $this->assertNotContains($presetB->id, $presetIdsA);
+
+        // Switch to Store B
+        $component->call('changeStore', $storeB->id);
+        $destIdsB = collect($component->get('shippingDestinationList'))->pluck('id')->all();
+        $presetIdsB = collect($component->instance()->getExtraItemPresets())->pluck('id')->all();
+        $this->assertContains($destB->id, $destIdsB);
+        $this->assertNotContains($destA->id, $destIdsB);
+        $this->assertContains($presetB->id, $presetIdsB);
+        $this->assertNotContains($presetA->id, $presetIdsB);
     }
 
     public function test_checkout_with_selected_customer_associates_customer_id(): void
@@ -1038,5 +1212,30 @@ class PosTerminalTest extends TestCase
         $this->assertNotNull($invoice);
         $this->assertEquals($customer['id'], $invoice->customer_id);
         $this->assertEquals(40.00, (float) $invoice->total_amount);
+    }
+
+    public function test_company_level_user_cannot_switch_to_non_existent_or_other_company_store(): void
+    {
+        /** @var User $companyAdmin */
+        $companyAdmin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null,
+        ]);
+
+        $otherCompany = Company::factory()->create();
+        $otherStore = Store::factory()->create(['company_id' => $otherCompany->id]);
+
+        $this->actingAs($companyAdmin);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('changeStore', 999999)
+            ->assertNotified(__('pos.store_not_found'));
+
+        $this->assertNull($component->get('storeId'));
+
+        $component->call('changeStore', $otherStore->id)
+            ->assertNotified(__('pos.store_not_found'));
+
+        $this->assertNull($component->get('storeId'));
     }
 }

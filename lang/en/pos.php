@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'select_store_first' => 'Please select a store from the top menu to begin selling',
+    'select_store' => 'Select Store',
     'terminal' => 'POS Terminal',
     'register' => 'Register',
     'closed' => 'Closed',
@@ -35,6 +37,7 @@ return [
     'checkout_failed' => 'Checkout Failed',
     'cart_held_success' => 'Cart Held Successfully',
     'cart_hold_failed' => 'Cart Hold Failed',
+    'store_not_found' => 'Store not found',
 
     // Discount Modal
     'item_discount' => 'Item Discount',

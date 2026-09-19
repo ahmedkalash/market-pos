@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'select_store_first' => 'الرجاء اختيار فرع من القائمة العلوية للبدء بالبيع',
+    'select_store' => 'اختر الفرع',
     'terminal' => 'نقطة البيع',
     'register' => 'الصندوق',
     'closed' => 'مغلق',
@@ -35,6 +37,7 @@ return [
     'checkout_failed' => 'فشل الدفع',
     'cart_held_success' => 'تم تعليق السلة بنجاح',
     'cart_hold_failed' => 'فشل تعليق السلة',
+    'store_not_found' => 'الفرع غير موجود',
 
     // Discount Modal
     'item_discount' => 'خصم العنصر',
