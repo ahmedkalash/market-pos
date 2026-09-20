@@ -24,8 +24,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-/.z/
 !/.z/srs.md
+/.z/run.php
 /.agents/
 /.claude/
 /.gemini/

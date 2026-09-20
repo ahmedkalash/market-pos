@@ -1,0 +1,128 @@
+{
+    "data": {
+        "shouldFinalize": false,
+        "data": [
+            {
+                "id": 5,
+                "company_id": 1,
+                "store_id": "1",
+                "vendor_id": "1",
+                "original_invoice_id": 2,
+                "return_number": "PR-2026-000001",
+                "vendor_credit_ref": null,
+                "return_reason": "rew",
+                "status": "draft",
+                "total_before_tax": "100.00",
+                "total_tax_amount": "0.00",
+                "total_amount": 100,
+                "notes": null,
+                "returned_at": "2026-06-04 00:00:00",
+                "finalized_at": "2026-06-04T19:25:15.000000Z",
+                "finalized_by": 2,
+                "created_by": 2,
+                "created_at": "2026-06-04T19:25:15.000000Z",
+                "updated_at": "2026-06-04T19:25:15.000000Z",
+                "invoice_number_input": "INV-FINAL-1-379",
+                "items": [
+                    {
+                        "record-5": [
+                            {
+                                "id": 5,
+                                "purchase_return_id": 5,
+                                "product_variant_id": 2,
+                                "original_item_id": 2,
+                                "quantity": 1,
+                                "unit_cost": 100,
+                                "subtotal": "100.00",
+                                "tax_rate": "0.00",
+                                "tax_amount": "0.00",
+                                "line_total": 100,
+                                "notes": null,
+                                "created_at": "2026-06-04T19:25:15.000000Z",
+                                "updated_at": "2026-06-04T19:25:15.000000Z",
+                                "product_name": "هاتف ذكي اكس - 128GB Black AR",
+                                "barcodes": [
+                                    [
+                                        "413218043403"
+                                    ],
+                                    {
+                                        "s": "arr"
+                                    }
+                                ],
+                                "max_returnable": 16
+                            },
+                            {
+                                "s": "arr"
+                            }
+                        ]
+                    },
+                    {
+                        "s": "arr"
+                    }
+                ],
+                "product_search": null
+            },
+            {
+                "s": "arr"
+            }
+        ],
+        "previousUrl": "https://markt_pos.test/app/purchase-returns/1/edit",
+        "mountedActions": [
+            [],
+            {
+                "s": "arr"
+            }
+        ],
+        "defaultAction": null,
+        "defaultActionArguments": null,
+        "defaultActionContext": null,
+        "defaultTableAction": null,
+        "defaultTableActionRecord": null,
+        "defaultTableActionArguments": null,
+        "componentFileAttachments": [
+            [],
+            {
+                "s": "arr"
+            }
+        ],
+        "areSchemaStateUpdateHooksDisabledForTesting": false,
+        "discoveredSchemaNames": [
+            [
+                "form",
+                "content",
+                "headerWidgets",
+                "footerWidgets"
+            ],
+            {
+                "s": "arr"
+            }
+        ],
+        "parentRecord": null,
+        "activeRelationManager": null,
+        "record": [
+            null,
+            {
+                "class": "purchase_return",
+                "key": 5,
+                "s": "mdl"
+            }
+        ],
+        "savedDataHash": "5caa311e4cbf7ddb1035f0b125dc2286"
+    },
+    "memo": {
+        "id": "ZPKjRpMLSoSGFkRkPNgi",
+        "name": "app.filament.resources.purchase-returns.pages.edit-purchase-return",
+        "path": "app/purchase-returns/5/edit",
+        "method": "GET",
+        "release": "a-a-a",
+        "children": [],
+        "scripts": [
+            "4094850187-0",
+            "2448682822-0"
+        ],
+        "assets": [],
+        "errors": [],
+        "locale": "ar"
+    },
+    "checksum": "b95b4d77670871f218f6c9d8f9e8a7542fede8d6adfd35e762f1de85d54dde4b"
+}
