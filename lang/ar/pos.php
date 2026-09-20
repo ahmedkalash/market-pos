@@ -167,4 +167,13 @@ return [
     'final_line_total' => 'إجمالي البند النهائي',
     'resolve_cart_issues' => 'يرجى تصحيح كميات الجملة أو مشاكل المخزون قبل إتمام عملية الدفع.',
     'out_of_stock' => 'نفذ من المخزون',
+    'destination_created_successfully' => 'تم إضافة وجهة الشحن بنجاح',
+    'customer_created_successfully' => 'تم إضافة العميل بنجاح',
+    'destination_name_required' => 'اسم وجهة الشحن مطلوب',
+    'cost_must_be_positive' => 'يجب أن تكون التكلفة صفر أو أكثر',
+    'cost_required' => 'حقل تكلفة الشحن مطلوب',
+    'cost_must_be_number' => 'يجب أن تكون تكلفة الشحن رقماً صالحاً',
+    'operation_failed' => 'فشلت العملية',
+    'unexpected_error' => 'حدث خطأ غير متوقع',
+    'network_error' => 'حدث خطأ في الاتصال بالشبكة',
 ];

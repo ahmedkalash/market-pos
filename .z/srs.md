@@ -426,8 +426,17 @@ settings
 - [ ] Cash management (shift open/close)
 - [ ] Transaction hold/recall
 - [ ] POS User Experience (UX)
-- [ ] Hotkeys: The cashier interface must be fully navigable via 
+- [ ] Hotkeys: The cashier interface must be fully navigable via
 - [ ] keyboard (F-keys, arrows, Enter) without ever touching a mouse.
+- [ ] Performance Optimization - (Future Version):
+        In product search like [`PosTerminal`](./../app/Filament/Pages/PosTerminal.php#448)The combined `OR` condition between `fullNameSearch` and `barcodes` forces MySQL into full-table scans.
+        Consider:
+        1. Fast-Path Barcode Check: If ctype_alnum($this->search), query ProductBarcode index first;
+            only fallback to fullNameSearch if no barcode is found.
+         2. Hardware Scanner Interceptor: In Alpine, detect <30ms keypress bursts + Enter to dispatch 
+            instant addToCartByBarcode() without filtering catalog pagination.
+        3. UI Mode Toggle: Add an explicit `[Name | Barcode]` filter toggle to isolate index usage.
+
 - [ ]  Implement Full Dark Mode for POS Terminal
         **Description:**
         The POS Terminal currently only supports light mode styling, which causes a UI bug (invisible/white text on a white background in numeric inputs) for users who have Dark Mode enabled in their Filament account preferences (like the Store Manager account). To fix this comprehensively and improve the user experience, we need to fully implement Dark Mode for the POS interface.

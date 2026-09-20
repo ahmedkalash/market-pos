@@ -7,6 +7,7 @@ use App\Models\Concerns\BelongsToStore;
 use App\Models\Concerns\HasActiveScope;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -60,5 +61,15 @@ class ProductCategory extends Model implements HasMedia
     public function notActive(Builder $query): Builder
     {
         return $query->where('is_active', false);
+    }
+
+    /**
+     * Get the localized store name.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->{lang_suffix('name')},
+        );
     }
 }

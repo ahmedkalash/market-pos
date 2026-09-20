@@ -167,4 +167,13 @@ return [
     'final_line_total' => 'Final Line Total',
     'resolve_cart_issues' => 'Please resolve wholesale minimum quantity or stock issues before payment.',
     'out_of_stock' => 'Out of Stock',
+    'destination_created_successfully' => 'Shipping destination created successfully',
+    'customer_created_successfully' => 'Customer created successfully',
+    'destination_name_required' => 'Destination name is required',
+    'cost_must_be_positive' => 'Cost must be zero or positive',
+    'cost_required' => 'Shipping cost is required',
+    'cost_must_be_number' => 'Shipping cost must be a valid number',
+    'operation_failed' => 'Operation failed',
+    'unexpected_error' => 'An unexpected error occurred',
+    'network_error' => 'Network communication error',
 ];

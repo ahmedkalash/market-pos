@@ -12,6 +12,7 @@ use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\InvoiceExtraItemPreset;
 use App\Models\Product;
+use App\Models\ProductBarcode;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
@@ -378,13 +379,71 @@ class PosTerminalTest extends TestCase
 
         $this->actingAs($companyAdmin);
 
-        $this->expectException(ValidationException::class);
-
         $component = Livewire::test(PosTerminal::class);
-        $component->instance()->createShippingDestination([
+        $result = $component->instance()->createShippingDestination([
             'name' => 'Downtown Express',
             'cost' => 15.00,
         ]);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['success']);
+        $this->assertNull($result['data']);
+        $this->assertSame(__('pos.select_store_first'), $result['message']);
+        $this->assertArrayHasKey('store_id', $result['errors']);
+        $this->assertContains(__('pos.select_store_first'), $result['errors']['store_id']);
+    }
+
+    public function test_create_shipping_destination_fails_with_multiple_validation_errors(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->instance()->createShippingDestination([
+            'name' => '',
+            'cost' => -10.00,
+        ]);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['success']);
+        $this->assertNull($result['data']);
+        $this->assertArrayHasKey('name', $result['errors']);
+        $this->assertArrayHasKey('cost', $result['errors']);
+        $this->assertContains(__('pos.destination_name_required'), $result['errors']['name']);
+        $this->assertContains(__('pos.cost_must_be_positive'), $result['errors']['cost']);
+    }
+
+    public function test_create_shipping_destination_fails_with_non_numeric_cost(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->instance()->createShippingDestination([
+            'name' => 'Alexandria Port',
+            'cost' => 'invalid-abc',
+        ]);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['success']);
+        $this->assertNull($result['data']);
+        $this->assertArrayHasKey('cost', $result['errors']);
+        $this->assertContains(__('pos.cost_must_be_number'), $result['errors']['cost']);
+    }
+
+    public function test_create_shipping_destination_fails_with_missing_cost(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->instance()->createShippingDestination([
+            'name' => 'Alexandria Port',
+            'cost' => null,
+        ]);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['success']);
+        $this->assertNull($result['data']);
+        $this->assertArrayHasKey('cost', $result['errors']);
+        $this->assertContains(__('pos.cost_required'), $result['errors']['cost']);
     }
 
     public function test_create_shipping_destination_assigns_active_pos_store_id(): void
@@ -407,8 +466,10 @@ class PosTerminalTest extends TestCase
             'cost' => 25.00,
         ]);
 
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
         $this->assertDatabaseHas('shipping_destinations', [
-            'id' => $result['id'],
+            'id' => $result['data']['id'],
             'company_id' => $this->company->id,
             'store_id' => $storeB->id,
             'name' => 'Store B Delivery',
@@ -786,10 +847,14 @@ class PosTerminalTest extends TestCase
         ]);
 
         $this->assertIsArray($result);
-        $this->assertEquals('Nasr City - Zone B', $result['name']);
-        $this->assertEquals(65.50, $result['cost']);
+        $this->assertTrue($result['success']);
+        $this->assertEquals('Nasr City - Zone B', $result['data']['name']);
+        $this->assertEquals(65.50, $result['data']['cost']);
+        $this->assertNull($result['message']);
+        $component->assertNotified(__('pos.destination_created_successfully'));
 
         $this->assertDatabaseHas('shipping_destinations', [
+            'id' => $result['data']['id'],
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
             'name' => 'Nasr City - Zone B',
@@ -890,14 +955,17 @@ class PosTerminalTest extends TestCase
         $result = $component->instance()->createCustomer($customerData);
 
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('id', $result);
-        $this->assertEquals('Sara Connor', $result['name']);
-        $this->assertEquals('01012345678', $result['phone']);
-        $this->assertEquals('sara@example.com', $result['email']);
-        $this->assertEquals('42 Elm St.', $result['address']);
+        $this->assertTrue($result['success']);
+        $this->assertNull($result['message']);
+        $component->assertNotified(__('pos.customer_created_successfully'));
+        $this->assertArrayHasKey('id', $result['data']);
+        $this->assertEquals('Sara Connor', $result['data']['name']);
+        $this->assertEquals('01012345678', $result['data']['phone']);
+        $this->assertEquals('sara@example.com', $result['data']['email']);
+        $this->assertEquals('42 Elm St.', $result['data']['address']);
 
         $this->assertDatabaseHas('customers', [
-            'id' => $result['id'],
+            'id' => $result['data']['id'],
             'company_id' => $this->company->id,
             'name' => 'Sara Connor',
             'phone' => '01012345678',
@@ -911,13 +979,33 @@ class PosTerminalTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $this->expectException(ValidationException::class);
-
         $component = Livewire::test(PosTerminal::class);
-        $component->instance()->createCustomer([
+        $result = $component->instance()->createCustomer([
             'name' => '',
             'phone' => '01012345678',
         ]);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['success']);
+        $this->assertNull($result['data']);
+        $this->assertArrayHasKey('name', $result['errors']);
+    }
+
+    public function test_inline_customer_creation_fails_with_multiple_validation_errors(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->instance()->createCustomer([
+            'name' => '',
+            'email' => 'invalid-email-address',
+        ]);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['success']);
+        $this->assertNull($result['data']);
+        $this->assertArrayHasKey('name', $result['errors']);
+        $this->assertArrayHasKey('email', $result['errors']);
     }
 
     public function test_wholesale_checkout_rejected_when_quantity_is_below_wholesale_threshold(): void
@@ -1191,6 +1279,8 @@ class PosTerminalTest extends TestCase
             'address' => 'Continental Hotel NY',
         ]);
 
+        $this->assertTrue($customer['success']);
+
         $cart = [
             [
                 'variant_id' => $this->variant->id,
@@ -1202,7 +1292,7 @@ class PosTerminalTest extends TestCase
         ];
 
         $component->call('processCheckout', $cart, [
-            'customer_id' => $customer['id'],
+            'customer_id' => $customer['data']['id'],
             'global_discount' => 0,
             'shipping_cost' => 0,
         ])
@@ -1210,7 +1300,7 @@ class PosTerminalTest extends TestCase
 
         $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
         $this->assertNotNull($invoice);
-        $this->assertEquals($customer['id'], $invoice->customer_id);
+        $this->assertEquals($customer['data']['id'], $invoice->customer_id);
         $this->assertEquals(40.00, (float) $invoice->total_amount);
     }
 
@@ -1237,5 +1327,306 @@ class PosTerminalTest extends TestCase
             ->assertNotified(__('pos.store_not_found'));
 
         $this->assertNull($component->get('storeId'));
+    }
+
+    public function test_search_by_exact_barcode_returns_matching_variant_via_fast_path(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant1 = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Cola Can',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variant1->id,
+            'barcode' => '6281001234567',
+        ]);
+
+        $variant2 = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Orange Juice',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variant2->id,
+            'barcode' => '6281007654321',
+        ]);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', '6281001234567');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant1->id, $productIds);
+        $this->assertNotContains($variant2->id, $productIds);
+        $this->assertNotContains($this->variant->id, $productIds);
+    }
+
+    public function test_search_by_barcode_prefix_returns_all_matching_variants(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant1 = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Milk 1L',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variant1->id,
+            'barcode' => '888111222',
+        ]);
+
+        $variant2 = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Milk 2L',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variant2->id,
+            'barcode' => '888111333',
+        ]);
+
+        $variant3 = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Water 500ml',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variant3->id,
+            'barcode' => '999555444',
+        ]);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', '888111');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant1->id, $productIds);
+        $this->assertContains($variant2->id, $productIds);
+        $this->assertNotContains($variant3->id, $productIds);
+    }
+
+    public function test_search_by_product_name_falls_back_when_no_barcode_matches(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Cappuccino',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variant->id,
+            'barcode' => '1234987654',
+        ]);
+
+        // Search for "Cappuccino" (single token >= 3 chars, but not a barcode)
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', 'Cappuccino');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant->id, $productIds);
+    }
+
+    public function test_search_by_multi_word_product_name_searches_by_name_directly(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Green Herbal Tea',
+        ]);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', 'Herbal Tea');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant->id, $productIds);
+    }
+
+    public function test_search_by_variant_name_en_and_ar_works_properly(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'French Vanilla',
+            'name_ar' => 'فانيليا فرنسية',
+        ]);
+
+        // Search English
+        $componentEn = Livewire::test(PosTerminal::class)
+            ->set('search', 'Vanilla');
+        $productIdsEn = collect($componentEn->viewData('products')->items())->pluck('id')->all();
+        $this->assertContains($variant->id, $productIdsEn);
+
+        // Search Arabic
+        $componentAr = Livewire::test(PosTerminal::class)
+            ->set('search', 'فانيليا');
+        $productIdsAr = collect($componentAr->viewData('products')->items())->pluck('id')->all();
+        $this->assertContains($variant->id, $productIdsAr);
+    }
+
+    public function test_search_by_numeric_product_name_falls_back_when_no_barcode_exists(): void
+    {
+        $this->actingAs($this->user);
+
+        // Variant with purely numeric name and no barcodes
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => '10025',
+        ]);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', '10025');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant->id, $productIds);
+    }
+
+    public function test_search_bypasses_barcode_fast_path_for_non_numeric_text(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Spare Cable Type C',
+        ]);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', 'Cable');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant->id, $productIds);
+    }
+
+    public function test_search_by_numeric_barcode_respects_configurable_min_barcode_search_length(): void
+    {
+        $this->actingAs($this->user);
+
+        $variantWithBarcode = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Special Gizmo',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $variantWithBarcode->id,
+            'barcode' => '777123',
+        ]);
+
+        $variantWithName = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Model 777 Gizmo',
+        ]);
+
+        // When searching "777" (3 digits, which is < default minBarcodeSearchLength of 4):
+        // It bypasses the barcode fast-path and searches names directly, finding "Model 777 Gizmo"
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', '777');
+
+        $productIds = collect($component->viewData('products')->items())->pluck('id')->all();
+        $this->assertContains($variantWithName->id, $productIds);
+        $this->assertNotContains($variantWithBarcode->id, $productIds);
+
+        // When configuring minBarcodeSearchLength to 3:
+        // Searching "777" triggers the barcode fast-path, finding the variant with barcode "777123"
+        $component->set('minBarcodeSearchLength', 3)
+            ->set('search', '777');
+
+        $productIds = collect($component->viewData('products')->items())->pluck('id')->all();
+        $this->assertContains($variantWithBarcode->id, $productIds);
+    }
+
+    public function test_search_with_unmatched_term_returns_empty_results(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', 'DEFINITELY_NON_EXISTENT_SEARCH_XYZ_9999');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertEmpty($productIds);
+    }
+
+    public function test_search_respects_store_isolation_even_if_barcode_matches_another_store(): void
+    {
+        $this->actingAs($this->user);
+
+        $otherStore = Store::factory()->create(['company_id' => $this->company->id]);
+        $otherProduct = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $otherStore->id,
+        ]);
+        $otherVariant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $otherStore->id,
+            'product_id' => $otherProduct->id,
+            'name_en' => 'Other Store Item',
+        ]);
+        ProductBarcode::create([
+            'product_variant_id' => $otherVariant->id,
+            'barcode' => '555666777888',
+        ]);
+
+        // Cashier in this->store searches for barcode belonging to otherStore
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', '555666777888');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertNotContains($otherVariant->id, $productIds);
+        $this->assertEmpty($productIds);
+    }
+
+    public function test_search_with_short_term_searches_name_directly(): void
+    {
+        $this->actingAs($this->user);
+
+        $variant = ProductVariant::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'name_en' => 'Ice Cream',
+        ]);
+
+        // Search with 2 characters ('Ic' < 3 chars)
+        $component = Livewire::test(PosTerminal::class)
+            ->set('search', 'Ic');
+
+        $products = $component->viewData('products');
+        $productIds = collect($products->items())->pluck('id')->all();
+
+        $this->assertContains($variant->id, $productIds);
     }
 }

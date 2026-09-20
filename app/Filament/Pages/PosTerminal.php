@@ -5,20 +5,25 @@ namespace App\Filament\Pages;
 use App\Enums\PaymentMethod;
 use App\Models\Customer;
 use App\Models\InvoiceExtraItemPreset;
+use App\Models\ProductBarcode;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
 use App\Models\ShippingDestination;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\PosCheckoutService;
+use App\Support\RpcResponse;
+use BackedEnum;
+use Exception;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
+use Throwable;
 
 /**
  * @property-read User $user
@@ -51,9 +56,11 @@ class PosTerminal extends Page
 
     public ?int $perPage = 3;
 
+    public int $minBarcodeSearchLength = 5;
+
     protected static ?string $slug = 'pos';
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-computer-desktop';
 
     protected static ?int $navigationSort = 1;
 
@@ -161,11 +168,12 @@ class PosTerminal extends Page
         ];
     }
 
+    // todo: review
     public function processCheckout(array $cartData, array $metaData): void
     {
         try {
             if (! $this->storeId) {
-                throw new \Exception(__('pos.select_store_first'));
+                throw new Exception(__('pos.select_store_first'));
             }
 
             $metaData['store_id'] = $this->storeId;
@@ -183,7 +191,7 @@ class PosTerminal extends Page
                 'total' => (float) $invoice->total_amount,
             ]);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('POS Checkout Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
             Notification::make()
@@ -196,11 +204,12 @@ class PosTerminal extends Page
         }
     }
 
+    // todo: review
     public function holdCart(array $cartData, array $metaData): void
     {
         try {
             if (! $this->storeId) {
-                throw new \Exception(__('pos.select_store_first'));
+                throw new Exception(__('pos.select_store_first'));
             }
 
             $metaData['store_id'] = $this->storeId;
@@ -214,7 +223,7 @@ class PosTerminal extends Page
 
             $this->dispatch('cart-held-successful');
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Notification::make()
                 ->danger()
                 ->title(__('pos.cart_hold_failed'))
@@ -227,22 +236,38 @@ class PosTerminal extends Page
 
     public function createShippingDestination(array $data): array
     {
-        if (! $this->storeId) {
-            Notification::make()
-                ->danger()
-                ->title(__('pos.select_store_first'))
-                ->send();
 
-            throw ValidationException::withMessages([
-                'store_id' => __('pos.select_store_first'),
-            ]);
+        $validator = validator(
+            array_merge($data, ['store_id' => $this->storeId]),
+            [
+                'store_id' => ['required', 'integer', 'exists:stores,id'],
+                'name' => ['required', 'string', 'max:255'],
+                'cost' => ['required', 'numeric', 'min:0'],
+            ],
+            [
+                'store_id.required' => __('pos.select_store_first'),
+                'store_id.exists' => __('pos.store_not_found'),
+                'name.required' => __('pos.destination_name_required'),
+                'cost.required' => __('pos.cost_required'),
+                'cost.numeric' => __('pos.cost_must_be_number'),
+                'cost.min' => __('pos.cost_must_be_positive'),
+            ]
+        );
+
+        if ($validator->fails()) {
+            return RpcResponse::fromValidator($validator);
         }
+
+        $validated = array_map(
+            fn ($value) => is_string($value) ? (blank($value) ? null : trim($value)) : $value,
+            $validator->validated()
+        );
 
         $destination = ShippingDestination::create([
             'company_id' => $this->user->company_id,
-            'store_id' => $this->storeId,
-            'name' => trim($data['name'] ?? ''),
-            'cost' => (float) ($data['cost'] ?? 0),
+            'store_id' => $validated['store_id'],
+            'name' => $validated['name'],
+            'cost' => (float) $validated['cost'],
             'is_active' => true,
         ]);
 
@@ -254,24 +279,38 @@ class PosTerminal extends Page
 
         $this->shippingDestinationList[] = $result;
 
-        return $result;
+        Notification::make()
+            ->title(__('pos.destination_created_successfully'))
+            ->success()
+            ->send();
+
+        return RpcResponse::success(data: $result);
     }
 
     public function createCustomer(array $data): array
     {
-        $validated = validator($data, [
+        $validator = validator($data, [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:65535'],
-        ])->validate();
+        ]);
+
+        if ($validator->fails()) {
+            return RpcResponse::fromValidator($validator);
+        }
+
+        $validated = array_map(
+            fn ($value) => is_string($value) ? (blank($value) ? null : trim($value)) : $value,
+            $validator->validated()
+        );
 
         $customer = Customer::create([
             'company_id' => $this->user->company_id,
-            'name' => trim($validated['name']),
-            'phone' => ! empty($validated['phone']) ? trim($validated['phone']) : null,
-            'email' => ! empty($validated['email']) ? trim($validated['email']) : null,
-            'address' => ! empty($validated['address']) ? trim($validated['address']) : null,
+            'name' => $validated['name'],
+            'phone' => $validated['phone'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'address' => $validated['address'] ?? null,
             'is_active' => true,
         ]);
 
@@ -285,7 +324,12 @@ class PosTerminal extends Page
 
         $this->customerList[] = $result;
 
-        return $result;
+        Notification::make()
+            ->title(__('pos.customer_created_successfully'))
+            ->success()
+            ->send();
+
+        return RpcResponse::success(data: $result);
     }
 
     public function getExtraItemPresets(): array
@@ -294,19 +338,11 @@ class PosTerminal extends Page
             return [];
         }
 
-        // todo check store id in company level user
         return InvoiceExtraItemPreset::query()
             ->forSaleInvoice()
             ->active()
-            ->where('store_id', $this->storeId)
+            ->filterByStore($this->storeId)
             ->get(['id', 'name', 'action_type', 'amount', 'notes'])
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'action_type' => $p->action_type->value,
-                'amount' => (float) $p->amount,
-                'notes' => $p->notes,
-            ])
             ->toArray();
     }
 
@@ -341,57 +377,45 @@ class PosTerminal extends Page
     /**
      * Fetch Categories
      */
-    private function productCategories()
+    private function productCategories(): Collection|BaseCollection
     {
         if (! $this->storeId) {
-            return collect([]);
+            return collect();
         }
 
-        return ProductCategory::query()->active()
-            ->where('store_id', $this->storeId)
+        return ProductCategory::query()
+            ->active()
+            ->filterByStore($this->storeId)
             ->get(['id', 'name_en', 'name_ar'])
             ->map(fn ($cat) => [
                 'id' => $cat->id,
-                'name' => $cat->{lang_suffix('name')},
+                'name' => $cat->name,
             ]);
     }
 
     /**
      * Fetch Shipping Destinations for active store
      */
-    private function shippingDestinations(): Collection
+    private function shippingDestinations(): BaseCollection
     {
         if (! $this->storeId) {
-            return collect([]);
+            return collect();
         }
 
         return ShippingDestination::query()
             ->active()
             ->where('store_id', $this->storeId)
-            ->get(['id', 'name', 'cost'])
-            ->map(fn ($d) => [
-                'id' => $d->id,
-                'name' => $d->name,
-                'cost' => (float) $d->cost,
-            ]);
+            ->get(['id', 'name', 'cost']);
     }
 
-    /**
-     * Fetch Customers
-     */
-    private function customers()
+    private function customers(): BaseCollection
     {
-        return Customer::query()->active()
-            ->get(['id', 'name', 'phone'])
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'phone' => $c->phone,
-            ]);
-
+        return Customer::query()
+            ->active()
+            ->get(['id', 'name', 'phone']);
     }
 
-    private function stores()
+    private function stores(): Collection|BaseCollection
     {
         $storesQuery = Store::query();
         if ($this->user->isStoreLevel()) {
@@ -401,7 +425,7 @@ class PosTerminal extends Page
         return $storesQuery->get(['id', 'name_en', 'name_ar'])
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'name' => $s->{lang_suffix('name')},
+                'name' => $s->name,
             ]);
     }
 
@@ -412,31 +436,50 @@ class PosTerminal extends Page
             ->active()
             ->with(['product.category', 'barcodes', 'unitOfMeasure']);
         if ($this->storeId) {
-            $variantsQuery->where('store_id', $this->storeId);
+            $variantsQuery->filterByStore($this->storeId);
         } else {
             // Force empty results if no store is selected (Company Level admin hasn't picked yet)
-            $variantsQuery->where('id', 0);
+            $variantsQuery->filterByStore(0);
         }
         if ($this->categoryId) {
             $variantsQuery->filterByCategory($this->categoryId);
         }
 
+        // TODO (Performance Optimization - Future Version):
+        // The combined `OR` condition between fullNameSearch and barcodes forces MySQL into full-table scans.
+        // Consider:
+        // 1. Fast-Path Barcode Check: If ctype_alnum($this->search), query ProductBarcode index first;
+        //    only fallback to fullNameSearch if no barcode is found.
+        // 2. Hardware Scanner Interceptor: In Alpine, detect <30ms keypress bursts + Enter to dispatch
+        //    instant addToCartByBarcode() without filtering catalog pagination.
+        // 3. UI Mode Toggle: Add an explicit [Name | Barcode] filter toggle to isolate index usage.
         if (filled($this->search)) {
-            $variantsQuery->where(function ($query) {
-                $query->whereNameLike($this->search)
-                    ->orWhereHas('product', function ($q) {
-                        $q->whereNameLike($this->search);
+            $term = trim($this->search);
+            $barcodeVariantIds = collect();
+
+            // Fast-Path: Retail barcodes are strictly numeric digits (EAN-13, UPC, EAN-8, in-store codes)
+            if (ctype_digit($term) && strlen($term) >= $this->minBarcodeSearchLength) {
+                $barcodeVariantIds = ProductBarcode::query()
+                    ->where('barcode', 'like', "$term%")
+                    ->whereHas('productVariant', function ($q) {
+                        $q->filterByStore($this->storeId ?: 0);
                     })
-                    ->orWhereHas('barcodes', function ($q) {
-                        $q->where('barcode', 'like', "%{$this->search}%");
-                    });
-            });
+                    ->limit(100)
+                    ->pluck('product_variant_id');
+            }
+
+            if ($barcodeVariantIds->isNotEmpty()) {
+                $variantsQuery->whereIn('id', $barcodeVariantIds);
+            } else {
+                // Graceful fallback to full-name search across variants and parent products
+                $variantsQuery->fullNameSearch($term);
+            }
         }
 
         return $variantsQuery->paginate($this->perPage ?? 10);
     }
 
-    private function paymentMethodList(): Collection
+    private function paymentMethodList(): BaseCollection
     {
         return collect(PaymentMethod::cases())->map(fn ($pm) => [
             'value' => $pm->value,
