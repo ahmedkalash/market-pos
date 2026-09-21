@@ -2,8 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\DTOs\Checkout\CartItemDTO;
+use App\DTOs\Checkout\CheckoutMetaDataDTO;
+use App\DTOs\Checkout\ExtraItemDTO;
+use App\Enums\DiscountType;
+use App\Enums\ExtraItemActionType;
 use App\Enums\InvoiceType;
 use App\Enums\MovementType;
+use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Enums\SaleInvoiceStatus;
 use App\Filament\Pages\PosTerminal;
@@ -99,15 +105,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful')
@@ -127,15 +132,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 5,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -160,15 +164,16 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2, // 40.00 subtotal
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 5.00,
+                'payment_method' => 'cash',
+                'global_discount_type' => 'fixed',
+                'global_discount_amount' => 5.00,
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -187,15 +192,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 10.00,
             ])
             ->assertDispatched('checkout-successful');
@@ -215,9 +219,8 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 100,
-                'discount' => 0,
             ],
         ];
 
@@ -225,7 +228,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -242,15 +245,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('holdCart', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('cart-held-successful');
@@ -284,9 +286,8 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
-                'discount' => 0,
             ],
         ];
 
@@ -294,7 +295,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -317,16 +318,15 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('changeStore', $this->store->id)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -350,9 +350,8 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
-                'discount' => 0,
             ],
         ];
 
@@ -360,7 +359,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('holdCart', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -550,16 +549,15 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'customer_id' => $customer->id,
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -577,15 +575,16 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 2.00, // $2.00 unit discount * 2 = $4.00 total discount => $36.00
+                'discount_type' => 'fixed',
+                'discount_amount' => 2.00, // $2.00 unit discount * 2 = $4.00 total discount => $36.00
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -618,22 +617,22 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
             [
                 'variant_id' => $variant2->id,
                 'name' => $variant2->full_qualified_name,
-                'price' => 15.00,
+                'price_type' => 'retail',
                 'qty' => 3,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 5.00,
+                'payment_method' => 'cash',
+                'global_discount_type' => 'fixed',
+                'global_discount_amount' => 5.00,
                 'shipping_cost' => 10.00,
             ])
             ->assertDispatched('checkout-successful');
@@ -662,7 +661,7 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
                 'discount_type' => 'percentage',
                 'discount_amount' => 10,
@@ -671,6 +670,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
                 'global_discount_type' => 'percentage',
                 'global_discount_amount' => 10,
                 'shipping_cost' => 0,
@@ -693,15 +693,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 5.00,
                 'extra_items' => [
                     [
@@ -753,15 +752,13 @@ class PosTerminalTest extends TestCase
                 'variant_id' => $wholesaleVariant->id,
                 'name' => $wholesaleVariant->full_qualified_name,
                 'price_type' => 'wholesale',
-                'price' => 18.00,
                 'qty' => 5,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -783,7 +780,7 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
                 'discount_type' => 'fixed',
                 'discount_amount' => 15.00,
@@ -794,7 +791,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -815,9 +812,8 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
         ];
 
@@ -825,7 +821,9 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 25.00,
+                'payment_method' => 'cash',
+                'global_discount_type' => 'fixed',
+                'global_discount_amount' => 25.00,
                 'shipping_cost' => 0,
             ]);
 
@@ -878,15 +876,15 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 1,
-                'discount' => 0,
             ],
         ];
 
         // Cashier chose destination (default 40.00) but customized shipping cost to 55.00 and added custom address
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
                 'shipping_destination_id' => $destination->id,
                 'shipping_cost' => 55.00,
                 'shipping_address' => 'Building 12, Tahrir St.',
@@ -917,14 +915,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 50.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
                 'shipping_destination_id' => $destination->id,
                 'shipping_cost' => 0.00,
                 'shipping_address' => 'Local Neighborhood',
@@ -1037,9 +1035,7 @@ class PosTerminalTest extends TestCase
                 'variant_id' => $wholesaleVariant->id,
                 'name' => $wholesaleVariant->full_qualified_name,
                 'price_type' => 'wholesale',
-                'price' => 18.00,
                 'qty' => 5, // Below threshold of 10
-                'discount' => 0,
             ],
         ];
 
@@ -1047,7 +1043,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -1093,6 +1089,7 @@ class PosTerminalTest extends TestCase
         PosCheckoutService::make()->checkout($cart, [
             'store_id' => $this->store->id,
             'company_id' => $this->company->id,
+            'payment_method' => 'cash',
         ]);
     }
 
@@ -1125,15 +1122,13 @@ class PosTerminalTest extends TestCase
                 'variant_id' => $wholesaleVariant->id,
                 'name' => $wholesaleVariant->full_qualified_name,
                 'price_type' => 'wholesale',
-                'price' => 18.00,
                 'qty' => 12, // Meets and exceeds threshold of 10
-                'discount' => 0,
             ],
         ];
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ])
             ->assertDispatched('checkout-successful');
@@ -1169,9 +1164,8 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $lowStockVariant->id,
                 'name' => $lowStockVariant->full_qualified_name,
-                'price' => 30.00,
+                'price_type' => 'retail',
                 'qty' => 5, // Exceeds available stock of 3
-                'discount' => 0,
             ],
         ];
 
@@ -1179,7 +1173,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -1209,6 +1203,7 @@ class PosTerminalTest extends TestCase
         $cart = [
             [
                 'variant_id' => $lowStockVariant->id,
+                'price_type' => 'retail',
                 'qty' => 5,
             ],
         ];
@@ -1219,6 +1214,7 @@ class PosTerminalTest extends TestCase
         PosCheckoutService::make()->checkout($cart, [
             'store_id' => $this->store->id,
             'company_id' => $this->company->id,
+            'payment_method' => 'cash',
         ]);
     }
 
@@ -1246,7 +1242,7 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $nonNegotiableVariant->id,
                 'name' => $nonNegotiableVariant->full_qualified_name,
-                'price' => 50.00,
+                'price_type' => 'retail',
                 'qty' => 1,
                 'discount_type' => 'fixed',
                 'discount_amount' => 5.00, // Not allowed because price is not negotiable
@@ -1257,7 +1253,7 @@ class PosTerminalTest extends TestCase
 
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
-                'global_discount' => 0,
+                'payment_method' => 'cash',
                 'shipping_cost' => 0,
             ]);
 
@@ -1285,15 +1281,14 @@ class PosTerminalTest extends TestCase
             [
                 'variant_id' => $this->variant->id,
                 'name' => $this->variant->full_qualified_name,
-                'price' => 20.00,
+                'price_type' => 'retail',
                 'qty' => 2,
-                'discount' => 0,
             ],
         ];
 
         $component->call('processCheckout', $cart, [
             'customer_id' => $customer['data']['id'],
-            'global_discount' => 0,
+            'payment_method' => 'cash',
             'shipping_cost' => 0,
         ])
             ->assertDispatched('checkout-successful');
@@ -1628,5 +1623,544 @@ class PosTerminalTest extends TestCase
         $productIds = collect($products->items())->pluck('id')->all();
 
         $this->assertContains($variant->id, $productIds);
+    }
+
+    public function test_pos_checkout_service_processes_dto_instances_directly(): void
+    {
+        $this->actingAs($this->user);
+
+        $cartItems = [
+            new CartItemDTO(
+                variantId: $this->variant->id,
+                quantity: 2.0,
+                priceType: PriceType::Retail,
+                discountType: null,
+                discountAmount: 0.0,
+                unitPrice: 20.00
+            ),
+        ];
+
+        $extraItem = new ExtraItemDTO(
+            name: 'Eco Bag',
+            actionType: ExtraItemActionType::Addition,
+            amount: 2.00
+        );
+
+        $metaData = new CheckoutMetaDataDTO(
+            storeId: $this->store->id,
+            companyId: $this->company->id,
+            paymentMethod: PaymentMethod::Cash,
+            extraItems: [$extraItem]
+        );
+
+        $invoice = PosCheckoutService::make()->checkout($cartItems, $metaData);
+
+        $this->assertNotNull($invoice);
+        $this->assertEquals(SaleInvoiceStatus::Finalized, $invoice->status);
+        $this->assertEquals(42.00, (float) $invoice->total_amount);
+        $this->assertCount(1, $invoice->extraItems);
+        $this->assertEquals('Eco Bag', $invoice->extraItems->first()->name);
+    }
+
+    public function test_pos_checkout_service_hold_cart_with_dto_instances_directly(): void
+    {
+        $this->actingAs($this->user);
+
+        $cartItems = [
+            new CartItemDTO(
+                variantId: $this->variant->id,
+                quantity: 3.0,
+                priceType: PriceType::Retail
+            ),
+        ];
+
+        $metaData = new CheckoutMetaDataDTO(
+            storeId: $this->store->id,
+            companyId: $this->company->id,
+            paymentMethod: PaymentMethod::Cash,
+            globalDiscountType: DiscountType::Fixed,
+            globalDiscountAmount: 5.00
+        );
+
+        $invoice = PosCheckoutService::make()->holdCart($cartItems, $metaData);
+
+        $this->assertNotNull($invoice);
+        $this->assertEquals(SaleInvoiceStatus::Draft, $invoice->status);
+        $this->assertEquals(55.00, (float) $invoice->total_amount);
+    }
+
+    public function test_checkout_fails_validation_when_cart_is_empty(): void
+    {
+        $this->actingAs($this->user);
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', [], [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_variant_does_not_exist(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => 999999, // non-existent
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_hold_cart_fails_validation_when_cart_is_empty(): void
+    {
+        $this->actingAs($this->user);
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', [], [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_quantity_is_zero_or_negative(): void
+    {
+        $this->actingAs($this->user);
+
+        $cartZeroQty = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 0,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cartZeroQty, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_price_type_is_invalid(): void
+    {
+        $this->actingAs($this->user);
+
+        $cartInvalidPriceType = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'invalid_price_type',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cartInvalidPriceType, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_item_discount_amount_is_negative(): void
+    {
+        $this->actingAs($this->user);
+
+        $cartNegativeDiscount = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+                'discount_type' => 'fixed',
+                'discount_amount' => -5.00,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cartNegativeDiscount, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_global_discount_amount_is_negative(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'global_discount_type' => 'fixed',
+                'global_discount_amount' => -10.00,
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_item_discount_amount_provided_without_discount_type(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+                'discount_amount' => 5.00,
+                'discount_type' => null,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_item_discount_type_provided_without_discount_amount(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+                'discount_amount' => null,
+                'discount_type' => 'fixed',
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_global_discount_amount_provided_without_discount_type(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'global_discount_amount' => 10.00,
+                'global_discount_type' => null,
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_global_discount_type_provided_without_discount_amount(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'global_discount_amount' => null,
+                'global_discount_type' => 'fixed',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_extra_item_is_missing_action_type(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+                'extra_items' => [
+                    [
+                        'name' => 'Packaging fee',
+                        'amount' => 5.00,
+                        // missing action_type
+                    ],
+                ],
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_extra_item_is_missing_name(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+                'extra_items' => [
+                    [
+                        'amount' => 5.00,
+                        'action_type' => 'addition',
+                        // missing name
+                    ],
+                ],
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_extra_item_is_missing_amount(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+                'extra_items' => [
+                    [
+                        'name' => 'Gift Wrap',
+                        'action_type' => 'addition',
+                        // missing amount
+                    ],
+                ],
+            ]);
+    }
+
+    public function test_checkout_succeeds_validation_when_extra_items_is_empty_or_null(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+                'discount_amount' => 0,
+                'discount_type' => 'fixed',
+            ],
+        ];
+
+        // Should succeed without exception when extra_items is [] or null
+        $component = Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+                'extra_items' => [],
+                'global_discount_amount' => 0,
+                'global_discount_type' => 'fixed',
+            ]);
+
+        $component->assertDispatched('checkout-successful');
+    }
+
+    public function test_hold_cart_persists_selected_payment_method_and_null_discount_when_not_provided(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'card',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $invoice = SaleInvoice::latest('id')->first();
+        $this->assertNotNull($invoice);
+        $this->assertSame(SaleInvoiceStatus::Draft, $invoice->status);
+        $this->assertSame($this->company->id, $invoice->company_id);
+        $this->assertSame($this->store->id, $invoice->store_id);
+        $this->assertSame(PaymentMethod::Card, $invoice->payment_method);
+        $this->assertNull($invoice->discount_type);
+        $this->assertNull($invoice->discount_amount);
+    }
+
+    public function test_checkout_persists_proper_company_id_and_store_id(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('checkout-successful');
+
+        $invoice = SaleInvoice::latest('id')->first();
+        $this->assertNotNull($invoice);
+        $this->assertSame(SaleInvoiceStatus::Finalized, $invoice->status);
+        $this->assertSame($this->company->id, $invoice->company_id);
+        $this->assertSame($this->store->id, $invoice->store_id);
+    }
+
+    public function test_checkout_fails_validation_when_payment_method_is_missing(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_checkout_fails_validation_when_payment_method_is_invalid(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'unsupported_method',
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_hold_cart_fails_validation_when_payment_method_is_missing(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'shipping_cost' => 0,
+            ]);
+    }
+
+    public function test_hold_cart_fails_validation_when_payment_method_is_invalid(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $this->expectException(Halt::class);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'unsupported_method',
+                'shipping_cost' => 0,
+            ]);
     }
 }

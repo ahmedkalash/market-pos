@@ -448,6 +448,25 @@ settings
         - [ ] **Persist Theme State:** Ensure the theme toggle interacts correctly with the user's existing Filament theme preference or Alpine.js local storage state.
         - [ ] **Test Across Roles:** Verify the POS terminal looks correct in both modes for both Company Admin and Store Manager accounts.
 
+--- current
+- [] review `app/Services/PosCheckoutService.php`
+- [] review blade, js, alpine
+- [] front end validations
+- [] fix checkout error `"error":"خصم الفاتورة الإجمالي يخفض إجمالي المبلغ عن الحد الأدنى المسموح به."`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Phase 3.1 — imports and Exports
 - [ ] Export other items like "inventory movement", ...etc

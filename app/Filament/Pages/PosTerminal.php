@@ -2,7 +2,12 @@
 
 namespace App\Filament\Pages;
 
+use App\DTOs\Checkout\CartItemDTO;
+use App\DTOs\Checkout\CheckoutMetaDataDTO;
+use App\Enums\DiscountType;
+use App\Enums\ExtraItemActionType;
 use App\Enums\PaymentMethod;
+use App\Enums\PriceType;
 use App\Models\Customer;
 use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductBarcode;
@@ -17,10 +22,13 @@ use BackedEnum;
 use Exception;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
 use Throwable;
@@ -142,7 +150,7 @@ class PosTerminal extends Page
         $paginatedVariants = $this->paginatedVariants();
 
         // Transform the collection items while keeping the paginator intact
-        $paginatedVariants->getCollection()->transform(function ($variant) {
+        $paginatedVariants->getCollection()->transform(function (ProductVariant $variant) {
             return [
                 'id' => $variant->id,
                 'product_id' => $variant->product_id,
@@ -156,9 +164,9 @@ class PosTerminal extends Page
                 'wholesale_is_price_negotiable' => (bool) $variant->wholesale_is_price_negotiable,
                 'min_wholesale_price' => (float) $variant->min_wholesale_price,
                 'wholesale_qty_threshold' => (float) $variant->wholesale_qty_threshold,
-                'uom_name' => $variant->unitOfMeasure?->{lang_suffix('name')} ?? '',
+                'uom_name' => $variant->unitOfMeasure?->name ?? '',
                 'stock' => (float) $variant->quantity,
-                'barcodes' => $variant->barcodes->pluck('barcode')->toArray(),
+                'barcodes' => $variant->getAllBarcodesAsArray(),
                 'image' => (method_exists($variant->product, 'getFirstMediaUrl') ? $variant->product->getFirstMediaUrl('image', 'thumb') : null) ?: null,
             ];
         });
@@ -169,6 +177,36 @@ class PosTerminal extends Page
     }
 
     // todo: review
+    /**
+     * Process checkout for the active POS cart.
+     *
+     * @param array<int, array{
+     *     variant_id: int,
+     *     qty: float|int,
+     *     price_type: string,
+     *     discount_amount?: float|int|null,
+     *     discount_type?: string|null
+     * }> $cartData Raw cart items payload from Alpine.js client.
+     * @param array{
+     *     store_id?: int|null,
+     *     customer_id?: int|null,
+     *     payment_method?: string|null,
+     *     global_discount_amount?: float|int|null,
+     *     global_discount_type?: string|null,
+     *     shipping_destination_id?: int|null,
+     *     shipping_cost?: float|int|null,
+     *     shipping_address?: string|null,
+     *     extra_items?: array<int, array{
+     *         presetId?: string|int|null,
+     *         name: string,
+     *         amount: float|int,
+     *         action_type?: string|null,
+     *         notes?: string|null
+     *     }>
+     * } $metaData Checkout metadata payload from Alpine.js client.
+     *
+     * @throws Halt
+     */
     public function processCheckout(array $cartData, array $metaData): void
     {
         try {
@@ -176,9 +214,15 @@ class PosTerminal extends Page
                 throw new Exception(__('pos.select_store_first'));
             }
 
-            $metaData['store_id'] = $this->storeId;
+            $metaData['store_id'] = (int) $this->storeId;
+            $metaData['company_id'] = (int) $this->user->company_id;
 
-            $invoice = PosCheckoutService::make()->checkout($cartData, $metaData);
+            $this->validateCheckoutPayload($cartData, $metaData);
+
+            $cartItems = array_map(fn (array $item): CartItemDTO => CartItemDTO::fromArray($item), $cartData);
+            $metaDto = CheckoutMetaDataDTO::fromArray($metaData);
+
+            $invoice = PosCheckoutService::make()->checkout($cartItems, $metaDto);
 
             Notification::make()
                 ->success()
@@ -194,17 +238,52 @@ class PosTerminal extends Page
         } catch (Throwable $e) {
             Log::error('POS Checkout Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
+            $errorMessage = $e instanceof ValidationException
+                ? $e->validator->errors()->first()
+                : $e->getMessage();
+
             Notification::make()
                 ->danger()
                 ->title(__('pos.checkout_failed'))
-                ->body($e->getMessage())
+                ->body($errorMessage)
                 ->send();
 
             $this->halt(true);
         }
+
     }
 
     // todo: review
+    /**
+     * Put the active POS cart on hold as a draft invoice.
+     *
+     * @param array<int, array{
+     *     variant_id: int,
+     *     qty: float|int,
+     *     price_type: string,
+     *     discount_amount?: float|int|null,
+     *     discount_type?: string|null
+     * }> $cartData Raw cart items payload from Alpine.js client.
+     * @param array{
+     *     store_id?: int|null,
+     *     customer_id?: int|null,
+     *     payment_method?: string|null,
+     *     global_discount_amount?: float|int|null,
+     *     global_discount_type?: string|null,
+     *     shipping_destination_id?: int|null,
+     *     shipping_cost?: float|int|null,
+     *     shipping_address?: string|null,
+     *     extra_items?: array<int, array{
+     *         presetId?: string|int|null,
+     *         name: string,
+     *         amount: float|int,
+     *         action_type?: string|null,
+     *         notes?: string|null
+     *     }>
+     * } $metaData Checkout metadata payload from Alpine.js client.
+     *
+     * @throws Halt
+     */
     public function holdCart(array $cartData, array $metaData): void
     {
         try {
@@ -212,9 +291,15 @@ class PosTerminal extends Page
                 throw new Exception(__('pos.select_store_first'));
             }
 
-            $metaData['store_id'] = $this->storeId;
+            $metaData['store_id'] = (int) $this->storeId;
+            $metaData['company_id'] = (int) $this->user->company_id;
 
-            PosCheckoutService::make()->holdCart($cartData, $metaData);
+            $this->validateCheckoutPayload($cartData, $metaData);
+
+            $cartItems = array_map(fn (array $item): CartItemDTO => CartItemDTO::fromArray($item), $cartData);
+            $metaDto = CheckoutMetaDataDTO::fromArray($metaData);
+
+            PosCheckoutService::make()->holdCart($cartItems, $metaDto);
 
             Notification::make()
                 ->success()
@@ -224,14 +309,65 @@ class PosTerminal extends Page
             $this->dispatch('cart-held-successful');
 
         } catch (Throwable $e) {
+            $errorMessage = $e instanceof ValidationException
+                ? $e->validator->errors()->first()
+                : $e->getMessage();
+
             Notification::make()
                 ->danger()
                 ->title(__('pos.cart_hold_failed'))
-                ->body($e->getMessage())
+                ->body($errorMessage)
                 ->send();
 
             $this->halt(true);
         }
+    }
+
+    /**
+     * Validate the cart and checkout metadata payload before DTO transformation.
+     *
+     * @param  array<int, mixed>  $cartData
+     * @param  array<string, mixed>  $metaData
+     *
+     * @throws ValidationException
+     */
+    protected function validateCheckoutPayload(array $cartData, array $metaData): void
+    {
+        validator(
+            [
+                'cart' => $cartData,
+                'meta' => $metaData,
+            ],
+            [
+                'cart' => ['required', 'array', 'min:1'],
+                'cart.*.variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+                'cart.*.qty' => ['required', 'numeric', 'gt:0'],
+                'cart.*.price_type' => ['required', Rule::enum(PriceType::class)],
+                'cart.*.discount_amount' => ['required_with:cart.*.discount_type', 'nullable', 'numeric', 'min:0'],
+                'cart.*.discount_type' => ['required_with:cart.*.discount_amount', 'nullable', Rule::enum(DiscountType::class)],
+
+                'meta.store_id' => ['required', 'integer', 'exists:stores,id'],
+                'meta.company_id' => ['required', 'integer', 'exists:companies,id'],
+                'meta.customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+                'meta.payment_method' => ['required', Rule::enum(PaymentMethod::class)],
+                'meta.global_discount_amount' => ['required_with:meta.global_discount_type', 'nullable', 'numeric', 'min:0'],
+                'meta.global_discount_type' => ['required_with:meta.global_discount_amount', 'nullable', Rule::enum(DiscountType::class)],
+                'meta.shipping_destination_id' => ['nullable', 'integer', 'exists:shipping_destinations,id'],
+                'meta.shipping_cost' => ['nullable', 'numeric', 'min:0'],
+                'meta.shipping_address' => ['nullable', 'string', 'max:65535'],
+                'meta.extra_items' => ['nullable', 'array'],
+                'meta.extra_items.*.name' => ['required', 'string', 'max:255'],
+                'meta.extra_items.*.amount' => ['required', 'numeric', 'min:0'],
+                'meta.extra_items.*.action_type' => ['required', Rule::enum(ExtraItemActionType::class)],
+                'meta.extra_items.*.notes' => ['nullable', 'string', 'max:65535'],
+            ],
+            [
+                'cart.required' => __('pos.cart_empty'),
+                'cart.min' => __('pos.cart_empty'),
+                'meta.store_id.required' => __('pos.select_store_first'),
+                'meta.store_id.exists' => __('pos.store_not_found'),
+            ]
+        )->validate();
     }
 
     public function createShippingDestination(array $data): array
