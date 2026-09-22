@@ -1641,8 +1641,6 @@ class PosTerminalTest extends TestCase
                 variantId: $this->variant->id,
                 quantity: 2.0,
                 priceType: PriceType::Retail,
-                discountType: null,
-                discountAmount: 0.0,
                 unitPrice: 20.00
             ),
         ];
@@ -1677,7 +1675,8 @@ class PosTerminalTest extends TestCase
             new CartItemDTO(
                 variantId: $this->variant->id,
                 quantity: 3.0,
-                priceType: PriceType::Retail
+                priceType: PriceType::Retail,
+                unitPrice: 20.00
             ),
         ];
 

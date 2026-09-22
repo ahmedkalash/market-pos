@@ -23,17 +23,17 @@ class CheckoutDTOTest extends TestCase
             variantId: 101,
             quantity: 3.5,
             priceType: PriceType::Wholesale,
+            unitPrice: 45.0,
             discountType: DiscountType::Percentage,
-            discountAmount: 15.0,
-            unitPrice: 45.0
+            discountAmount: 15.0
         );
 
         $this->assertSame(101, $dto->variantId);
         $this->assertSame(3.5, $dto->quantity);
         $this->assertSame(PriceType::Wholesale, $dto->priceType);
+        $this->assertSame(45.0, $dto->unitPrice);
         $this->assertSame(DiscountType::Percentage, $dto->discountType);
         $this->assertSame(15.0, $dto->discountAmount);
-        $this->assertSame(45.0, $dto->unitPrice);
     }
 
     public function test_cart_item_dto_from_array_with_standard_keys(): void
@@ -42,9 +42,9 @@ class CheckoutDTOTest extends TestCase
             'variant_id' => 42,
             'qty' => 2.0,
             'price_type' => 'wholesale',
+            'unit_price' => 25.0,
             'discount_type' => 'fixed',
             'discount_amount' => 5.0,
-            'unit_price' => 25.0,
         ];
 
         $dto = CartItemDTO::fromArray($data);
@@ -52,58 +52,35 @@ class CheckoutDTOTest extends TestCase
         $this->assertSame(42, $dto->variantId);
         $this->assertSame(2.0, $dto->quantity);
         $this->assertSame(PriceType::Wholesale, $dto->priceType);
+        $this->assertSame(25.0, $dto->unitPrice);
         $this->assertSame(DiscountType::Fixed, $dto->discountType);
         $this->assertSame(5.0, $dto->discountAmount);
-        $this->assertSame(25.0, $dto->unitPrice);
     }
 
-    public function test_cart_item_dto_from_array_with_partial_keys(): void
+    public function test_cart_item_dto_from_array_without_discount_defaults_to_null(): void
     {
-        $data = [
+        $dto = CartItemDTO::fromArray([
             'variant_id' => 99,
-            'qty' => 5,
+            'qty' => 5.0,
             'price_type' => 'retail',
-            'discount_amount' => 2.50,
-            'discount_type' => 'fixed',
-        ];
-
-        $dto = CartItemDTO::fromArray($data);
+            'unit_price' => 12.50,
+        ]);
 
         $this->assertSame(99, $dto->variantId);
         $this->assertSame(5.0, $dto->quantity);
         $this->assertSame(PriceType::Retail, $dto->priceType);
-        $this->assertSame(DiscountType::Fixed, $dto->discountType);
-        $this->assertSame(2.50, $dto->discountAmount);
-        $this->assertSame(0.0, $dto->unitPrice);
-    }
-
-    public function test_cart_item_dto_from_array_throws_when_price_type_is_missing(): void
-    {
-        $this->expectException(\ValueError::class);
-
-        CartItemDTO::fromArray([]);
-    }
-
-    public function test_cart_item_dto_from_array_with_minimal_keys(): void
-    {
-        $dto = CartItemDTO::fromArray([
-            'variant_id' => 99,
-            'price_type' => 'retail',
-        ]);
-
-        $this->assertSame(99, $dto->variantId);
-        $this->assertSame(1.0, $dto->quantity);
-        $this->assertSame(PriceType::Retail, $dto->priceType);
+        $this->assertSame(12.50, $dto->unitPrice);
         $this->assertNull($dto->discountType);
-        $this->assertSame(0.0, $dto->discountAmount);
-        $this->assertSame(0.0, $dto->unitPrice);
+        $this->assertNull($dto->discountAmount);
     }
 
     public function test_cart_item_dto_from_array_with_enum_instances_directly(): void
     {
         $data = [
             'variant_id' => 15,
+            'qty' => 1.0,
             'price_type' => PriceType::Wholesale,
+            'unit_price' => 30.0,
             'discount_type' => DiscountType::Percentage,
             'discount_amount' => 10,
         ];
@@ -112,6 +89,56 @@ class CheckoutDTOTest extends TestCase
 
         $this->assertSame(PriceType::Wholesale, $dto->priceType);
         $this->assertSame(DiscountType::Percentage, $dto->discountType);
+        $this->assertSame(10.0, $dto->discountAmount);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_variant_id_is_missing(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('variant_id is required');
+
+        CartItemDTO::fromArray([
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_qty_is_missing(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('qty is required');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_qty_is_zero_or_negative(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('qty is required and must be greater than 0');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_price_type_is_missing(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('price_type is required');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'unit_price' => 10.0,
+        ]);
     }
 
     public function test_cart_item_dto_from_array_throws_on_invalid_price_type(): void
@@ -120,7 +147,33 @@ class CheckoutDTOTest extends TestCase
 
         CartItemDTO::fromArray([
             'variant_id' => 77,
+            'qty' => 1.0,
             'price_type' => 'non_existent_price_type',
+            'unit_price' => 10.0,
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_without_unit_price_defaults_to_zero(): void
+    {
+        $dto = CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+        ]);
+
+        $this->assertSame(0.0, $dto->unitPrice);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_unit_price_is_negative(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('unit_price must be a non-negative number');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => -5.0,
         ]);
     }
 
@@ -130,9 +183,141 @@ class CheckoutDTOTest extends TestCase
 
         CartItemDTO::fromArray([
             'variant_id' => 77,
+            'qty' => 1.0,
             'price_type' => 'retail',
+            'unit_price' => 10.0,
             'discount_type' => 'unknown_discount',
         ]);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_discount_type_given_without_amount(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('discount_amount is required when discount_type is specified');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_type' => 'fixed',
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_discount_amount_given_without_type(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('discount_type is required when discount_amount is specified');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_amount' => 5.0,
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_discount_amount_is_negative(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('discount_amount cannot be negative');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_type' => 'fixed',
+            'discount_amount' => -2.0,
+        ]);
+    }
+
+    public function test_cart_item_dto_from_array_normalizes_empty_string_discount_amount_to_null(): void
+    {
+        $dto = CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_amount' => '',
+        ]);
+
+        $this->assertNull($dto->discountAmount);
+        $this->assertNull($dto->discountType);
+    }
+
+    public function test_cart_item_dto_from_array_normalizes_zero_integer_discount_without_type_to_null(): void
+    {
+        $dto = CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_amount' => 0,
+        ]);
+
+        $this->assertNull($dto->discountAmount);
+        $this->assertNull($dto->discountType);
+    }
+
+    public function test_cart_item_dto_from_array_normalizes_zero_string_discount_without_type_to_null(): void
+    {
+        $dto = CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_amount' => '0',
+        ]);
+
+        $this->assertNull($dto->discountAmount);
+        $this->assertNull($dto->discountType);
+    }
+
+    public function test_cart_item_dto_from_array_casts_numeric_string_discount_to_float(): void
+    {
+        $dto = CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_type' => 'fixed',
+            'discount_amount' => '15.5',
+        ]);
+
+        $this->assertSame(15.5, $dto->discountAmount);
+        $this->assertSame(DiscountType::Fixed, $dto->discountType);
+    }
+
+    public function test_cart_item_dto_from_array_throws_when_discount_amount_is_not_numeric(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('discount_amount must be numeric.');
+
+        CartItemDTO::fromArray([
+            'variant_id' => 1,
+            'qty' => 1.0,
+            'price_type' => 'retail',
+            'unit_price' => 10.0,
+            'discount_type' => 'fixed',
+            'discount_amount' => 'abc_invalid',
+        ]);
+    }
+
+    public function test_cart_item_dto_constructor_throws_on_invalid_invariants(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('discount_amount cannot exceed 100% for percentage discounts');
+
+        new CartItemDTO(
+            variantId: 1,
+            quantity: 1.0,
+            priceType: PriceType::Retail,
+            unitPrice: 10.0,
+            discountType: DiscountType::Percentage,
+            discountAmount: 150.0
+        );
     }
 
     // ==========================================
