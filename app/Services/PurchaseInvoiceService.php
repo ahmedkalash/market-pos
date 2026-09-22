@@ -60,6 +60,15 @@ class PurchaseInvoiceService
      *
      * This ensures the database always holds mathematically correct totals regardless
      * of what the frontend reactive calculations produced.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`). Safe to call standalone or within Filament hooks.
+     * - **Nesting:** If invoked inside an outer transaction (e.g. Filament `afterCreate`),
+     *   it seamlessly participates in that outer transaction.
+     * - **Concurrency:** Pessimistically locks (`lockForUpdate()`) the purchase invoice row.
+     * - **Rollback:** Any calculation failure immediately rolls back all pending line item and header writes.
+     *
+     * @throws Throwable
      */
     public function recalculateTotals(PurchaseInvoice $invoice): void
     {
@@ -127,7 +136,25 @@ class PurchaseInvoiceService
     }
 
     /**
-     * @throws \Throwable
+     * Finalize a purchase invoice: update variant purchase costs, increase stock, and lock as Finalized.
+     *
+     * Lifecycle steps:
+     *  1. Validates each line variant belongs to the invoice's store.
+     *  2. Updates the variant's purchase_price to the invoice unit_cost.
+     *  3. Calls InventoryService::recordMovement() to update stock and create ledger entry.
+     *  4. Saves computed financial data on each item row.
+     *  5. Calculates and saves invoice totals.
+     *  6. Locks the invoice as Finalized.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Nesting:** Participates in surrounding Filament save transactions when called from hooks.
+     * - **Rollback:** Any failure (store boundary breach, missing items) rolls back stock changes and status.
+     * - **Idempotency:** Re-checks status under pessimistic lock (`lockForUpdate()`); if already finalized, returns safely.
+     * - **Stock Impact:** Atomically records `MovementType::Purchase` stock-in ledger entries via `InventoryService`.
+     *
+     * @throws \RuntimeException If store boundaries are violated or invoice has no items.
+     * @throws Throwable
      */
     public function finalize(PurchaseInvoice $invoice): void
     {
@@ -249,6 +276,16 @@ class PurchaseInvoiceService
         ];
     }
 
+    /**
+     * Recalculate and persist all financial totals on a Draft PurchaseReturn.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Concurrency:** Acquires a pessimistic lock (`lockForUpdate()`) on the purchase return row.
+     * - **Nesting:** Participates in surrounding Filament save transactions when called from hooks.
+     *
+     * @throws Throwable
+     */
     public function recalculateReturnTotals(PurchaseReturn $return): void
     {
         DB::transaction(function () use ($return) {
@@ -304,8 +341,14 @@ class PurchaseInvoiceService
      *
      * All steps in a single DB::transaction(). Any failure rolls back everything.
      *
-     * @throws \RuntimeException
-     * @throws \Throwable
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Idempotency:** Safely exits without side-effects if the return is already finalized.
+     * - **Concurrency:** Locks both the return document and original purchase invoice (`lockForUpdate()`).
+     * - **Stock Impact:** Atomically records `MovementType::PurchaseReturn` stock-out ledger entries via `InventoryService`.
+     *
+     * @throws \RuntimeException If return quantities exceed original purchase or store boundary is violated.
+     * @throws Throwable
      */
     public function finalizeReturn(PurchaseReturn $return, ?int $userId = null): void
     {

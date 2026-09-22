@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Enums\DiscountType;
 use App\Enums\MovementType;
+use App\Enums\PriceType;
 use App\Enums\SaleInvoiceReturnStatus;
 use App\Enums\SaleInvoiceStatus;
 use App\Enums\SaleReturnStatus;
+use App\Exceptions\InsufficientStockException;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceItem;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Handles the full transactional lifecycle of Sale Invoices.
+ * Handles the full transactional lifecycle of Sale Invoices and Sale Return Invoices.
  *
  * Invoice finalization:
  *  1. Validates each line variant belongs to the invoice's store.
@@ -26,7 +28,15 @@ use Throwable;
  *  4. Calculates and saves invoice totals.
  *  5. Locks the invoice as Finalized with payment method.
  *
- * All operations run in a single DB::transaction(). Any failure rolls back everything.
+ * Return finalization:
+ *  1. Validates items (store boundary + quantity does not exceed original).
+ *  2. Records StockIn movements via InventoryService.
+ *  3. Persists totals and locks the return as Finalized.
+ *  4. Syncs the original invoice's return_status.
+ *
+ * All state-mutating operations run within self-contained `DB::transaction()` blocks.
+ * If called inside an outer transaction (such as Filament's `afterCreate` or `PosCheckoutService::checkout`),
+ * they automatically participate in the surrounding transaction. Any failure rolls back everything.
  */
 class SaleInvoiceService
 {
@@ -47,6 +57,15 @@ class SaleInvoiceService
      *  3. Aggregates all line subtotals and tax amounts into the invoice-level
      *     total_before_tax, total_tax_amount, and total_amount fields.
      *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`). Safe to call standalone or within Filament hooks.
+     * - **Nesting:** If invoked inside an outer transaction (e.g., Filament `afterCreate` or `PosCheckoutService`),
+     *   it seamlessly participates in that outer transaction.
+     * - **Rollback:** Any business rule violation (e.g., wholesale minimum threshold, negative price, discount violation)
+     *   throws an exception, triggering an automatic rollback of all pending writes.
+     * - **Concurrency:** Pessimistically locks (`lockForUpdate()`) the invoice row and all invoice items.
+     *
+     * @throws \RuntimeException If wholesale threshold, non-negotiable status, or minimum price is breached.
      * @throws Throwable
      */
     public function recalculateTotals(SaleInvoice $invoice): void
@@ -121,6 +140,17 @@ class SaleInvoiceService
         foreach ($invoice->items as $item) {
             $variant = $item->variant;
             $quantity = (float) $item->quantity;
+
+            // Assert Wholesale Minimum Quantity Threshold is Met
+            if ($item->price_type === PriceType::Wholesale &&
+                $variant->hasWholesaleQtyThreshold() &&
+                $quantity < (float) $variant->wholesale_qty_threshold) {
+                throw new \RuntimeException(__('sale_invoice.wholesale_min_qty_breached', [
+                    'item' => $variant->name() ?? $variant->full_qualified_name,
+                    'min' => (float) $variant->wholesale_qty_threshold,
+                ]));
+            }
+
             $unitPrice = $variant->getBasePrice($item->price_type);
 
             // Assign the fresh unit price to the item so that all discount calculations
@@ -209,8 +239,26 @@ class SaleInvoiceService
     }
 
     /**
-     * Finalize a sale invoice — deduct stock and lock the record.
+     * Finalize a sale invoice — deduct stock and lock the record as Finalized.
      *
+     * Lifecycle steps:
+     *  1. Validates each line variant belongs to the invoice's store.
+     *  2. Calls InventoryService::recordMovement() with MovementType::Sale to deduct stock.
+     *  3. Saves computed financial data on each item row.
+     *  4. Calculates and saves invoice totals.
+     *  5. Locks the invoice as Finalized with payment method.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Nesting:** If invoked within an outer transaction (e.g., `PosCheckoutService::checkout` or Filament hook),
+     *   it seamlessly participates in that outer transaction.
+     * - **Rollback:** Failure at any point (e.g. `InsufficientStockException`, store boundary violation)
+     *   aborts the transaction and rolls back all stock deductions and status changes.
+     * - **Idempotency:** Re-checks status under row lock (`lockForUpdate()`); if already finalized, returns safely.
+     *
+     *
+     * @throws InsufficientStockException If available stock is insufficient.
+     * @throws \RuntimeException If store boundary is violated or invoice has no items.
      * @throws Throwable
      */
     public function finalize(SaleInvoice $invoice): void
@@ -282,6 +330,10 @@ class SaleInvoiceService
      * to this specific item and calculates the actual
      * monetary amount to refund per unit (effective_unit_refund).
      *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. This is a read-only mathematical calculation.
+     * - **Side Effects:** None. Performs zero database writes.
+     *
      * @param  SaleInvoiceItem  $originalItem  The original invoice item being returned
      * @return array{unit_prorated_global_discount: float, effective_unit_refund: float}
      */
@@ -339,7 +391,12 @@ class SaleInvoiceService
 
     /**
      * Recalculate and persist all financial totals on a Draft SaleReturnInvoice.
-     * Called from Filament afterCreate/afterSave hooks.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Concurrency:** Acquires a pessimistic lock (`lockForUpdate()`) on the return invoice row.
+     * - **Nesting:** Participates in surrounding Filament save transactions when called from hooks.
+     *
      *
      * @throws Throwable
      */
@@ -378,8 +435,16 @@ class SaleInvoiceService
     }
 
     /**
-     * Finalize a sale return.
+     * Finalize a sale return: return inventory to stock, sync invoice status, and lock return document.
      *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Idempotency:** Safely exits without side-effects if the return is already finalized.
+     * - **Concurrency:** Locks both the return invoice and the original sale invoice (`lockForUpdate()`).
+     * - **Stock Impact:** Atomically records `MovementType::SaleReturn` stock-in ledger entries via `InventoryService`.
+     *
+     *
+     * @throws \RuntimeException If return quantities exceed original purchase or store boundary is violated.
      * @throws Throwable
      */
     public function finalizeReturn(SaleReturnInvoice $return, ?int $userId = null): void

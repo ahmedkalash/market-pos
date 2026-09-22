@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\MovementType;
 use App\Enums\PaymentMethod;
+use App\Enums\PriceType;
 use App\Enums\SaleInvoiceStatus;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Company;
@@ -248,5 +249,154 @@ class SaleInvoiceServiceTest extends TestCase
         $this->expectExceptionMessage("Variant [{$otherVariant->id}] does not belong to store [{$this->store->id}].");
 
         $this->service->finalize($invoice);
+    }
+
+    public function test_recalculate_totals_throws_when_wholesale_quantity_is_below_threshold(): void
+    {
+        $wholesaleVariant = ProductVariant::factory()->withStock(50)->create([
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+            'retail_price' => 20.00,
+            'wholesale_price' => 12.00,
+            'wholesale_enabled' => true,
+            'wholesale_is_price_negotiable' => true,
+            'min_wholesale_price' => 10.00,
+            'wholesale_qty_threshold' => 10,
+        ]);
+
+        $invoice = SaleInvoice::factory()->create([
+            'company_id' => $this->user->company_id,
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft,
+        ]);
+
+        SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $wholesaleVariant->id,
+            'quantity' => 5.000,
+            'unit_price' => 12.0000,
+            'price_type' => PriceType::Wholesale,
+            'subtotal' => 0.00,
+            'line_total' => 0.00,
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage(__('sale_invoice.wholesale_min_qty_breached', [
+            'item' => $wholesaleVariant->name(),
+            'min' => 10,
+        ]));
+
+        $this->service->recalculateTotals($invoice);
+    }
+
+    public function test_recalculate_totals_succeeds_when_wholesale_quantity_meets_or_exceeds_threshold(): void
+    {
+        $wholesaleVariant = ProductVariant::factory()->withStock(50)->create([
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+            'retail_price' => 20.00,
+            'wholesale_price' => 12.00,
+            'wholesale_enabled' => true,
+            'wholesale_is_price_negotiable' => true,
+            'min_wholesale_price' => 10.00,
+            'wholesale_qty_threshold' => 10,
+        ]);
+
+        $invoice = SaleInvoice::factory()->create([
+            'company_id' => $this->user->company_id,
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft,
+        ]);
+
+        $item = SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $wholesaleVariant->id,
+            'quantity' => 10.000,
+            'unit_price' => 12.0000,
+            'price_type' => PriceType::Wholesale,
+            'subtotal' => 0.00,
+            'line_total' => 0.00,
+        ]);
+
+        $this->service->recalculateTotals($invoice);
+
+        $item->refresh();
+        $invoice->refresh();
+
+        $this->assertEquals(120.00, (float) $item->subtotal);
+        $this->assertEquals(120.00, (float) $item->line_total);
+        $this->assertEquals(120.00, (float) $invoice->total_amount);
+    }
+
+    public function test_recalculate_totals_succeeds_when_retail_item_quantity_is_below_wholesale_threshold(): void
+    {
+        $wholesaleVariant = ProductVariant::factory()->withStock(50)->create([
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+            'retail_price' => 20.00,
+            'wholesale_price' => 12.00,
+            'wholesale_enabled' => true,
+            'wholesale_qty_threshold' => 10,
+        ]);
+
+        $invoice = SaleInvoice::factory()->create([
+            'company_id' => $this->user->company_id,
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft,
+        ]);
+
+        $item = SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $wholesaleVariant->id,
+            'quantity' => 2.000,
+            'unit_price' => 20.0000,
+            'price_type' => PriceType::Retail,
+            'subtotal' => 0.00,
+            'line_total' => 0.00,
+        ]);
+
+        $this->service->recalculateTotals($invoice);
+
+        $item->refresh();
+        $invoice->refresh();
+
+        $this->assertEquals(40.00, (float) $item->subtotal);
+        $this->assertEquals(40.00, (float) $invoice->total_amount);
+    }
+
+    public function test_recalculate_totals_succeeds_when_wholesale_variant_has_no_threshold(): void
+    {
+        $wholesaleVariant = ProductVariant::factory()->withStock(50)->create([
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+            'retail_price' => 20.00,
+            'wholesale_price' => 12.00,
+            'wholesale_enabled' => true,
+            'wholesale_qty_threshold' => 0,
+        ]);
+
+        $invoice = SaleInvoice::factory()->create([
+            'company_id' => $this->user->company_id,
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft,
+        ]);
+
+        $item = SaleInvoiceItem::factory()->create([
+            'sale_invoice_id' => $invoice->id,
+            'product_variant_id' => $wholesaleVariant->id,
+            'quantity' => 1.000,
+            'unit_price' => 12.0000,
+            'price_type' => PriceType::Wholesale,
+            'subtotal' => 0.00,
+            'line_total' => 0.00,
+        ]);
+
+        $this->service->recalculateTotals($invoice);
+
+        $item->refresh();
+        $invoice->refresh();
+
+        $this->assertEquals(12.00, (float) $item->subtotal);
+        $this->assertEquals(12.00, (float) $invoice->total_amount);
     }
 }

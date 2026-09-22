@@ -36,8 +36,8 @@ readonly class CartItemDTO
         };
 
         return new self(
-            variantId: (int) ($data['variant_id'] ?? 0),
-            quantity: (float) ($data['qty'] ?? 1.0),
+            variantId: (int) ($data['variant_id']),
+            quantity: (float) ($data['qty']),
             priceType: $priceType,
             discountType: $discountType,
             discountAmount: (float) ($data['discount_amount'] ?? 0.0),

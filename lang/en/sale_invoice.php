@@ -103,6 +103,7 @@ return [
     'discount_percentage' => 'Percentage',
     'item_not_negotiable' => 'Item :item is not negotiable.',
     'item_below_minimum' => 'Discount on item :item breaches the minimum allowed price of :min.',
+    'wholesale_min_qty_breached' => 'Quantity for item :item is below the minimum required wholesale quantity of :min.',
     'invoice_discount_breaches_minimum' => 'Invoice discount pushes item :item below its minimum allowed price.',
     'invoice_discount' => 'Main Line Items Discount',
     'invoice_discount_description' => 'Applies a discount to the sum of all basic line items. This discount does NOT apply to shipping costs or extra adjustments.',

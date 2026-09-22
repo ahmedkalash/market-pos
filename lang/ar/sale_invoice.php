@@ -103,6 +103,7 @@ return [
     'discount_percentage' => 'نسبة مئوية',
     'item_not_negotiable' => 'الصنف :item غير قابل للتفاوض.',
     'item_below_minimum' => 'الخصم على الصنف :item يتجاوز الحد الأدنى المسموح للسعر :min.',
+    'wholesale_min_qty_breached' => 'كمية الصنف :item أقل من الحد الأدنى المطلوب لكمية الجملة وهو :min.',
     'invoice_discount_breaches_minimum' => 'خصم الفاتورة يخفض سعر الصنف :item عن الحد الأدنى المسموح به.',
     'invoice_discount' => 'تطبيق خصم علي مستوي بنود الفاتورة الاساسية',
     'invoice_discount_description' => 'يُطبق الخصم على إجمالي البنود الأساسية فقط. هذا الخصم لا يشمل تكاليف الشحن أو التسويات الإضافية.',

@@ -1053,8 +1053,10 @@ class PosTerminalTest extends TestCase
         ]);
     }
 
-    public function test_wholesale_checkout_service_throws_validation_exception_when_below_threshold(): void
+    public function test_wholesale_checkout_service_throws_exception_when_below_threshold(): void
     {
+        $this->actingAs($this->user);
+
         $product = Product::factory()->create([
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
@@ -1083,8 +1085,11 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage(__('pos.wholesale_min_qty_error', ['product' => $wholesaleVariant->full_qualified_name, 'min' => 10]));
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage(__('sale_invoice.wholesale_min_qty_breached', [
+            'item' => $wholesaleVariant->name(),
+            'min' => 10,
+        ]));
 
         PosCheckoutService::make()->checkout($cart, [
             'store_id' => $this->store->id,
@@ -1185,6 +1190,8 @@ class PosTerminalTest extends TestCase
 
     public function test_checkout_service_throws_validation_exception_when_exceeding_stock(): void
     {
+        $this->actingAs($this->user);
+
         $product = Product::factory()->create([
             'company_id' => $this->company->id,
             'store_id' => $this->store->id,
@@ -2162,5 +2169,90 @@ class PosTerminalTest extends TestCase
                 'payment_method' => 'unsupported_method',
                 'shipping_cost' => 0,
             ]);
+    }
+
+    public function test_checkout_creates_invoice_with_translated_pos_notes(): void
+    {
+        $this->actingAs($this->user);
+
+        app()->setLocale('en');
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('checkout-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+        $this->assertEquals('Created via POS Terminal', $invoice->notes);
+        $this->assertEquals(__('pos.created_via_terminal'), $invoice->notes);
+    }
+
+    public function test_checkout_creates_invoice_with_translated_pos_notes_in_arabic(): void
+    {
+        $this->actingAs($this->user);
+
+        app()->setLocale('ar');
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('checkout-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+        $this->assertEquals('تم الإنشاء عبر نقطة البيع', $invoice->notes);
+        $this->assertEquals(__('pos.created_via_terminal'), $invoice->notes);
+    }
+
+    public function test_hold_cart_creates_draft_invoice_with_translated_pos_notes(): void
+    {
+        $this->actingAs($this->user);
+
+        app()->setLocale('en');
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+        $this->assertEquals(SaleInvoiceStatus::Draft, $invoice->status);
+        $this->assertEquals('Created via POS Terminal', $invoice->notes);
+        $this->assertEquals(__('pos.created_via_terminal'), $invoice->notes);
     }
 }

@@ -83,6 +83,7 @@ interface PosTerminalWire {
         metaData: {
             customer_id?: number | null;
             store_id?: number | null;
+            payment_method?: string;
             global_discount_type?: string;
             global_discount_amount?: number;
             shipping_destination_id?: number | null;
@@ -116,6 +117,7 @@ interface PosTerminalWire {
         metaData: {
             customer_id?: number | null;
             store_id?: number | null;
+            payment_method?: string;
             global_discount_type?: string;
             global_discount_amount?: number;
             shipping_destination_id?: number | null;

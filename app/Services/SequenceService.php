@@ -29,6 +29,11 @@ class SequenceService
      * This uses a pessimistic lock (lockForUpdate) on the sequence row
      * to ensure that concurrent requests do not get the same number.
      * This must be called inside a database transaction.
+     *
+     * ### Transaction Boundary: Required Outer Transaction (Boundary: `required`)
+     * - **Manages Transaction:** No. Asserts that `DB::transactionLevel() > 0`.
+     * - **Throws:** `\RuntimeException` immediately if invoked without an active outer transaction.
+     * - **Concurrency:** Pessimistically locks (`lockForUpdate()`) the `sequences` row for `(company_id, type)`.
      */
     public function next(int $companyId, SequenceType $type): string
     {

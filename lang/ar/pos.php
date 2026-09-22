@@ -176,4 +176,5 @@ return [
     'operation_failed' => 'فشلت العملية',
     'unexpected_error' => 'حدث خطأ غير متوقع',
     'network_error' => 'حدث خطأ في الاتصال بالشبكة',
+    'created_via_terminal' => 'تم الإنشاء عبر نقطة البيع',
 ];

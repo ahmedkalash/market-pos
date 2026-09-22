@@ -34,6 +34,14 @@ class InventoryService
      * Uses SELECT ... FOR UPDATE on the variant row to prevent concurrent
      * modifications from causing quantity drift.
      *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Nesting:** If invoked inside an existing transaction (e.g. `SaleInvoiceService::finalize`),
+     *   it seamlessly participates in that outer transaction.
+     * - **Concurrency:** Pessimistically locks (`lockForUpdate()`) the `ProductVariant` row to serialize stock deductions.
+     * - **Rollback:** Throws `InsufficientStockException` if outbound quantity exceeds available stock, aborting the transaction.
+     *
+     * @throws InsufficientStockException If available stock is insufficient.
      * @throws \Throwable
      */
     public function recordMovement(

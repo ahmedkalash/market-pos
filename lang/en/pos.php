@@ -176,4 +176,5 @@ return [
     'operation_failed' => 'Operation failed',
     'unexpected_error' => 'An unexpected error occurred',
     'network_error' => 'Network communication error',
+    'created_via_terminal' => 'Created via POS Terminal',
 ];

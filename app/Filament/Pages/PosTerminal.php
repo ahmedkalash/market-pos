@@ -180,6 +180,10 @@ class PosTerminal extends Page
     /**
      * Process checkout for the active POS cart.
      *
+     * ### Transaction Boundary: Delegated (Boundary: `delegated`)
+     * - **Manages Transaction:** Delegated to `PosCheckoutService::checkout()`.
+     * - **Exception Handling:** Catches all exceptions, sends user notification toast, and halts Livewire execution via `$this->halt(true)`.
+     *
      * @param array<int, array{
      *     variant_id: int,
      *     qty: float|int,
@@ -256,6 +260,10 @@ class PosTerminal extends Page
     // todo: review
     /**
      * Put the active POS cart on hold as a draft invoice.
+     *
+     * ### Transaction Boundary: Delegated (Boundary: `delegated`)
+     * - **Manages Transaction:** Delegated to `PosCheckoutService::holdCart()`.
+     * - **Exception Handling:** Catches all exceptions, sends user notification toast, and halts Livewire execution via `$this->halt(true)`.
      *
      * @param array<int, array{
      *     variant_id: int,
