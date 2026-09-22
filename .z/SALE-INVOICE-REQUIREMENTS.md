@@ -3,8 +3,6 @@ Sale Invoice — Requirements Specification
 Overview
 --------
 
-This document captures the functional and acceptance requirements for the Filament "Create Invoice" page (SaleInvoices). It is written so a developer or QA engineer can reproduce the page without reading the current implementation. The spec emphasizes POS/terminal constraints: low latency interactions, Livewire server-side state with Alpine.js client-side responsiveness, numeric/currency correctness, and robust validation.
-
 Files to inspect (implementation reference)
 
 - app\Filament\Resources\SaleInvoices\\*
@@ -18,23 +16,32 @@ Files to inspect (implementation reference)
 - Customer selection (optional) + inline Customer creation: name, mobile, email, adress. Persist to invoice.customer_id.
 - barcode/search input
 - POS terminal user/employee display (readonly).
+-
 
 1.2 Cart / Invoice Items
 Each line must expose the following fields and labels:
 
+* [done] Cancel / Clear cart (confirmation required).
+
+- [done] Add item (button), Remove item (trash icon on each line
 - Price type (select): retail | wholesale — required. Default = retail. Changing price type updates unit price and min quantity constraints.
+
   - `issue: The minimum quantity constraint is applied however it is being  silently without any disclaimers or info so we need to display a line or something on tha cart item that is displayed when the price type is changed to wholesale that say the minimum allowed quantity for wholesale price is X quantity. show we show Min-allowed quantity message if qty < minAllowedForPriceType (display inline error)?`
   - `action: currently if the price type does not allow disc, it is shown in the disc modal, but we need to make it clear with zero click from the user, what do you suggest? red line idicator, or disable disc btn with tooltip or something else`
 - Quantity (numeric, editable) — required. Shows UOM. For wholesale, quantity must meet minWholesaleQty (see validation).
+
   - `action: make sure validations happens on both front and backend`
 - Unit price (currency, readonly)
+
   - `Q: if a disc hass been applied should we dispaly both orignal price and unit price after disc and display the orignal price as '~~123~~', which will add more usablity and clearty to the user . what do you think? will it be easy to implement?`
 - Subtotal before discount (readonly) = unit price × qty (no per-item discounts applied yet).
+
   - `Q: do we need to dispaly it,how we are going to do it? if there is an applied disc will we display it price as '~~123~~'? will it be better? will it be easy to implement?`
 - --------- unit disc modal ---------------
 - breakdowns.
 - Discount type (select): fixed | percentage (per unit).
 - Unit discount value (numeric): interpret as currency when discount type=fixed, or percent when percentage. Show appropriate prefix/suffix (currency symbol / %). **Constrain based on maxUnitDiscount**.
+
   - `action: make sure validations happens on both front and backend`
 - Total item discount (readonly) = unitDiscount × qty.
 - `action: we need to display the 'line total after disc' in that unit disc modal breakdowns so the use has all related info in one place, what do you think about it, will it be easy to implement?`
@@ -76,18 +83,42 @@ Each line must expose the following fields and labels:
 - Shipping cost.
 - Grand total: final amount due = Items subtotal − items discounts − invoice-level discount + extras total + shipping.
 
---------------------------------prevous items are done -----------------------------
+#### ----------------------prevous items are done ----------
+
+---
+
+
+
+
 
 1.7 Actions
 
 - [todo] Save as draft (persists invoice with status=draft).
-- Finalize (checkout)/ Save & Print (persists as finalized, triggers print/receipt).
-  - [todo] checkout modal
-  - ![alt text](.z/assets/20260914_202919_image.png)
-- [done] Cancel / Clear cart (confirmation required).
-- [done] Add item (button), Remove item (trash icon on each line
+- Print finalized, draft invoices.
+- [todo] checkout modal
+  ---------------------
+  - - select paymoent mothod
+    - display total amount
+    - print invoice checkbox (check by defut)
+    - cashair helper
 
-2.3 Error messaging & flows
+      - tender/Change amount when pay in cash that auto calc remaining (Cash Received, tender, Change)
+    - ![alt text](assets/20260914_202919_image.png)
+    - ![alt text](image-4.png)
+- [todo] order placed modal
+  - do we need such thing, what we will display in it, what is the purpose of it, what is the user flow after that modal, please clarify
+  -![img.png](img.png)
+
+
+-[ ] pagination
+  - fix pagination ui,
+  - new pages items are add/merged after the current items
+  - auto fetch or infinite scroll
+
+
+
+
+  2.3 Error messaging & flows
 
 - Inline errors near fields; global error summary near Save button for blocking issues.
 - All monetary calculations use Decimal arithmetic (no float) to the configured scale (default 2).

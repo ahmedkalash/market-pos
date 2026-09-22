@@ -177,4 +177,7 @@ return [
     'unexpected_error' => 'حدث خطأ غير متوقع',
     'network_error' => 'حدث خطأ في الاتصال بالشبكة',
     'created_via_terminal' => 'تم الإنشاء عبر نقطة البيع',
+    'hold_cart' => 'تعليق السلة',
+    'hold_cart_tooltip' => 'حفظ السلة الحالية كفاتورة مسودة وإفراغ الصندوق (F8)',
+    'draft_invoice_created' => 'تم إنشاء فاتورة مسودة رقم :number',
 ];

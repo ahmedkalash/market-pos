@@ -305,16 +305,22 @@ class PosTerminal extends Page
             $cartItems = array_map(fn (array $item): CartItemDTO => CartItemDTO::fromArray($item), $cartData);
             $metaDto = CheckoutMetaDataDTO::fromArray($metaData);
 
-            PosCheckoutService::make()->holdCart($cartItems, $metaDto);
+            $invoice = PosCheckoutService::make()->holdCart($cartItems, $metaDto);
 
             Notification::make()
                 ->success()
                 ->title(__('pos.cart_held_success'))
+                ->body(__('pos.draft_invoice_created', ['number' => $invoice->invoice_number]))
                 ->send();
 
-            $this->dispatch('cart-held-successful');
+            $this->dispatch('cart-held-successful', [
+                'invoice_number' => $invoice->invoice_number,
+                'total' => (float) $invoice->total_amount,
+            ]);
 
         } catch (Throwable $e) {
+            Log::error('POS Hold Cart Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
             $errorMessage = $e instanceof ValidationException
                 ? $e->validator->errors()->first()
                 : $e->getMessage();

@@ -200,6 +200,15 @@
                             <i class="ph ph-plus-minus font-bold text-lg group-hover:scale-110 transition-transform"></i>
                             <span x-show="extraItems.length > 0" class="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-danger-500 text-[9px] font-bold text-white ring-2 ring-white"></span>
                         </button>
+                        <button type="button"
+                                @click="holdCartAction()"
+                                :disabled="cart.length === 0 || isProcessing || hasInvalidCartItems"
+                                :class="(cart.length === 0 || isProcessing || hasInvalidCartItems) ? 'opacity-40 cursor-not-allowed' : 'hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 text-gray-500'"
+                                class="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 transition-all shadow-sm group"
+                                :title="hasInvalidCartItems ? '{{ __('pos.resolve_cart_issues') }}' : '{{ __('pos.hold_cart_tooltip') }}'">
+                            <i class="ph ph-pause font-bold text-lg group-hover:scale-110 transition-transform" x-show="!isProcessing"></i>
+                            <i class="ph ph-spinner animate-spin text-sm" x-show="isProcessing" x-cloak></i>
+                        </button>
                         <button @click="confirmClearCart()"
                                 :disabled="cart.length === 0"
                                 :class="cart.length === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:text-danger-600 hover:bg-danger-50 hover:border-danger-200'"
@@ -504,12 +513,38 @@
                         {{ $products->links() }}
                     </div>
 
-                    <!-- Pay Now -->
-                    <div class="flex items-center gap-6 ms-auto">
+                    <!-- Payment Method & Pay Now -->
+                    <div class="flex items-center gap-4 ms-auto">
+                        <!-- Payment Method Dropdown -->
+                        <div class="flex flex-col text-start">
+                            <label for="posPaymentMethod" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{{ __('sale_invoice.payment_method') }}</label>
+                            <div class="relative">
+                                <select id="posPaymentMethod"
+                                        x-model="paymentMethod"
+                                        class="bg-gray-50 border border-gray-200 text-gray-800 text-sm font-bold rounded-xl focus:ring-primary-500 focus:border-primary-500 block py-2.5 ps-3 pe-8 appearance-none transition-colors shadow-sm cursor-pointer hover:border-gray-300">
+                                    <option value="cash">{{ __('sale_invoice.payment_method_cash') }}</option>
+                                    <option value="card">{{ __('sale_invoice.payment_method_card') }}</option>
+                                    <option value="split">{{ __('sale_invoice.payment_method_split') }}</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2.5 text-gray-500">
+                                    <i class="ph ph-caret-down text-xs font-bold"></i>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="text-end">
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">{{ __('pos.total_payable') }}</p>
                             <p class="text-2xl font-extrabold text-gray-800 leading-none tracking-tight" x-text="currencySymbol + ' ' + cartTotal.toFixed(2)"></p>
                         </div>
+                        <button type="button"
+                                class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                @click="holdCartAction()"
+                                :disabled="cart.length === 0 || isProcessing || hasInvalidCartItems"
+                                :title="hasInvalidCartItems ? '{{ __('pos.resolve_cart_issues') }}' : '{{ __('pos.hold_cart_tooltip') }}'">
+                            <i class="ph ph-pause-circle text-xl" x-show="!isProcessing"></i>
+                            <i class="ph ph-spinner animate-spin text-xl" x-show="isProcessing" x-cloak></i>
+                            <span>{{ __('pos.hold_cart') }}</span>
+                        </button>
                         <button class="bg-primary-600 hover:bg-primary-700 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                                 @click="processPayment()"
                                 :disabled="cart.length === 0 || isProcessing || hasInvalidCartItems"
@@ -738,11 +773,14 @@
                                 <button @click="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="ph ph-x text-lg"></i></button>
                             </div>
                             <div class="p-4 space-y-4">
-                                <div x-show="modalData.error" x-text="modalData.error" class="text-xs font-bold text-danger-600 bg-danger-50 p-2 rounded-lg mb-3" style="display: none;"></div>
+                                <div x-show="modalData.error" class="p-3 bg-danger-50 text-danger-600 text-xs font-bold rounded-lg border border-danger-100 flex items-start gap-2" style="display: none;">
+                                    <i class="ph ph-warning-circle text-base shrink-0"></i>
+                                    <span x-text="modalData.error"></span>
+                                </div>
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
                                         <label class="text-xs font-bold text-gray-500 uppercase">{{ __('pos.shipping_destination') }}</label>
-                                        <button type="button" @click="showNewDestinationForm = !showNewDestinationForm; modalData.error = ''" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors">
+                                        <button type="button" @click="showNewDestinationForm = !showNewDestinationForm; modalData.clearErrors();" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors">
                                             <i class="ph ph-plus text-sm"></i>
                                             <span x-text="showNewDestinationForm ? '{{ __('pos.cancel') }}' : '{{ __('pos.new_destination') }}'"></span>
                                         </button>
@@ -751,17 +789,46 @@
                                     <!-- Inline New Destination Form -->
                                     <div x-show="showNewDestinationForm" x-transition class="p-3 mb-3 bg-primary-50/60 border border-primary-200 rounded-xl space-y-2.5">
                                         <div class="text-xs font-bold text-primary-800">{{ __('pos.create_shipping_destination') }}</div>
-                                        <div x-show="modalData.error" x-text="modalData.error" class="text-xs font-bold text-danger-600 bg-danger-50 p-2 rounded-lg border border-danger-200"></div>
                                         <div>
                                             <label class="text-[10px] font-bold text-gray-500 uppercase">{{ __('pos.destination_name') }}</label>
-                                            <input type="text" x-model="newDestination.name" placeholder="{{ __('pos.enter_destination_name') }}" class="mt-1 w-full border border-gray-200 rounded-lg p-2 text-xs font-medium outline-none focus:border-primary-500 bg-white">
+                                            <input type="text"
+                                                   x-model="newDestination.name"
+                                                   @input="modalData.clearFieldError('name')"
+                                                   placeholder="{{ __('pos.enter_destination_name') }}"
+                                                   class="mt-1 w-full border rounded-lg p-2 text-xs font-medium outline-none transition-colors bg-white"
+                                                   :class="modalData.hasError('name') ? 'border-danger-400 bg-danger-50/20 focus:border-danger-500' : 'border-gray-200 focus:border-primary-500'">
+                                            <template x-if="modalData.hasError('name')">
+                                                <div class="mt-1 space-y-0.5">
+                                                    <template x-for="(errMsg, i) in modalData.getAllErrors('name')" :key="i">
+                                                        <p class="text-[10px] text-danger-600 font-bold flex items-center gap-1">
+                                                            <i class="ph ph-warning-circle"></i>
+                                                            <span x-text="errMsg"></span>
+                                                        </p>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
                                         <div>
                                             <label class="text-[10px] font-bold text-gray-500 uppercase">{{ __('pos.default_cost') }}</label>
                                             <div class="relative mt-1 flex items-center">
                                                 <span class="absolute start-2.5 text-gray-400 text-xs font-bold" x-text="currencySymbol"></span>
-                                                <input type="number" x-model.number="newDestination.cost" class="w-full border border-gray-200 rounded-lg py-1.5 ps-7 pe-2 text-xs font-medium outline-none focus:border-primary-500 bg-white" min="0">
+                                                <input type="text"
+                                                       inputmode="decimal"
+                                                       x-model="newDestination.cost"
+                                                       @input="modalData.clearFieldError('cost')"
+                                                       class="w-full border rounded-lg py-1.5 ps-7 pe-2 text-xs font-medium outline-none transition-colors bg-white"
+                                                       :class="modalData.hasError('cost') ? 'border-danger-400 bg-danger-50/20 focus:border-danger-500' : 'border-gray-200 focus:border-primary-500'">
                                             </div>
+                                            <template x-if="modalData.hasError('cost')">
+                                                <div class="mt-1 space-y-0.5">
+                                                    <template x-for="(errMsg, i) in modalData.getAllErrors('cost')" :key="i">
+                                                        <p class="text-[10px] text-danger-600 font-bold flex items-center gap-1">
+                                                            <i class="ph ph-warning-circle"></i>
+                                                            <span x-text="errMsg"></span>
+                                                        </p>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
                                         <button type="button" @click="saveNewDestination()" :disabled="!newDestination.name" class="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs font-bold shadow-sm transition-colors">
                                             {{ __('pos.save_destination') }}
@@ -925,19 +992,79 @@
                             <div class="p-5 space-y-3.5">
                                 <div>
                                     <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">{{ __('pos.customer_name') }} <span class="text-danger-500">*</span></label>
-                                    <input type="text" x-model="modalData.customer.name" placeholder="{{ __('pos.customer_name') }}" class="mt-1 w-full border border-gray-200 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white">
+                                    <input type="text"
+                                           x-model="modalData.customer.name"
+                                           @input="modalData.clearFieldError('name')"
+                                           placeholder="{{ __('pos.customer_name') }}"
+                                           class="mt-1 w-full border rounded-xl p-2.5 text-sm font-medium outline-none transition-colors bg-white"
+                                           :class="modalData.hasError('name') ? 'border-danger-400 bg-danger-50/20 focus:border-danger-500' : 'border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500'">
+                                    <template x-if="modalData.hasError('name')">
+                                        <div class="mt-1 space-y-0.5">
+                                            <template x-for="(errMsg, i) in modalData.getAllErrors('name')" :key="i">
+                                                <p class="text-[10px] text-danger-600 font-bold flex items-center gap-1">
+                                                    <i class="ph ph-warning-circle"></i>
+                                                    <span x-text="errMsg"></span>
+                                                </p>
+                                            </template>
+                                        </div>
+                                    </template>
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">{{ __('pos.customer_phone') }}</label>
-                                    <input type="text" x-model="modalData.customer.phone" placeholder="{{ __('pos.customer_phone') }}" class="mt-1 w-full border border-gray-200 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white">
+                                    <input type="text"
+                                           x-model="modalData.customer.phone"
+                                           @input="modalData.clearFieldError('phone')"
+                                           placeholder="{{ __('pos.customer_phone') }}"
+                                           class="mt-1 w-full border rounded-xl p-2.5 text-sm font-medium outline-none transition-colors bg-white"
+                                           :class="modalData.hasError('phone') ? 'border-danger-400 bg-danger-50/20 focus:border-danger-500' : 'border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500'">
+                                    <template x-if="modalData.hasError('phone')">
+                                        <div class="mt-1 space-y-0.5">
+                                            <template x-for="(errMsg, i) in modalData.getAllErrors('phone')" :key="i">
+                                                <p class="text-[10px] text-danger-600 font-bold flex items-center gap-1">
+                                                    <i class="ph ph-warning-circle"></i>
+                                                    <span x-text="errMsg"></span>
+                                                </p>
+                                            </template>
+                                        </div>
+                                    </template>
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">{{ __('pos.customer_email') }}</label>
-                                    <input type="email" x-model="modalData.customer.email" placeholder="{{ __('pos.customer_email') }}" class="mt-1 w-full border border-gray-200 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white">
+                                    <input type="email"
+                                           x-model="modalData.customer.email"
+                                           @input="modalData.clearFieldError('email')"
+                                           placeholder="{{ __('pos.customer_email') }}"
+                                           class="mt-1 w-full border rounded-xl p-2.5 text-sm font-medium outline-none transition-colors bg-white"
+                                           :class="modalData.hasError('email') ? 'border-danger-400 bg-danger-50/20 focus:border-danger-500' : 'border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500'">
+                                    <template x-if="modalData.hasError('email')">
+                                        <div class="mt-1 space-y-0.5">
+                                            <template x-for="(errMsg, i) in modalData.getAllErrors('email')" :key="i">
+                                                <p class="text-[10px] text-danger-600 font-bold flex items-center gap-1">
+                                                    <i class="ph ph-warning-circle"></i>
+                                                    <span x-text="errMsg"></span>
+                                                </p>
+                                            </template>
+                                        </div>
+                                    </template>
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">{{ __('pos.customer_address') }}</label>
-                                    <textarea x-model="modalData.customer.address" rows="2" placeholder="{{ __('pos.customer_address') }}" class="mt-1 w-full border border-gray-200 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white"></textarea>
+                                    <textarea x-model="modalData.customer.address"
+                                              @input="modalData.clearFieldError('address')"
+                                              rows="2"
+                                              placeholder="{{ __('pos.customer_address') }}"
+                                              class="mt-1 w-full border rounded-xl p-2.5 text-sm font-medium outline-none transition-colors bg-white"
+                                              :class="modalData.hasError('address') ? 'border-danger-400 bg-danger-50/20 focus:border-danger-500' : 'border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500'"></textarea>
+                                    <template x-if="modalData.hasError('address')">
+                                        <div class="mt-1 space-y-0.5">
+                                            <template x-for="(errMsg, i) in modalData.getAllErrors('address')" :key="i">
+                                                <p class="text-[10px] text-danger-600 font-bold flex items-center gap-1">
+                                                    <i class="ph ph-warning-circle"></i>
+                                                    <span x-text="errMsg"></span>
+                                                </p>
+                                            </template>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
 
@@ -958,6 +1085,118 @@
 
     <!-- Alpine.js POS State Engine -->
     <script>
+        /**
+         * Standardized client handler for Livewire RpcResponse envelopes.
+         */
+        const RpcHandler = {
+            /**
+             * Applies an RpcResponse envelope to the given Alpine modal state.
+             *
+             * @param {Object} response - The RpcResponse from Livewire
+             * @param {Object} targetState - The modalData object
+             * @param {Array<string>|null} knownFields - List of input field names present in the active form.
+             *                                            If provided, errors matching these fields will ONLY
+             *                                            appear under their inputs, not in the top banner.
+             *                                            Unmapped errors (like store_id) will appear in targetState.error.
+             * @returns {boolean} True if operation succeeded, false otherwise
+             */
+            handle(response, targetState, knownFields = null) {
+                if (!response || typeof response !== 'object') {
+                    targetState.error = '{{ __('pos.unexpected_error') }}';
+                    targetState.errors = {};
+                    return false;
+                }
+
+                if (response.success) {
+                    targetState.error = '';
+                    targetState.errors = {};
+                    return true;
+                }
+
+                targetState.errors = response.errors || {};
+
+                if (Array.isArray(knownFields) && knownFields.length > 0) {
+                    const unmappedField = Object.keys(targetState.errors).find(f => !knownFields.includes(f));
+
+                    if (unmappedField && Array.isArray(targetState.errors[unmappedField]) && targetState.errors[unmappedField].length > 0) {
+                        targetState.error = targetState.errors[unmappedField][0];
+                    } else if (Object.keys(targetState.errors).length === 0) {
+                        targetState.error = response.message || '{{ __('pos.operation_failed') }}';
+                    } else {
+                        targetState.error = '';
+                    }
+                } else {
+                    targetState.error = response.message
+                        || this.getFirstError(response.errors)
+                        || '{{ __('pos.operation_failed') }}';
+                }
+
+                return false;
+            },
+
+            /**
+             * Extracts the first error message from the dictionary.
+             */
+            getFirstError(errors) {
+                if (!errors || typeof errors !== 'object') return null;
+                for (const field of Object.keys(errors)) {
+                    if (Array.isArray(errors[field]) && errors[field].length > 0) {
+                        return errors[field][0];
+                    }
+                }
+                return null;
+            }
+        };
+
+        /**
+         * Helper to construct a fresh modalData state object with reactive error helpers.
+         */
+        function createDefaultModalData() {
+            return {
+                name: '',
+                index: null,
+                type: 'fixed',
+                amount: 0,
+                unitPrice: 0,
+                isNegotiable: false,
+                minAllowed: 0,
+                minAllowedTotal: 0,
+                subtotal: 0,
+                error: '',
+                errors: {},
+                destinationId: '',
+                cost: 0,
+                address: '',
+                customer: { name: '', phone: '', email: '', address: '' },
+                newItem: { presetId: '', name: '', amount: 0, action_type: 'addition', notes: '' },
+                items: [],
+
+                hasError(field) {
+                    return Boolean(this.errors && this.errors[field] && this.errors[field].length > 0);
+                },
+                getError(field) {
+                    return this.hasError(field) ? this.errors[field][0] : '';
+                },
+                getAllErrors(field) {
+                    return this.hasError(field) ? this.errors[field] : [];
+                },
+                clearFieldError(field) {
+                    if (this.errors && this.errors[field]) {
+                        const updated = { ...this.errors };
+                        delete updated[field];
+                        this.errors = updated;
+                        if (Object.keys(this.errors).length === 0) {
+                            this.error = '';
+                        }
+                    }
+                },
+                clearErrors() {
+                    this.error = '';
+                    this.errors = {};
+                }
+            };
+        }
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('posSystem', () => ({
                 // Server-owned reference data — read directly from $wire (auto-synced by Livewire)
@@ -999,6 +1238,9 @@
 
                 cart: [],
 
+                // Payment Method (Explicitly chosen in UI, defaults to cash)
+                paymentMethod: 'cash',
+
                 // Customer selection
                 selectedCustomerId: null,
                 selectedCustomerName: '{{ __('pos.walk_in') }}',
@@ -1017,24 +1259,7 @@
                 activeModal: null, // 'itemDiscount', 'extraItems', 'globalDiscount', 'shipping', 'confirmClearCart', 'newCustomer'
                 showNewDestinationForm: false,
                 newDestination: { name: '', cost: 0 },
-                modalData: {
-                    name: '',
-                    index: null,
-                    type: 'fixed',
-                    amount: 0,
-                    unitPrice: 0,
-                    isNegotiable: false,
-                    minAllowed: 0,
-                    minAllowedTotal: 0,
-                    subtotal: 0,
-                    error: '',
-                    destinationId: '',
-                    cost: 0,
-                    address: '',
-                    customer: { name: '', phone: '', email: '', address: '' },
-                    newItem: { presetId: '', name: '', amount: 0, action_type: 'addition', notes: '' },
-                    items: [],
-                },
+                modalData: createDefaultModalData(),
 
                 init() {
                     window.addEventListener('keydown', (e) => {
@@ -1064,14 +1289,18 @@
                             e.preventDefault();
                             this.confirmClearCart();
                         }
+                        if (e.key === 'F8') {
+                            e.preventDefault();
+                            this.holdCartAction();
+                        }
                     });
 
                     // Listen to Livewire checkout events
                     window.addEventListener('checkout-successful', (e) => {
                         this.handleCheckoutSuccess(e.detail[0] || e.detail);
                     });
-                    window.addEventListener('cart-held-successful', () => {
-                        this.handleCartHeld();
+                    window.addEventListener('cart-held-successful', (e) => {
+                        this.handleCartHeld(e.detail ? (e.detail[0] || e.detail) : null);
                     });
                 },
 
@@ -1159,25 +1388,31 @@
                 openCustomerModal() {
                     this.openModal('newCustomer', {
                         customer: { name: '', phone: '', email: '', address: '' },
-                        error: ''
+                        error: '',
+                        errors: {}
                     });
                 },
 
                 async saveNewCustomer() {
                     if (!this.modalData.customer?.name) return;
                     this.isSavingCustomer = true;
-                    this.modalData.error = '';
+                    this.modalData.clearErrors();
+
                     try {
-                        const created = await this.$wire.createCustomer(this.modalData.customer);
-                        if (created && created.id) {
-                            this.customers.push(created);
-                            this.selectCustomer(created);
-                            this.closeModal();
-                        } else {
-                            this.modalData.error = '{{ __('pos.create_customer') }} failed.';
+                        const response = await this.$wire.createCustomer(this.modalData.customer);
+
+                        if (!RpcHandler.handle(response, this.modalData, ['name', 'phone', 'email', 'address'])) {
+                            return;
                         }
+
+                        const created = response.data;
+                        this.customers.push(created);
+                        this.selectCustomer(created);
+                        this.closeModal();
+
                     } catch (e) {
-                        this.modalData.error = e?.message || 'Failed to create customer';
+                        console.error('RPC Network Failure', e);
+                        this.modalData.error = e?.message || '{{ __('pos.network_error') }}';
                     } finally {
                         this.isSavingCustomer = false;
                     }
@@ -1267,24 +1502,7 @@
 
                 // Modal helpers
                 defaultModalData() {
-                    return {
-                        name: '',
-                        index: null,
-                        type: 'fixed',
-                        amount: 0,
-                        unitPrice: 0,
-                        isNegotiable: false,
-                        minAllowed: 0,
-                        minAllowedTotal: 0,
-                        subtotal: 0,
-                        error: '',
-                        destinationId: '',
-                        cost: 0,
-                        address: '',
-                        customer: { name: '', phone: '', email: '', address: '' },
-                        newItem: { presetId: '', name: '', amount: 0, action_type: 'addition', notes: '' },
-                        items: [],
-                    };
+                    return createDefaultModalData();
                 },
                 openModal(name, data = {}) {
                     this.activeModal = name;
@@ -1423,11 +1641,13 @@
                         destinationId: this.shippingDestinationId ? String(this.shippingDestinationId) : '',
                         cost: this.shippingCost,
                         address: this.shippingAddress || '',
+                        error: '',
+                        errors: {}
                     });
                 },
                 onShippingDestinationChange(val) {
                     this.modalData.destinationId = val ? String(val) : '';
-                    this.modalData.error = '';
+                    this.modalData.clearErrors();
                     if (val) {
                         const d = this.shippingDestinations.find(x => String(x.id) === String(val));
                         if (d) {
@@ -1441,40 +1661,44 @@
                 },
                 async saveNewDestination() {
                     if (!this.newDestination.name) return;
-                    this.modalData.error = '';
+                    this.modalData.clearErrors();
 
-                    if (!this.storeId) {
-                        this.modalData.error = '{{ __('pos.select_store_first') }}';
-                        return;
-                    }
+                    // todo uncomment this after manual checking the rpc response is working fine
+                    {{--if (!this.storeId) {--}}
+                    {{--    this.modalData.error = '{{ __('pos.select_store_first') }}';--}}
+                    {{--    return;--}}
+                    {{--}--}}
 
                     try {
-                        const created = await this.$wire.createShippingDestination({
+                        const costVal = (this.newDestination.cost !== '' && this.newDestination.cost !== null && this.newDestination.cost !== undefined)
+                            ? this.newDestination.cost
+                            : null;
+
+                        const response = await this.$wire.createShippingDestination({
                             name: this.newDestination.name,
-                            cost: parseFloat(this.newDestination.cost) || 0,
+                            cost: costVal,
                         });
-                        if (created && created.id) {
-                            this.shippingDestinations.push(created);
-                            this.modalData.destinationId = String(created.id);
-                            this.modalData.cost = parseFloat(created.cost) || 0;
-                            this.modalData.address = created.name;
-                            this.modalData.error = '';
-                            this.newDestination = { name: '', cost: 0 };
-                            this.showNewDestinationForm = false;
-                            this.$nextTick(() => {
-                                const selectEl = document.getElementById('shippingDestinationSelect');
-                                if (selectEl) selectEl.value = String(created.id);
-                            });
-                        } else {
-                            this.modalData.error = '{{ __('pos.select_store_first') }}';
+                        console.log('RPC Response for createShippingDestination:', response);
+                        if (!RpcHandler.handle(response, this.modalData, ['name', 'cost'])) {
+                            return;
                         }
+
+                        const created = response.data;
+                        this.shippingDestinations.push(created);
+                        this.modalData.destinationId = String(created.id);
+                        this.modalData.cost = parseFloat(created.cost) || 0;
+                        this.modalData.address = created.name;
+                        this.newDestination = { name: '', cost: 0 };
+                        this.showNewDestinationForm = false;
+
+                        this.$nextTick(() => {
+                            const selectEl = document.getElementById('shippingDestinationSelect');
+                            if (selectEl) selectEl.value = String(created.id);
+                        });
+
                     } catch (e) {
-                        console.error('Failed to create shipping destination', e);
-                        const errorMsg = e?.data?.errors?.store_id?.[0]
-                            || e?.data?.message
-                            || e?.message
-                            || '{{ __('pos.select_store_first') }}';
-                        this.modalData.error = errorMsg;
+                        console.error('RPC Network Failure', e);
+                        this.modalData.error = e?.message || '{{ __('pos.network_error') }}';
                     }
                 },
                 applyShipping() {
@@ -1510,7 +1734,6 @@
                 processPayment() {
                     if (this.cart.length === 0 || this.isProcessing || this.hasInvalidCartItems) return;
                     this.isProcessing = true;
-
                     // Format cart for backend matching the expected structure
                     const formattedCart = this.cart.map(item => ({
                         variant_id: item.variant_id,
@@ -1523,6 +1746,7 @@
                     this.$wire.processCheckout(formattedCart, {
                         customer_id: this.selectedCustomerId || null,
                         store_id: this.storeId || null,
+                        payment_method: this.paymentMethod,
                         global_discount_type: this.globalDiscountType,
                         global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
                         shipping_destination_id: this.shippingDestinationId || null,
@@ -1535,7 +1759,7 @@
                 },
 
                 holdCartAction() {
-                    if (this.cart.length === 0 || this.isProcessing) return;
+                    if (this.cart.length === 0 || this.isProcessing || this.hasInvalidCartItems) return;
                     this.isProcessing = true;
 
                     const formattedCart = this.cart.map(item => ({
@@ -1549,6 +1773,7 @@
                     this.$wire.holdCart(formattedCart, {
                         customer_id: this.selectedCustomerId || null,
                         store_id: this.storeId || null,
+                        payment_method: this.paymentMethod,
                         global_discount_type: this.globalDiscountType,
                         global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
                         shipping_destination_id: this.shippingDestinationId || null,
@@ -1572,8 +1797,9 @@
                     this.focusSearch();
                 },
 
-                handleCartHeld() {
+                handleCartHeld(detail) {
                     this.clearCart();
+                    this.focusSearch();
                 }
             }));
         });

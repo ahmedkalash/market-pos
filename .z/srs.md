@@ -448,7 +448,20 @@ settings
         - [ ] **Persist Theme State:** Ensure the theme toggle interacts correctly with the user's existing Filament theme preference or Alpine.js local storage state.
         - [ ] **Test Across Roles:** Verify the POS terminal looks correct in both modes for both Company Admin and Store Manager accounts.
 
---- current
+- [ ] what payment methods should we include and how we will each method
+- [ ] multi payment method 
+  - ![img_1.png](img_1.png)
+- [ ] payment methods reference and enhancements
+  - when paying by non cash method, we need some ref for trust or record keeping or something that can verify that hte client has paid
+    - and allow us to track the payment  and the reference for it in the future
+    - like card number, bank account num, mobile wallet num or transaction id, or something like that or all of them
+- [ ] open/close shift/register
+- [ ] sound playing
+- [ ] full keyboard shortcuts
+
+
+
+## current
 - [] review `app/Services/PosCheckoutService.php`
 - [] review blade, js, alpine
 - [] front end validations

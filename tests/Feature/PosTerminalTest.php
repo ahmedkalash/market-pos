@@ -2254,4 +2254,192 @@ class PosTerminalTest extends TestCase
         $this->assertEquals('Created via POS Terminal', $invoice->notes);
         $this->assertEquals(__('pos.created_via_terminal'), $invoice->notes);
     }
+
+    public function test_hold_cart_dispatches_cart_held_successful_event_with_invoice_number_and_total(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 3, // 3 * 20.00 = 60.00
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful', function (string $eventName, array $params): bool {
+                $payload = is_array($params[0] ?? null) ? $params[0] : $params;
+
+                return ! empty($payload['invoice_number']) && (float) $payload['total'] === 60.0;
+            })
+            ->assertNotified();
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+        $this->assertSame(SaleInvoiceStatus::Draft, $invoice->status);
+        $this->assertSame(60.0, (float) $invoice->total_amount);
+    }
+
+    public function test_hold_cart_with_customer_shipping_and_extra_items_persists_all_draft_relations(): void
+    {
+        $this->actingAs($this->user);
+
+        $customer = Customer::factory()->create([
+            'company_id' => $this->company->id,
+            'is_active' => true,
+        ]);
+
+        $destination = ShippingDestination::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'name' => 'Express Courier',
+            'cost' => 15.00,
+        ]);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2, // 2 * 20 = 40.00
+                'discount_type' => 'fixed',
+                'discount_amount' => 2.00, // 2 * 2 = 4.00 discount => 36.00
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'customer_id' => $customer->id,
+                'payment_method' => 'cash',
+                'global_discount_type' => 'fixed',
+                'global_discount_amount' => 6.00, // 36 - 6 = 30.00
+                'shipping_destination_id' => $destination->id,
+                'shipping_cost' => 15.00, // 30 + 15 = 45.00
+                'shipping_address' => '123 Main St, Nasr City',
+                'extra_items' => [
+                    [
+                        'name' => 'Packaging Service',
+                        'action_type' => 'addition',
+                        'amount' => 10.00,
+                    ],
+                    [
+                        'name' => 'Promo Voucher',
+                        'action_type' => 'subtraction',
+                        'amount' => 5.00,
+                    ],
+                ],
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+        $this->assertSame(SaleInvoiceStatus::Draft, $invoice->status);
+        $this->assertSame($customer->id, $invoice->customer_id);
+        $this->assertSame($destination->id, $invoice->shipping_destination_id);
+        $this->assertSame(15.0, (float) $invoice->shipping_cost);
+        $this->assertSame('123 Main St, Nasr City', $invoice->shipping_address);
+        $this->assertSame(40.0, (float) $invoice->subtotal);
+        $this->assertSame(6.0, (float) $invoice->global_discount_amount);
+        $this->assertSame(5.0, (float) $invoice->extra_items_total);
+        $this->assertSame(50.0, (float) $invoice->total_amount); // 30 (items post discount) + 5 (net extras) + 15 (shipping) = 50.00
+        $this->assertCount(1, $invoice->items);
+        $this->assertCount(2, $invoice->extraItems);
+
+        // Assert stock remains completely untouched on hold
+        $this->variant->refresh();
+        $this->assertSame(50.0, (float) $this->variant->quantity);
+    }
+
+    public function test_hold_cart_does_not_deduct_inventory_stock_or_create_inventory_movements(): void
+    {
+        $this->actingAs($this->user);
+
+        $initialStock = (float) $this->variant->quantity;
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 10,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+        $this->assertSame(SaleInvoiceStatus::Draft, $invoice->status);
+
+        // Verify stock is identical
+        $this->variant->refresh();
+        $this->assertSame($initialStock, (float) $this->variant->quantity);
+
+        // Verify NO inventory movement was logged
+        $movementsCount = InventoryMovement::where('reference_type', SaleInvoice::class)
+            ->where('reference_id', $invoice->id)
+            ->count();
+        $this->assertSame(0, $movementsCount);
+    }
+
+    public function test_hold_cart_fails_when_wholesale_threshold_is_not_met(): void
+    {
+        $this->actingAs($this->user);
+
+        $product = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+        ]);
+
+        $uom = UnitOfMeasure::where('company_id', $this->company->id)->first();
+
+        $wholesaleVariant = ProductVariant::factory()->withStock(50)->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $product->id,
+            'uom_id' => $uom->id,
+            'retail_price' => 25.00,
+            'wholesale_price' => 18.00,
+            'wholesale_enabled' => true,
+            'wholesale_is_price_negotiable' => true,
+            'min_wholesale_price' => 15.00,
+            'wholesale_qty_threshold' => 10, // Requires min 10
+        ]);
+
+        $cart = [
+            [
+                'variant_id' => $wholesaleVariant->id,
+                'name' => $wholesaleVariant->full_qualified_name,
+                'price_type' => 'wholesale',
+                'qty' => 3, // Only 3, below threshold of 10
+            ],
+        ];
+
+        try {
+            Livewire::test(PosTerminal::class)
+                ->call('holdCart', $cart, [
+                    'payment_method' => 'cash',
+                    'shipping_cost' => 0,
+                ]);
+            $this->fail('Expected Halt exception was not thrown.');
+        } catch (Halt $e) {
+            // Expected Halt exception was thrown
+        }
+
+        $this->assertDatabaseMissing('sale_invoices', [
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft,
+        ]);
+    }
 }

@@ -177,4 +177,7 @@ return [
     'unexpected_error' => 'An unexpected error occurred',
     'network_error' => 'Network communication error',
     'created_via_terminal' => 'Created via POS Terminal',
+    'hold_cart' => 'Hold Cart',
+    'hold_cart_tooltip' => 'Save active cart as a draft invoice and clear register (F8)',
+    'draft_invoice_created' => 'Draft invoice #:number created',
 ];
