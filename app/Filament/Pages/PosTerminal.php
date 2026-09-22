@@ -176,7 +176,6 @@ class PosTerminal extends Page
         ];
     }
 
-    // todo: review
     /**
      * Process checkout for the active POS cart.
      *
@@ -257,7 +256,6 @@ class PosTerminal extends Page
 
     }
 
-    // todo: review
     /**
      * Put the active POS cart on hold as a draft invoice.
      *
