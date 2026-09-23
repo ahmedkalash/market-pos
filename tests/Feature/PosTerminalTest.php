@@ -2442,4 +2442,68 @@ class PosTerminalTest extends TestCase
             'status' => SaleInvoiceStatus::Draft,
         ]);
     }
+
+    public function test_checkout_dispatches_event_with_invoice_id_for_thermal_printing(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('checkout-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->latest()->first();
+        $this->assertNotNull($invoice);
+
+        $dispatch = collect(data_get($component->effects, 'dispatches'))->firstWhere('name', 'checkout-successful');
+        $this->assertNotNull($dispatch);
+        $payload = $dispatch['params'][0] ?? $dispatch['params'];
+        $this->assertEquals($invoice->id, $payload['invoice_id']);
+        $this->assertEquals($invoice->invoice_number, $payload['invoice_number']);
+        $this->assertEquals((float) $invoice->total_amount, (float) $payload['total']);
+    }
+
+    public function test_hold_cart_dispatches_event_with_invoice_id(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)
+            ->where('status', SaleInvoiceStatus::Draft)
+            ->latest()
+            ->first();
+        $this->assertNotNull($invoice);
+
+        $dispatch = collect(data_get($component->effects, 'dispatches'))->firstWhere('name', 'cart-held-successful');
+        $this->assertNotNull($dispatch);
+        $payload = $dispatch['params'][0] ?? $dispatch['params'];
+        $this->assertEquals($invoice->id, $payload['invoice_id']);
+        $this->assertEquals($invoice->invoice_number, $payload['invoice_number']);
+    }
 }

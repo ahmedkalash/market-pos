@@ -234,6 +234,7 @@ class PosTerminal extends Page
 
             // Tell Alpine to reset the cart and show success modal
             $this->dispatch('checkout-successful', [
+                'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
                 'total' => (float) $invoice->total_amount,
             ]);
@@ -314,6 +315,7 @@ class PosTerminal extends Page
                 ->send();
 
             $this->dispatch('cart-held-successful', [
+                'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
                 'total' => (float) $invoice->total_amount,
             ]);

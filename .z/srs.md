@@ -455,6 +455,15 @@ settings
   - when paying by non cash method, we need some ref for trust or record keeping or something that can verify that hte client has paid
     - and allow us to track the payment  and the reference for it in the future
     - like card number, bank account num, mobile wallet num or transaction id, or something like that or all of them
+- [ ] **Advanced Payment Methods & Tracking :** 
+      Allow company admins/store managers to create and manage various payment methods (Bank Transfer, Vodafone Cash, Credit Card, etc.).
+      - Require a unique **Receiver Identifier** for each method (e.g., last 4 digits of a bank account, mobile wallet number) to track exactly where funds are deposited.
+      - Require a **Source Identifier** (e.g., buyer's bank account, mobile wallet, or card number) for transactions to verify the sender.
+      - Add comprehensive payment tracking and auditing to ensure every single payment succeeds and prevent fraud/theft.
+      - Alter the invoices and receipts to display the received payment account identifier (where the money was deposited).
+
+
+
 - [ ] open/close shift/register
 - [ ] sound playing
 - [ ] full keyboard shortcuts
@@ -462,7 +471,6 @@ settings
 
 
 ## current
-- [] review `app/Services/PosCheckoutService.php`
 - [] review blade, js, alpine
 - [] front end validations
 - [] fix checkout error `"error":"خصم الفاتورة الإجمالي يخفض إجمالي المبلغ عن الحد الأدنى المسموح به."`
@@ -599,12 +607,6 @@ Feature
       - **Audit Trail:** Any change made to an already finalized invoice (even if non-financial) must be immutably logged in the `finalized_invoices_audit_logs` table with a clear description of what was modified.
       - **Financial Consistency:** If a financial field like `shipping_cost` is edited, the system MUST trigger `recalculateTotals()` on the invoice so that `total_amount` stays consistent with the updated data.
 
-- [ ] **Advanced Payment Methods & Tracking (V2):** 
-      Allow company admins/store managers to create and manage various payment methods (Bank Transfer, Vodafone Cash, Credit Card, etc.).
-      - Require a unique **Receiver Identifier** for each method (e.g., last 4 digits of a bank account, mobile wallet number) to track exactly where funds are deposited.
-      - Require a **Source Identifier** (e.g., buyer's bank account, mobile wallet, or card number) for transactions to verify the sender.
-      - Add comprehensive payment tracking and auditing to ensure every single payment succeeds and prevent fraud/theft.
-      - Alter the invoices and receipts to display the received payment account identifier (where the money was deposited).
 
 - [ ] Smart Reconciliation (Stocktake Mode)
     The Idea: Periodic counting is a nightmare for staff.

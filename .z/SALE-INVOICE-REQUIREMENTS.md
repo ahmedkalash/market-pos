@@ -87,43 +87,36 @@ Each line must expose the following fields and labels:
 
 ---
 
-
-
-
-
 1.7 Actions
 
-- [todo] Save as draft (persists invoice with status=draft).
-- Print finalized, draft invoices.
+- ~~[done] Save as draft (persists invoice with status=draft).~~
+- ~~[done] Print finalized invoices,~~
+- [todo] Print draft invoices.
 - [todo] checkout modal
   ---------------------
-  - - select paymoent mothod
-    - display total amount
-    - print invoice checkbox (check by defut)
+
+
+  - - ~~[done] select payment mothod~~
+    - ~~[done] display total amount~~
+    - ~~[done] print invoice checkbox (check by defut)~~
     - cashair helper
 
-      - tender/Change amount when pay in cash that auto calc remaining (Cash Received, tender, Change)
-    - ![alt text](assets/20260914_202919_image.png)
-    - ![alt text](image-4.png)
-- [todo] order placed modal
-  - do we need such thing, what we will display in it, what is the purpose of it, what is the user flow after that modal, please clarify
-  -![img.png](img.png)
+      - ~~[done] tender/Change amount when pay in cash that auto calc remaining (Cash Received, tender, Change)~~
+    - ![](assets/20260923_035042_image.png)
 
 
 -[ ] pagination
-  - fix pagination ui,
-  - new pages items are add/merged after the current items
-  - auto fetch or infinite scroll
 
+- fix pagination ui,
+- new pages items are add/merged after the current items
+- auto fetch or infinite scroll
 
-
-
-  2.3 Error messaging & flows
+2.3 Error messaging & flows
 
 - Inline errors near fields; global error summary near Save button for blocking issues.
 - All monetary calculations use Decimal arithmetic (no float) to the configured scale (default 2).
 
-7. Permissions & roles:
+1. Permissions & roles:
 
    1. apply same as [SaleInvoiceForm](app\Filament\Resources\SaleInvoices\Schemas\SaleInvoiceForm.phphttps:/)
 
