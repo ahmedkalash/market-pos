@@ -159,16 +159,20 @@ sequenceDiagram
 
 ---
 
-### 5. Multi-Tenant & Multi-Store Data Isolation
-* **Security Model:**
-  * **Store-Level Cashiers:** Strictly bound to their designated store (`$user->store_id`). Catalog searches, stock checks, customer lists, and invoice queries are automatically scoped to prevent cross-store data leakage.
-  * **Company-Level Administrators:** Possess multi-store oversight with dynamic store switching on the POS terminal.
-  * **Defensive Boundary Checks:** During checkout, the service layer verifies that every variant being sold belongs strictly to the store context of the invoice:
-    ```php
-    if ((int) $variant->product->store_id !== (int) $invoice->store_id) {
-        throw new \RuntimeException("Variant [{$variant->id}] does not belong to store [{$invoice->store_id}].");
-    }
-    ```
+### 5. Multi-Tenant & Multi-Store Data Isolation (Global Scopes)
+In a multi-store SaaS application, relying on developers to manually type `->where('company_id', ...)` on every query is dangerous—human error means someone will eventually forget it, causing cross-tenant data leaks.
+
+To make isolation automatic and foolproof, models implement two lightweight Eloquent traits:
+* [`BelongsToCompany`](app/Models/Concerns/BelongsToCompany.php): Automatically attaches a global query scope appending `WHERE company_id = ?` to all reads, and auto-stamps `company_id` during model creation from the authenticated session.
+* [`BelongsToStore`](app/Models/Concerns/BelongsToStore.php): Implements smart, two-tier scoping:
+  * **Store-Level Staff (Cashiers):** Automatically locked to their assigned `store_id` for catalog searches, inventory balances, and sales documents.
+  * **Company-Level Managers:** Automatically bypass the store filter so they can oversee, report across, and switch between branches from the POS terminal.
+* **Defensive Boundary Checks:** During checkout, the service layer double-checks that every product variant belongs strictly to the store context of the invoice:
+  ```php
+  if ((int) $variant->product->store_id !== (int) $invoice->store_id) {
+      throw new \RuntimeException("Variant [{$variant->id}] does not belong to store [{$invoice->store_id}].");
+  }
+  ```
 
 ---
 
