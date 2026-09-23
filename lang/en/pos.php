@@ -197,4 +197,11 @@ return [
     'place_order' => 'Place Order',
     'exact_amount' => 'Exact',
     'tendered_insufficient' => 'Amount tendered is less than total due',
+    'showing' => 'Showing',
+    'to' => 'to',
+    'of' => 'of',
+    'products' => 'products',
+    'loading_products' => 'Loading products...',
+    'previous' => 'Previous',
+    'next' => 'Next',
 ];

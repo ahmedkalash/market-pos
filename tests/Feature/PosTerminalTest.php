@@ -2506,4 +2506,86 @@ class PosTerminalTest extends TestCase
         $this->assertEquals($invoice->id, $payload['invoice_id']);
         $this->assertEquals($invoice->invoice_number, $payload['invoice_number']);
     }
+
+    public function test_catalog_paginates_products_with_per_page_setting(): void
+    {
+        $this->actingAs($this->user);
+
+        // Variant from setUp is 1. Let's create 6 more variants in the same store
+        $product = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'category_id' => $this->variant->product->category_id,
+        ]);
+
+        for ($i = 0; $i < 6; $i++) {
+            ProductVariant::factory()->create([
+                'product_id' => $product->id,
+                'store_id' => $this->store->id,
+                'is_active' => true,
+            ]);
+        }
+
+        $component = Livewire::test(PosTerminal::class);
+
+        $viewData = $component->viewData('products');
+        $this->assertNotNull($viewData);
+        $this->assertEquals(3, $viewData->perPage());
+        $this->assertEquals(7, $viewData->total());
+        $this->assertCount(3, $viewData->items());
+        $this->assertTrue($viewData->hasPages());
+        $this->assertEquals(1, $viewData->currentPage());
+    }
+
+    public function test_catalog_navigates_between_pages(): void
+    {
+        $this->actingAs($this->user);
+
+        $product = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'category_id' => $this->variant->product->category_id,
+        ]);
+
+        for ($i = 0; $i < 6; $i++) {
+            ProductVariant::factory()->create([
+                'product_id' => $product->id,
+                'store_id' => $this->store->id,
+                'is_active' => true,
+            ]);
+        }
+
+        Livewire::test(PosTerminal::class)
+            ->call('nextPage')
+            ->assertSet('paginators.page', 2)
+            ->call('previousPage')
+            ->assertSet('paginators.page', 1);
+    }
+
+    public function test_search_and_category_filters_reset_page(): void
+    {
+        $this->actingAs($this->user);
+
+        $product = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'category_id' => $this->variant->product->category_id,
+        ]);
+
+        for ($i = 0; $i < 6; $i++) {
+            ProductVariant::factory()->create([
+                'product_id' => $product->id,
+                'store_id' => $this->store->id,
+                'is_active' => true,
+            ]);
+        }
+
+        Livewire::test(PosTerminal::class)
+            ->set('paginators.page', 2)
+            ->set('search', 'something')
+            ->assertSet('paginators.page', 1)
+            ->set('paginators.page', 2)
+            ->set('categoryId', 999)
+            ->assertSet('paginators.page', 1);
+    }
 }

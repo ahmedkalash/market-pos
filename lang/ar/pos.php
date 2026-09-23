@@ -197,4 +197,11 @@ return [
     'place_order' => 'تأكيد الدفع',
     'exact_amount' => 'المبلغ بالضبط',
     'tendered_insufficient' => 'المبلغ المستلم أقل من الإجمالي المطلوب',
+    'showing' => 'عرض',
+    'to' => 'إلى',
+    'of' => 'من أصل',
+    'products' => 'منتج',
+    'loading_products' => 'جارٍ تحميل المنتجات...',
+    'previous' => 'السابق',
+    'next' => 'التالي',
 ];
