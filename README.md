@@ -44,8 +44,7 @@ sequenceDiagram
 
     CheckoutService->>DB: BEGIN TRANSACTION (DB::transaction)
     
-    rect rgb(240, 248, 255)
-    note right of CheckoutService: Phase 1: Draft Creation & Concurrency Lock
+    Note over CheckoutService,DB: ── Phase 1: Draft Creation & Concurrency Lock ──
     CheckoutService->>DB: SequenceService::next() -> Generate Invoice Number
     CheckoutService->>DB: Insert SaleInvoice (Status: Draft)
     CheckoutService->>DB: SELECT * FROM product_variants WHERE id IN (...) FOR UPDATE
@@ -56,10 +55,8 @@ sequenceDiagram
         Livewire-->>Alpine: $this->halt(true) + Danger Notification
     end
     CheckoutService->>DB: Insert SaleInvoiceItem & SaleInvoiceExtraItem rows
-    end
 
-    rect rgb(255, 250, 240)
-    note right of SaleService: Phase 2: Authoritative Financial Recalculation
+    Note over SaleService,DB: ── Phase 2: Authoritative Financial Recalculation ──
     CheckoutService->>SaleService: recalculateTotals(SaleInvoice)
     activate SaleService
     SaleService->>DB: Lock Invoice & Items (lockForUpdate)
@@ -68,10 +65,8 @@ sequenceDiagram
     SaleService->>SaleService: Prorate Global Discounts & Verify Minimum Total
     SaleService->>DB: Update SaleInvoice with Authoritative Financial Totals
     deactivate SaleService
-    end
 
-    rect rgb(245, 255, 245)
-    note right of SaleService: Phase 3: Immutable Stock Deduction & Finalization
+    Note over SaleService,DB: ── Phase 3: Immutable Stock Deduction & Finalization ──
     CheckoutService->>SaleService: finalize(SaleInvoice)
     activate SaleService
     SaleService->>DB: Lock SaleInvoice FOR UPDATE
@@ -90,7 +85,6 @@ sequenceDiagram
 
     SaleService->>DB: Update SaleInvoice (Status: Finalized, finalized_at: now())
     deactivate SaleService
-    end
 
     CheckoutService->>DB: COMMIT TRANSACTION
     CheckoutService-->>Livewire: Return fresh finalized SaleInvoice
