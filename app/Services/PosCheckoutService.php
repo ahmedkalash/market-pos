@@ -38,7 +38,7 @@ class PosCheckoutService
      * - **Rollback:** Any validation failure (e.g. stock deficit, wholesale threshold, discount violation)
      *   triggers an immediate rollback, leaving zero uncommitted or orphan records in the database.
      * - **Orchestration:** Atomically wraps:
-     *   1. `createDraftInvoice()` (draft invoice header, lines, and extra items)
+     *   1. `saveDraftInvoice()` (draft invoice header, lines, and extra items)
      *   2. `SaleInvoiceService::recalculateTotals()` (prices, discounts, line totals)
      *   3. `SaleInvoiceService::finalize()` (inventory stock deduction & finalized status)
      *
@@ -223,6 +223,10 @@ class PosCheckoutService
     /**
      * Retrieve held/draft invoices for a given store, optionally filtered by search query.
      *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. This is a read-only query method.
+     * - **Side Effects:** None. Performs zero database writes.
+     *
      * @return array<int, array<string, mixed>>
      */
     public function getHeldInvoices(int $storeId, ?string $search = null, int $limit = 50): array
@@ -292,6 +296,10 @@ class PosCheckoutService
 
     /**
      * Fetch a held/draft invoice and format it for complete rehydration into the POS Alpine.js cart.
+     *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. This is a read-only query method.
+     * - **Side Effects:** None. Evaluates live stock levels to set advisory stock warnings without writes.
      *
      * @return array<string, mixed>
      *
@@ -380,6 +388,13 @@ class PosCheckoutService
 
     /**
      * Discard (delete) an unneeded draft sale invoice and its cascaded relations.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **Concurrency:** Pessimistically locks the target draft invoice (`lockForUpdate()`) to prevent race conditions.
+     * - **Rollback:** Automatically rolls back on query, lock, or deletion failure.
+     * - **Cascade:** Database foreign keys automatically cascade deletion to items and extra items.
+     *
      *
      * @throws Throwable
      */

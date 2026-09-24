@@ -23,7 +23,6 @@ use BackedEnum;
 use Exception;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as BaseCollection;
@@ -118,6 +117,12 @@ class PosTerminal extends Page
         $this->refreshStoreContext();
     }
 
+    /**
+     * Switch active store context for company-level users.
+     *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. Pure context and authorization query.
+     */
     public function changeStore(int $newStoreId): void
     {
         try {
@@ -199,7 +204,8 @@ class PosTerminal extends Page
      *
      * ### Transaction Boundary: Delegated (Boundary: `delegated`)
      * - **Manages Transaction:** Delegated to `PosCheckoutService::checkout()`.
-     * - **Exception Handling:** Catches all exceptions, sends user notification toast, and halts Livewire execution via `$this->halt(true)`.
+     * - **Exception Handling:** Catches all exceptions, dispatches a localized danger notification toast,
+     *   and returns gracefully to preserve the Livewire component state without crashing.
      *
      * @param array<int, array{
      *     variant_id: int,
@@ -225,8 +231,6 @@ class PosTerminal extends Page
      *         notes?: string|null
      *     }>
      * } $metaData Checkout metadata payload from Alpine.js client.
-     *
-     * @throws Halt
      */
     public function processCheckout(array $cartData, array $metaData): void
     {
@@ -284,7 +288,8 @@ class PosTerminal extends Page
      *
      * ### Transaction Boundary: Delegated (Boundary: `delegated`)
      * - **Manages Transaction:** Delegated to `PosCheckoutService::holdCart()`.
-     * - **Exception Handling:** Catches all exceptions, sends user notification toast, and halts Livewire execution via `$this->halt(true)`.
+     * - **Exception Handling:** Catches all exceptions, dispatches a localized danger notification toast,
+     *   and returns gracefully to keep the cashier cart active for corrections.
      *
      * @param array<int, array{
      *     variant_id: int,
@@ -312,8 +317,6 @@ class PosTerminal extends Page
      *         notes?: string|null
      *     }>
      * } $metaData Checkout metadata payload from Alpine.js client.
-     *
-     * @throws Halt
      */
     public function holdCart(array $cartData, array $metaData): void
     {
@@ -369,6 +372,9 @@ class PosTerminal extends Page
     /**
      * Validate the cart and checkout metadata payload before DTO transformation.
      *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. Pure validation helper.
+     *
      * @param  array<int, mixed>  $cartData
      * @param  array<string, mixed>  $metaData
      *
@@ -415,6 +421,18 @@ class PosTerminal extends Page
         )->validate();
     }
 
+    /**
+     * Create a new shipping destination for the active store via RPC.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **State Isolation:** Public component property (`$this->shippingDestinationList`) is only
+     *   mutated after the database transaction successfully commits.
+     * - **Return:** Standardized RpcResponse envelope.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     public function createShippingDestination(array $data): array
     {
 
@@ -480,6 +498,18 @@ class PosTerminal extends Page
         }
     }
 
+    /**
+     * Create a new customer for the active company via RPC.
+     *
+     * ### Transaction Boundary: Self-Contained (Boundary: `self`)
+     * - **Manages Transaction:** Yes (`DB::transaction`).
+     * - **State Isolation:** Public component property (`$this->customerList`) is only
+     *   mutated after the database transaction successfully commits.
+     * - **Return:** Standardized RpcResponse envelope.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     public function createCustomer(array $data): array
     {
         $validator = validator($data, [
@@ -537,6 +567,14 @@ class PosTerminal extends Page
         }
     }
 
+    /**
+     * Retrieve active extra item presets for the current store.
+     *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. Read-only database query.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public function getExtraItemPresets(): array
     {
         if (! $this->storeId) {
@@ -569,6 +607,10 @@ class PosTerminal extends Page
 
     /**
      * Retrieve held/draft invoices for the active store via RPC, optionally filtered by search.
+     *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. Read query delegated to `PosCheckoutService::getHeldInvoices()`.
+     * - **Side Effects:** Updates `$this->heldCartsCount` when search term is empty.
      */
     public function getHeldInvoices(?string $search = null): array
     {
@@ -610,6 +652,9 @@ class PosTerminal extends Page
 
     /**
      * Fetch a held/draft invoice and format it for Alpine.js cart rehydration.
+     *
+     * ### Transaction Boundary: None (Read-Only)
+     * - **Manages Transaction:** No. Read query delegated to `PosCheckoutService::getDraftInvoiceForRehydration()`.
      */
     public function fetchDraftInvoice(int $invoiceId): array
     {
@@ -646,7 +691,14 @@ class PosTerminal extends Page
     }
 
     /**
-     * Discard (delete) a held/draft invoice from the database.
+     * Discard (delete) a held/draft invoice from the database via RPC.
+     *
+     * ### Transaction Boundary: Delegated (Boundary: `delegated`)
+     * - **Manages Transaction:** Delegated to `PosCheckoutService::discardDraftInvoice()`.
+     * - **State Sync:** Refreshes `$this->heldCartsCount` only after successful database deletion.
+     * - **Return:** Standardized RpcResponse envelope.
+     *
+     * @return array<string, mixed>
      */
     public function discardDraftInvoice(int $invoiceId): array
     {
