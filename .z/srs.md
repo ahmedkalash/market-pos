@@ -448,26 +448,27 @@ settings
         - [ ] **Persist Theme State:** Ensure the theme toggle interacts correctly with the user's existing Filament theme preference or Alpine.js local storage state.
         - [ ] **Test Across Roles:** Verify the POS terminal looks correct in both modes for both Company Admin and Store Manager accounts.
 
-- [ ] what payment methods should we include and how we will each method
-- [ ] multi payment method 
-  - ![img_1.png](img_1.png)
-- [ ] payment methods reference and enhancements
-  - when paying by non cash method, we need some ref for trust or record keeping or something that can verify that hte client has paid
-    - and allow us to track the payment  and the reference for it in the future
-    - like card number, bank account num, mobile wallet num or transaction id, or something like that or all of them
-- [ ] **Advanced Payment Methods & Tracking :** 
-      Allow company admins/store managers to create and manage various payment methods (Bank Transfer, Vodafone Cash, Credit Card, etc.).
-      - Require a unique **Receiver Identifier** for each method (e.g., last 4 digits of a bank account, mobile wallet number) to track exactly where funds are deposited.
-      - Require a **Source Identifier** (e.g., buyer's bank account, mobile wallet, or card number) for transactions to verify the sender.
-      - Add comprehensive payment tracking and auditing to ensure every single payment succeeds and prevent fraud/theft.
-      - Alter the invoices and receipts to display the received payment account identifier (where the money was deposited).
+- [ ] Payment `.z\Advanced Payment Methods, Split Payments & Anti-Fraud Tracking implementation_plan.md`
+  - [ ] what payment methods should we include and how we will each method
+  - [ ] multi payment method 
+    - ![img_1.png](img_1.png)
+  - [ ] payment methods reference and enhancements
+    - when paying by non cash method, we need some ref for trust or record keeping or something that can verify that hte client has paid
+      - and allow us to track the payment  and the reference for it in the future
+      - like card number, bank account num, mobile wallet num or transaction id, or something like that or all of them
+  - [ ] **Advanced Payment Methods & Tracking :** 
+        Allow company admins/store managers to create and manage various payment methods (Bank Transfer, Vodafone Cash, Credit Card, etc.).
+        - Require a unique **Receiver Identifier** for each method (e.g., last 4 digits of a bank account, mobile wallet number) to track exactly where funds are deposited.
+        - Require a **Source Identifier** (e.g., buyer's bank account, mobile wallet, or card number) for transactions to verify the sender.
+        - Add comprehensive payment tracking and auditing to ensure every single payment succeeds and prevent fraud/theft.
+        - Alter the invoices and receipts to display the received payment account identifier (where the money was deposited).
 
 
 
 - [ ] open/close shift/register
 - [ ] sound playing
 - [ ] full keyboard shortcuts
-
+- [ ] fix issues in `.z\pos_terminal_comprehensive_audit.md`
 
 
 ## current
