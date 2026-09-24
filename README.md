@@ -20,6 +20,38 @@ In enterprise retail, **a race condition is not a software glitch—it is real m
 
 ---
 
+## 📋 Engineering Methodology & Planning Documentation
+
+Markt POS is engineered using a documentation-first, spec-driven lifecycle modeled after cross-functional product and engineering teams. Rather than managing scope casually, all system requirements, architectural decisions, and sprint delivery logs are maintained in dedicated planning artifacts:
+
+```
+┌─────────────────────────┐       ┌─────────────────────────┐       ┌─────────────────────────┐
+│  Requirements & Scope   │  ──▶  │  Architecture & ADRs    │  ──▶  │  Milestone & Sprint     │
+│   (.z/srs.md)           │       │   (.z/implementation_*) │       │   Execution (.z/done.md)│
+└─────────────────────────┘       └─────────────────────────┘       └─────────────────────────┘
+                                                                                 │
+                                                                                 ▼
+┌─────────────────────────┐       ┌─────────────────────────┐       ┌─────────────────────────┐
+│ Production Deployment   │  ◀──  │ Automated Verification  │  ◀──  │ Service-Layer TDD       │
+│ & Boundary Verification │       │ (37+ Test Suites)       │       │ & Concurrency Hardening │
+└─────────────────────────┘       └─────────────────────────┘       └─────────────────────────┘
+```
+
+### 🗂️ Planning & Project Management References
+
+* **[Software Requirements Specification (.z/srs.md)](.z/srs.md):** Complete functional & non-functional requirements specification covering 13 core business modules (`AUTH`, `STR`, `PRD`, `INV`, `PO`, `POS`, `PAY`, `DISC`, `REC`, `RET`, `TAX`, `SAAS`), system non-functional constraints (`NFR-001..009`), multi-tenancy models, and Arabic/Egyptian market localization standards.
+* **[Sprint Milestones & Execution Log (.z/done.md)](.z/done.md):** Granular delivery audit log tracking completed deliverables across Phases 1 through 4.1 (Core Foundation, Product Matrices, Procurement, and Invoicing), along with active POS terminal hardening sprints.
+* **[Architecture Decision Records (ADRs) & Technical RFCs (.z/)](.z/):**
+  * **[Advanced Payment Methods, Split Payments & Anti-Fraud Architecture](.z/Advanced%20Payment%20Methods,%20Split%20Payments%20&%20Anti-Fraud%20Tracking%20implementation_plan.md):** Specification for multi-tender checkout, receiver/sender verification tokens, and deposit reconciliation.
+  * **[Direct Receiving & Procurement Implementation](.z/implementation_plan_direct_receiving.md):** Architecture for atomic vendor invoice processing and instant inventory replenishment.
+  * **[Livewire State Overwrite & DOM Freezing Investigation](.z/Livewire%20State%20Overwritein%20Filament%20Forms/Investigation%20Livewire%20State%20Overwrite%20in%20Filament%20Forms.md):** Technical post-mortem on preventing DOM morphing race conditions during rapid asynchronous inputs.
+  * **[Bulk Import Stock Notifications & Queue Buffering](.z/stock_notifications_for_bulk_importing.md):** Digest design to prevent notification storming during bulk operations.
+
+> [!NOTE]
+> For the complete requirements traceability matrix, milestone checklists, and sprint delivery status, please inspect the respective planning files linked above.
+
+---
+
 ## 🏗️ Architecture & Concurrency Pipeline
 
 The Point of Sale checkout flow is fully atomic. Below is the precise, production-verified sequence of how a transaction is processed, locked, validated, and finalized without race conditions:
@@ -186,13 +218,14 @@ To make isolation automatic and foolproof, models implement two lightweight Eloq
 
 ## 🧪 Comprehensive Test Suite (Testing as First-Class Code)
 
-Reliability in financial systems is proven by tests, not assumptions. The test suite features **over 2,500 lines of rigorous test coverage** in the POS module alone, testing every edge case and failure condition:
+Reliability in financial systems is proven by tests, not assumptions. The test suite features **over 37 dedicated test suites** across unit and feature layers, testing every edge case and failure condition:
 
 * ✅ **Concurrency & Stock Validation:** `test_checkout_fails_on_insufficient_stock`, `test_checkout_rejected_when_requested_quantity_exceeds_available_stock`
 * ✅ **Financial Constraints:** `test_checkout_fails_when_item_discount_exceeds_minimum_allowed_price`, `test_checkout_fails_when_global_discount_exceeds_minimum_allowed_total`
 * ✅ **Wholesale Rules:** `test_wholesale_checkout_rejected_when_quantity_is_below_wholesale_threshold`, `test_wholesale_checkout_succeeds_when_quantity_meets_or_exceeds_threshold`
 * ✅ **Multi-Tenant Boundaries:** `test_shipping_destinations_and_presets_are_isolated_by_store_for_company_level_user`, `test_search_respects_store_isolation_even_if_barcode_matches_another_store`
 * ✅ **Fast-Path Search:** `test_search_by_exact_barcode_returns_matching_variant_via_fast_path`, `test_search_bypasses_barcode_fast_path_for_non_numeric_text`
+* ✅ **Refund Precision:** `RecalculateReturnTotalsTest`, `SaleReturnServiceConcurrencyTest`
 
 Run the test suite:
 ```bash
@@ -208,7 +241,7 @@ Company (Tenant)
   │
   ├── Stores (Retail Locations)
   │     ├── Users (Cashiers, Managers, Store Admins)
-  │     ├── ProductCategories (Hierarchical Categories)
+  │     ├── ProductCategory (Hierarchical Categories)
   │     ├── Products
   │     │     └── ProductVariants
   │     │           ├── ProductBarcodes (Indexed 1:N Barcodes)
@@ -275,10 +308,11 @@ composer run dev
 
 This project demonstrates proficiency across the complete modern Laravel & Web application engineering spectrum:
 
-1. **Defensive Programming:** Fail-fast validation, database rollbacks, explicit typing via PHP 8.3 constructor promotion, and domain-specific DTOs (`CartItemDTO`, `CheckoutMetaDataDTO`).
-2. **Framework Mastery:** Deep understanding of Laravel 12 internals, Filament v4 lifecycle hooks (`$this->halt(true)` for transaction rollback), Livewire 3 reactivity, and Alpine.js state management.
-3. **Database Performance:** Index tuning, eliminating N+1 queries through aggressive eager loading (`with()`), and B-Tree barcode optimizations.
-4. **Clean Code & SOLID:** UI layers are strictly for presentation; complex calculations, sequential numbers, and stock ledgers live in single-responsibility Service classes (`SaleInvoiceService`, `InventoryService`, `PosCheckoutService`).
+1. **Spec-Driven Development:** Working directly from formal specifications, tracking task completions via sprint logs, and maintaining clear functional boundaries.
+2. **Defensive Programming:** Fail-fast validation, database rollbacks, explicit typing via PHP 8.3 constructor promotion, and domain-specific DTOs (`CartItemDTO`, `CheckoutMetaDataDTO`).
+3. **Framework Mastery:** Deep understanding of Laravel 12 internals, Filament v4 lifecycle hooks (`$this->halt(true)` for transaction rollback), Livewire 3 reactivity, and Alpine.js state management.
+4. **Database Performance:** Index tuning, eliminating N+1 queries through aggressive eager loading (`with()`), and B-Tree barcode optimizations.
+5. **Clean Code & SOLID:** UI layers are strictly for presentation; complex calculations, sequential numbers, and stock ledgers live in single-responsibility Service classes (`SaleInvoiceService`, `InventoryService`, `PosCheckoutService`).
 
 ---
 
