@@ -500,9 +500,6 @@
                     </div>
                 </div>
 
-                <!-- Catalog Pagination Footer -->
-                {{ $products->links('filament.pages.pos.catalog-pagination') }}
-
                 <!-- Cart Issues Warning Banner (Blocks checkout if wholesale min or stock is violated) -->
                 <div x-show="hasInvalidCartItems" class="px-6 py-2.5 bg-danger-50 border-t border-danger-200 text-danger-700 text-xs font-bold flex items-center justify-between shadow-inner" x-cloak>
                     <div class="flex items-center gap-2">
@@ -511,27 +508,15 @@
                     </div>
                 </div>
 
-                <!-- Bottom Pay Bar -->
-                <div class="bg-white border-t border-gray-200 shrink-0 flex items-center justify-end px-6 py-4 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.02)]">
-                    <!-- Payment Method & Pay Now -->
-                    <div class="flex items-center gap-4">
-                        <!-- Payment Method Dropdown -->
-                        <div class="flex flex-col text-start">
-                            <label for="posPaymentMethod" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{{ __('sale_invoice.payment_method') }}</label>
-                            <div class="relative">
-                                <select id="posPaymentMethod"
-                                        x-model="paymentMethod"
-                                        class="bg-gray-50 border border-gray-200 text-gray-800 text-sm font-bold rounded-xl focus:ring-primary-500 focus:border-primary-500 block py-2.5 ps-3 pe-8 appearance-none transition-colors shadow-sm cursor-pointer hover:border-gray-300">
-                                    <option value="cash">{{ __('sale_invoice.payment_method_cash') }}</option>
-                                    <option value="card">{{ __('sale_invoice.payment_method_card') }}</option>
-                                    <option value="split">{{ __('sale_invoice.payment_method_split') }}</option>
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2.5 text-gray-500">
-                                    <i class="ph ph-caret-down text-xs font-bold"></i>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Bottom Pay Bar & Catalog Pagination -->
+                <div class="relative bg-white border-t border-gray-200 shrink-0 flex items-center justify-between px-6 py-3.5 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.02)]">
+                    <!-- Start: Catalog Pagination & Results Counter -->
+                    <div class="flex items-center">
+                        {{ $products->links('filament.pages.pos.catalog-pagination') }}
+                    </div>
 
+                    <!-- End: Checkout Settlement Actions -->
+                    <div class="flex items-center gap-4">
                         <div class="text-end">
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">{{ __('pos.total_payable') }}</p>
                             <p class="text-2xl font-extrabold text-gray-800 leading-none tracking-tight" x-text="currencySymbol + ' ' + cartTotal.toFixed(2)"></p>

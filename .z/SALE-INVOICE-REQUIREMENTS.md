@@ -95,42 +95,41 @@ Each line must expose the following fields and labels:
 - [todo] checkout modal
   ---------------------
 
-
   - - ~~[done] select payment mothod~~
     - ~~[done] display total amount~~
     - ~~[done] print invoice checkbox (check by defut)~~
-    - cashair helper
+    - ~~cashair helper~~
 
       - ~~[done] tender/Change amount when pay in cash that auto calc remaining (Cash Received, tender, Change)~~
-    - ![](assets/20260923_035042_image.png)
+
+~~-[done] pagination~~
+
+- ~~fix pagination ui~~,
+- ~~new pages items are add/merged after the current items~~
+- ~~auto fetch or infinite scroll~~
 
 
--[ ] pagination
+##### draft/holed invioces
 
-- fix pagination ui,
-- new pages items are add/merged after the current items
-- auto fetch or infinite scroll
+- we need to display the draft/holed invioces so the cashair can refetch them and contuie his work
+- we nee something that allow the cashair to mark or title drafted inv so he know which one to fetch
+- draft inv printing option
 
-2.3 Error messaging & flows
 
-- Inline errors near fields; global error summary near Save button for blocking issues.
-- All monetary calculations use Decimal arithmetic (no float) to the configured scale (default 2).
+##### - Lang change in pos
 
-1. Permissions & roles:
 
-   1. apply same as [SaleInvoiceForm](app\Filament\Resources\SaleInvoices\Schemas\SaleInvoiceForm.phphttps:/)
+redisgn the summery breakdown section to be more elegant
+
+
+
+#### - Permissions & roles:
+
+* apply same as [SaleInvoiceForm](app\Filament\Resources\SaleInvoices\Schemas\SaleInvoiceForm.phphttps:/)
+
 
 ---
 
-Design principles:
-
-- Keep UI responsive: avoid full-page round trips. Use Livewire for server-side validation/state and Alpine.js for local fast interactions and client side validation.
-- Local client computations: compute all need computations
-- Validation: immediate client-side validation for every thing with authoritative server-side validation on submit/save.
-- Edge cases & special flows
-
-  - Negative totals: prevent finalizing if grand total < 0.
-  - Max discount enforcement: must prevent discounts that would reduce any product below its minAllowedPrice.
 
 Appendix A: Quick reference formulas
 ------------------------------------
