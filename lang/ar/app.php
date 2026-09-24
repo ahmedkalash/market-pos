@@ -213,6 +213,7 @@ return [
     'search_by_product_placeholder' => 'اكتب للبحث...',
     'finalize' => 'اعتماد',
     'unknown_product' => 'منتج غير معروف',
+    'unknown' => 'غير معروف',
     'success' => 'تم',
     'created_by' => 'تم الإنشاء بواسطة',
     'finalized_by' => 'تم الاعتماد بواسطة',

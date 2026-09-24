@@ -13,6 +13,7 @@ use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductBarcode;
 use App\Models\ProductCategory;
 use App\Models\ProductVariant;
+use App\Models\SaleInvoice;
 use App\Models\ShippingDestination;
 use App\Models\Store;
 use App\Models\User;
@@ -26,6 +27,7 @@ use Filament\Support\Exceptions\Halt;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as BaseCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -61,6 +63,8 @@ class PosTerminal extends Page
     public array $shippingDestinationList = [];
 
     public array $paymentMethodList = [];
+
+    public int $heldCartsCount = 0;
 
     public ?int $perPage = 3;
 
@@ -116,23 +120,37 @@ class PosTerminal extends Page
 
     public function changeStore(int $newStoreId): void
     {
-        if (! $this->user->isCompanyLevel()) {
-            return; // Store-level users cannot switch stores
-        }
-        // Tenant boundary validation: Ensure the store belongs to the user's company
-        $storeExists = Store::query()
-            ->where('id', $newStoreId)
-            ->exists();
-        if (! $storeExists) {
+        try {
+            if (! $this->user->isCompanyLevel()) {
+                return; // Store-level users cannot switch stores
+            }
+            // Tenant boundary validation: Ensure the store belongs to the user's company
+            $storeExists = Store::query()
+                ->where('id', $newStoreId)
+                ->exists();
+            if (! $storeExists) {
+                Notification::make()
+                    ->danger()
+                    ->title(__('pos.store_not_found'))
+                    ->send();
+
+                return;
+            }
+
+            $this->refreshStoreContext($newStoreId);
+        } catch (Throwable $e) {
+            Log::error('POS Change Store Failed', [
+                'new_store_id' => $newStoreId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             Notification::make()
                 ->danger()
-                ->title(__('pos.store_not_found'))
+                ->title(__('pos.store_switch_failed'))
+                ->body($e->getMessage())
                 ->send();
-
-            return;
         }
-
-        $this->refreshStoreContext($newStoreId);
     }
 
     public function updatingSearch(): void
@@ -232,6 +250,10 @@ class PosTerminal extends Page
                 ->title(__('pos.checkout_success'))
                 ->send();
 
+            $this->heldCartsCount = $this->storeId
+                ? SaleInvoice::query()->filterByStore($this->storeId)->draft()->count()
+                : 0;
+
             // Tell Alpine to reset the cart and show success modal
             $this->dispatch('checkout-successful', [
                 'invoice_id' => $invoice->id,
@@ -252,7 +274,7 @@ class PosTerminal extends Page
                 ->body($errorMessage)
                 ->send();
 
-            $this->halt(true);
+            return;
         }
 
     }
@@ -280,6 +302,8 @@ class PosTerminal extends Page
      *     shipping_destination_id?: int|null,
      *     shipping_cost?: float|int|null,
      *     shipping_address?: string|null,
+     *     draft_invoice_id?: int|null,
+     *     hold_reference?: string|null,
      *     extra_items?: array<int, array{
      *         presetId?: string|int|null,
      *         name: string,
@@ -314,9 +338,14 @@ class PosTerminal extends Page
                 ->body(__('pos.draft_invoice_created', ['number' => $invoice->invoice_number]))
                 ->send();
 
+            $this->heldCartsCount = $this->storeId
+                ? SaleInvoice::query()->filterByStore($this->storeId)->draft()->count()
+                : 0;
+
             $this->dispatch('cart-held-successful', [
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
+                'hold_reference' => $invoice->hold_reference,
                 'total' => (float) $invoice->total_amount,
             ]);
 
@@ -333,7 +362,7 @@ class PosTerminal extends Page
                 ->body($errorMessage)
                 ->send();
 
-            $this->halt(true);
+            return;
         }
     }
 
@@ -369,6 +398,8 @@ class PosTerminal extends Page
                 'meta.shipping_destination_id' => ['nullable', 'integer', 'exists:shipping_destinations,id'],
                 'meta.shipping_cost' => ['nullable', 'numeric', 'min:0'],
                 'meta.shipping_address' => ['nullable', 'string', 'max:65535'],
+                'meta.draft_invoice_id' => ['nullable', 'integer', 'exists:sale_invoices,id'],
+                'meta.hold_reference' => ['nullable', 'string', 'max:255'],
                 'meta.extra_items' => ['nullable', 'array'],
                 'meta.extra_items.*.name' => ['required', 'string', 'max:255'],
                 'meta.extra_items.*.amount' => ['required', 'numeric', 'min:0'],
@@ -413,28 +444,40 @@ class PosTerminal extends Page
             $validator->validated()
         );
 
-        $destination = ShippingDestination::create([
-            'company_id' => $this->user->company_id,
-            'store_id' => $validated['store_id'],
-            'name' => $validated['name'],
-            'cost' => (float) $validated['cost'],
-            'is_active' => true,
-        ]);
+        try {
+            $result = DB::transaction(function () use ($validated) {
+                $destination = ShippingDestination::create([
+                    'company_id' => $this->user->company_id,
+                    'store_id' => $validated['store_id'],
+                    'name' => $validated['name'],
+                    'cost' => (float) $validated['cost'],
+                    'is_active' => true,
+                ]);
 
-        $result = [
-            'id' => $destination->id,
-            'name' => $destination->name,
-            'cost' => (float) $destination->cost,
-        ];
+                return [
+                    'id' => $destination->id,
+                    'name' => $destination->name,
+                    'cost' => (float) $destination->cost,
+                ];
+            });
 
-        $this->shippingDestinationList[] = $result;
+            $this->shippingDestinationList[] = $result;
 
-        Notification::make()
-            ->title(__('pos.destination_created_successfully'))
-            ->success()
-            ->send();
+            Notification::make()
+                ->title(__('pos.destination_created_successfully'))
+                ->success()
+                ->send();
 
-        return RpcResponse::success(data: $result);
+            return RpcResponse::success(data: $result);
+        } catch (Throwable $e) {
+            Log::error('POS Create Shipping Destination Failed', [
+                'store_id' => $this->storeId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return RpcResponse::error(message: $e->getMessage());
+        }
     }
 
     public function createCustomer(array $data): array
@@ -455,31 +498,43 @@ class PosTerminal extends Page
             $validator->validated()
         );
 
-        $customer = Customer::create([
-            'company_id' => $this->user->company_id,
-            'name' => $validated['name'],
-            'phone' => $validated['phone'] ?? null,
-            'email' => $validated['email'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'is_active' => true,
-        ]);
+        try {
+            $result = DB::transaction(function () use ($validated) {
+                $customer = Customer::create([
+                    'company_id' => $this->user->company_id,
+                    'name' => $validated['name'],
+                    'phone' => $validated['phone'] ?? null,
+                    'email' => $validated['email'] ?? null,
+                    'address' => $validated['address'] ?? null,
+                    'is_active' => true,
+                ]);
 
-        $result = [
-            'id' => $customer->id,
-            'name' => $customer->name,
-            'phone' => $customer->phone,
-            'email' => $customer->email,
-            'address' => $customer->address,
-        ];
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'phone' => $customer->phone,
+                    'email' => $customer->email,
+                    'address' => $customer->address,
+                ];
+            });
 
-        $this->customerList[] = $result;
+            $this->customerList[] = $result;
 
-        Notification::make()
-            ->title(__('pos.customer_created_successfully'))
-            ->success()
-            ->send();
+            Notification::make()
+                ->title(__('pos.customer_created_successfully'))
+                ->success()
+                ->send();
 
-        return RpcResponse::success(data: $result);
+            return RpcResponse::success(data: $result);
+        } catch (Throwable $e) {
+            Log::error('POS Create Customer Failed', [
+                'company_id' => $this->user->company_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return RpcResponse::error(message: $e->getMessage());
+        }
     }
 
     public function getExtraItemPresets(): array
@@ -488,12 +543,149 @@ class PosTerminal extends Page
             return [];
         }
 
-        return InvoiceExtraItemPreset::query()
-            ->forSaleInvoice()
-            ->active()
-            ->filterByStore($this->storeId)
-            ->get(['id', 'name', 'action_type', 'amount', 'notes'])
-            ->toArray();
+        try {
+            return InvoiceExtraItemPreset::query()
+                ->forSaleInvoice()
+                ->active()
+                ->filterByStore($this->storeId)
+                ->get(['id', 'name', 'action_type', 'amount', 'notes'])
+                ->toArray();
+        } catch (Throwable $e) {
+            Log::error('POS Get Extra Item Presets Failed', [
+                'store_id' => $this->storeId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.extra_item_presets_load_failed'))
+                ->body(__('pos.extra_item_presets_load_failed_hint'))
+                ->send();
+
+            return [];
+        }
+    }
+
+    /**
+     * Retrieve held/draft invoices for the active store via RPC, optionally filtered by search.
+     */
+    public function getHeldInvoices(?string $search = null): array
+    {
+        if (! $this->storeId) {
+            $message = __('pos.select_store_first');
+            Notification::make()
+                ->danger()
+                ->title($message)
+                ->send();
+
+            return RpcResponse::error($message);
+        }
+
+        try {
+            $heldInvoices = PosCheckoutService::make()->getHeldInvoices($this->storeId, $search);
+
+            if (blank($search)) {
+                $this->heldCartsCount = SaleInvoice::query()->filterByStore($this->storeId)->draft()->count();
+            }
+
+            return RpcResponse::success(data: $heldInvoices);
+        } catch (Throwable $e) {
+            Log::error('POS Get Held Invoices Failed', [
+                'store_id' => $this->storeId,
+                'search' => $search,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.held_invoices_load_failed'))
+                ->body($e->getMessage())
+                ->send();
+
+            return RpcResponse::error(message: $e->getMessage());
+        }
+    }
+
+    /**
+     * Fetch a held/draft invoice and format it for Alpine.js cart rehydration.
+     */
+    public function fetchDraftInvoice(int $invoiceId): array
+    {
+        try {
+            if (! $this->storeId) {
+                $message = __('pos.select_store_first');
+                Notification::make()
+                    ->danger()
+                    ->title($message)
+                    ->send();
+
+                return RpcResponse::error($message);
+            }
+
+            $draftData = PosCheckoutService::make()->getDraftInvoiceForRehydration($invoiceId, $this->storeId);
+
+            return RpcResponse::success(data: $draftData);
+        } catch (Throwable $e) {
+            Log::error('POS Fetch Draft Invoice Failed', [
+                'invoice_id' => $invoiceId,
+                'store_id' => $this->storeId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.draft_resume_failed'))
+                ->body($e->getMessage())
+                ->send();
+
+            return RpcResponse::error(message: $e->getMessage());
+        }
+    }
+
+    /**
+     * Discard (delete) a held/draft invoice from the database.
+     */
+    public function discardDraftInvoice(int $invoiceId): array
+    {
+        try {
+            if (! $this->storeId) {
+                $message = __('pos.select_store_first');
+                Notification::make()
+                    ->danger()
+                    ->title($message)
+                    ->send();
+
+                return RpcResponse::error($message);
+            }
+
+            PosCheckoutService::make()->discardDraftInvoice($invoiceId, $this->storeId);
+            $this->heldCartsCount = SaleInvoice::query()->filterByStore($this->storeId)->draft()->count();
+
+            Notification::make()
+                ->title(__('pos.held_cart_discarded'))
+                ->success()
+                ->send();
+
+            return RpcResponse::success(data: ['invoice_id' => $invoiceId]);
+        } catch (Throwable $e) {
+            Log::error('POS Discard Draft Invoice Failed', [
+                'invoice_id' => $invoiceId,
+                'store_id' => $this->storeId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.draft_discard_failed'))
+                ->body($e->getMessage())
+                ->send();
+
+            return RpcResponse::error(message: $e->getMessage());
+        }
     }
 
     /**
@@ -517,6 +709,10 @@ class PosTerminal extends Page
 
         $activeStore = $this->storeId ? $storesCollection->firstWhere('id', $this->storeId) : null;
         $this->storeName = $activeStore ? $activeStore['name'] : __('pos.select_store');
+
+        $this->heldCartsCount = $this->storeId
+            ? SaleInvoice::query()->filterByStore($this->storeId)->draft()->count()
+            : 0;
 
         $this->categoryList = $this->productCategories()->toArray();
         $this->customerList = $this->customers()->toArray();

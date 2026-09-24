@@ -109,17 +109,17 @@ Each line must expose the following fields and labels:
 - ~~auto fetch or infinite scroll~~
 
 
-##### draft/holed invioces
+##### draft/holed invoices
 
-- we need to display the draft/holed invioces so the cashair can refetch them and contuie his work
-- we nee something that allow the cashair to mark or title drafted inv so he know which one to fetch
-- draft inv printing option
+- ~~(done) we need to display the draft/holed invoices so the cashier can refetch them and content his work~~
+- ~~(done) we need something that allow the cashier to mark or title drafted inv so he knows which one to fetch~~
+- ~~(done) draft inv printing option~~
 
 
 ##### - Lang change in pos
 
 
-redisgn the summery breakdown section to be more elegant
+redesign the summary breakdown section to be more elegant
 
 
 

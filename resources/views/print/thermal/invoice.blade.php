@@ -4,6 +4,9 @@
 @section('content')
     <div class="border-top border-bottom py-1 mb-2">
         <div><span class="font-bold">{{ __('app.invoice_number') }}:</span> {{ $invoice->invoice_number }}</div>
+        @if(!empty($invoice->hold_reference))
+            <div><span class="font-bold">{{ __('pos.hold_reference') }}:</span> {{ $invoice->hold_reference }}</div>
+        @endif
         <div><span class="font-bold">{{ __('app.created_at') }}:</span> {{ $invoice->created_at->format('Y-m-d H:i') }}</div>
         <div><span class="font-bold">{{ __('app.cashier') }}:</span> {{ $invoice->createdBy?->name ?? 'System' }}</div>
 

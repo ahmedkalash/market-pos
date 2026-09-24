@@ -28,10 +28,10 @@ use App\Models\TaxClass;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Services\PosCheckoutService;
-use Filament\Support\Exceptions\Halt;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class PosTerminalTest extends TestCase
@@ -224,13 +224,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         // Verify stock was not touched
         $this->variant->refresh();
@@ -291,13 +290,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'company_id' => $this->company->id,
@@ -355,13 +353,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('holdCart', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('cart-held-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'company_id' => $this->company->id,
@@ -787,13 +784,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'store_id' => $this->store->id,
@@ -817,15 +813,14 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'global_discount_type' => 'fixed',
                 'global_discount_amount' => 25.00,
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'store_id' => $this->store->id,
@@ -1039,13 +1034,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'store_id' => $this->store->id,
@@ -1174,13 +1168,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'store_id' => $this->store->id,
@@ -1256,13 +1249,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'store_id' => $this->store->id,
@@ -1699,13 +1691,12 @@ class PosTerminalTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', [], [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_variant_does_not_exist(): void
@@ -1720,26 +1711,24 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_hold_cart_fails_validation_when_cart_is_empty(): void
     {
         $this->actingAs($this->user);
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('holdCart', [], [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('cart-held-successful');
     }
 
     public function test_checkout_fails_validation_when_quantity_is_zero_or_negative(): void
@@ -1754,13 +1743,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cartZeroQty, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_price_type_is_invalid(): void
@@ -1775,13 +1763,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cartInvalidPriceType, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_item_discount_amount_is_negative(): void
@@ -1798,13 +1785,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cartNegativeDiscount, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_global_discount_amount_is_negative(): void
@@ -1819,15 +1805,14 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'global_discount_type' => 'fixed',
                 'global_discount_amount' => -10.00,
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_item_discount_amount_provided_without_discount_type(): void
@@ -1844,13 +1829,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_item_discount_type_provided_without_discount_amount(): void
@@ -1867,13 +1851,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_global_discount_amount_provided_without_discount_type(): void
@@ -1888,15 +1871,14 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'global_discount_amount' => 10.00,
                 'global_discount_type' => null,
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_global_discount_type_provided_without_discount_amount(): void
@@ -1911,15 +1893,14 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
                 'global_discount_amount' => null,
                 'global_discount_type' => 'fixed',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_extra_item_is_missing_action_type(): void
@@ -1934,8 +1915,6 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
@@ -1947,7 +1926,8 @@ class PosTerminalTest extends TestCase
                         // missing action_type
                     ],
                 ],
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_extra_item_is_missing_name(): void
@@ -1962,8 +1942,6 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
@@ -1975,7 +1953,8 @@ class PosTerminalTest extends TestCase
                         // missing name
                     ],
                 ],
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_extra_item_is_missing_amount(): void
@@ -1990,8 +1969,6 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'cash',
@@ -2003,7 +1980,8 @@ class PosTerminalTest extends TestCase
                         // missing amount
                     ],
                 ],
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_succeeds_validation_when_extra_items_is_empty_or_null(): void
@@ -2100,12 +2078,11 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_checkout_fails_validation_when_payment_method_is_invalid(): void
@@ -2120,13 +2097,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('processCheckout', $cart, [
                 'payment_method' => 'unsupported_method',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('checkout-successful');
     }
 
     public function test_hold_cart_fails_validation_when_payment_method_is_missing(): void
@@ -2141,12 +2117,11 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('holdCart', $cart, [
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('cart-held-successful');
     }
 
     public function test_hold_cart_fails_validation_when_payment_method_is_invalid(): void
@@ -2161,13 +2136,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        $this->expectException(Halt::class);
-
         Livewire::test(PosTerminal::class)
             ->call('holdCart', $cart, [
                 'payment_method' => 'unsupported_method',
                 'shipping_cost' => 0,
-            ]);
+            ])
+            ->assertNotDispatched('cart-held-successful');
     }
 
     public function test_checkout_creates_invoice_with_translated_pos_notes(): void
@@ -2426,16 +2400,12 @@ class PosTerminalTest extends TestCase
             ],
         ];
 
-        try {
-            Livewire::test(PosTerminal::class)
-                ->call('holdCart', $cart, [
-                    'payment_method' => 'cash',
-                    'shipping_cost' => 0,
-                ]);
-            $this->fail('Expected Halt exception was not thrown.');
-        } catch (Halt $e) {
-            // Expected Halt exception was thrown
-        }
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'shipping_cost' => 0,
+            ])
+            ->assertNotDispatched('cart-held-successful');
 
         $this->assertDatabaseMissing('sale_invoices', [
             'store_id' => $this->store->id,
@@ -2587,5 +2557,787 @@ class PosTerminalTest extends TestCase
             ->set('paginators.page', 2)
             ->set('categoryId', 999)
             ->assertSet('paginators.page', 1);
+    }
+
+    public function test_cashier_can_hold_cart_with_custom_reference_tag(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 3,
+                'discount_amount' => 2.0,
+                'discount_type' => 'fixed',
+            ],
+        ];
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'Table 14 - Red Car',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $this->assertDatabaseHas('sale_invoices', [
+            'store_id' => $this->store->id,
+            'hold_reference' => 'Table 14 - Red Car',
+            'status' => SaleInvoiceStatus::Draft->value,
+        ]);
+
+        $this->assertEquals(1, $component->get('heldCartsCount'));
+
+        $dispatch = collect(data_get($component->effects, 'dispatches'))->firstWhere('name', 'cart-held-successful');
+        $this->assertNotNull($dispatch);
+        $payload = $dispatch['params'][0] ?? $dispatch['params'];
+        $this->assertEquals('Table 14 - Red Car', $payload['hold_reference']);
+    }
+
+    public function test_hold_cart_supports_max_255_character_hold_reference_and_rejects_exceeding_length(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        // 1. Exactly 255 characters should pass and be stored accurately
+        $longReference255 = str_repeat('A', 255);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'hold_reference' => $longReference255,
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        $this->assertDatabaseHas('sale_invoices', [
+            'store_id' => $this->store->id,
+            'hold_reference' => $longReference255,
+            'status' => SaleInvoiceStatus::Draft->value,
+        ]);
+
+        // 2. 256 characters should fail validation, notify user, and return cleanly without throwing Halt
+        $tooLongReference256 = str_repeat('B', 256);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'hold_reference' => $tooLongReference256,
+                'shipping_cost' => 0,
+            ])
+            ->assertNotDispatched('cart-held-successful');
+
+        $this->assertDatabaseMissing('sale_invoices', [
+            'hold_reference' => $tooLongReference256,
+        ]);
+    }
+
+    public function test_get_held_invoices_returns_only_active_store_drafts(): void
+    {
+        $this->actingAs($this->user);
+
+        // Create 2 draft invoices in current store
+        $customer = Customer::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'John Doe',
+            'phone' => '1234567890',
+        ]);
+
+        $cart1 = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart1, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'Order A',
+                'customer_id' => $customer->id,
+                'shipping_cost' => 0,
+            ]);
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart1, [
+                'payment_method' => 'card',
+                'hold_reference' => 'Order B',
+                'shipping_cost' => 0,
+            ]);
+
+        // Create 1 draft invoice in a DIFFERENT store
+        $otherStore = Store::factory()->create(['company_id' => $this->company->id]);
+        $otherUser = User::factory()->create(['company_id' => $this->company->id, 'store_id' => $otherStore->id]);
+        $otherVariant = ProductVariant::factory()->withStock(20)->create([
+            'company_id' => $this->company->id,
+            'store_id' => $otherStore->id,
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+        ]);
+        $this->actingAs($otherUser);
+        PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $otherVariant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $otherStore->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Other Store Draft',
+            ])
+        );
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->getHeldInvoices();
+
+        $this->assertTrue($response['success']);
+        $this->assertCount(2, $response['data']);
+
+        $references = array_column($response['data'], 'hold_reference');
+        $this->assertContains('Order A', $references);
+        $this->assertContains('Order B', $references);
+        $this->assertNotContains('Other Store Draft', $references);
+
+        // Verify structure of preview fields
+        $first = $response['data'][0];
+        $this->assertArrayHasKey('id', $first);
+        $this->assertArrayHasKey('invoice_number', $first);
+        $this->assertArrayHasKey('hold_reference', $first);
+        $this->assertArrayHasKey('customer_name', $first);
+        $this->assertArrayHasKey('items_count', $first);
+        $this->assertArrayHasKey('items_preview', $first);
+        $this->assertArrayHasKey('total_amount', $first);
+        $this->assertArrayHasKey('created_at_human', $first);
+        $this->assertArrayHasKey('cashier_name', $first);
+    }
+
+    public function test_get_held_invoices_filters_by_search_query_across_reference_customer_phone_and_invoice_number(): void
+    {
+        $this->actingAs($this->user);
+
+        $customer1 = Customer::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Ahmed Alpha',
+            'phone' => '01011112222',
+        ]);
+
+        $customer2 = Customer::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Sara Beta',
+            'phone' => '01233334444',
+        ]);
+
+        $cartItem = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        // 1. Hold cart with reference and customer 1
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartItem, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'VIP Table 7',
+                'customer_id' => $customer1->id,
+                'shipping_cost' => 0,
+            ]);
+
+        // 2. Hold cart with reference and customer 2
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartItem, [
+                'payment_method' => 'card',
+                'hold_reference' => 'Drive Thru 3',
+                'customer_id' => $customer2->id,
+                'shipping_cost' => 0,
+            ]);
+
+        // 3. Hold cart with reference and walk-in customer (no customer_id)
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartItem, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'Takeaway Express',
+                'shipping_cost' => 0,
+            ]);
+
+        $component = Livewire::test(PosTerminal::class);
+        $instance = $component->instance();
+
+        // Total held carts count is 3
+        $this->assertEquals(3, $component->get('heldCartsCount'));
+
+        // Case A: Search by hold reference ("VIP")
+        $resA = $instance->getHeldInvoices('VIP');
+        $this->assertTrue($resA['success']);
+        $this->assertCount(1, $resA['data']);
+        $this->assertEquals('VIP Table 7', $resA['data'][0]['hold_reference']);
+        $this->assertEquals('Ahmed Alpha', $resA['data'][0]['customer_name']);
+
+        // Case B: Search by customer name ("Sara")
+        $resB = $instance->getHeldInvoices('Sara');
+        $this->assertTrue($resB['success']);
+        $this->assertCount(1, $resB['data']);
+        $this->assertEquals('Drive Thru 3', $resB['data'][0]['hold_reference']);
+        $this->assertEquals('Sara Beta', $resB['data'][0]['customer_name']);
+
+        // Case C: Search by customer phone ("0101111")
+        $resC = $instance->getHeldInvoices('0101111');
+        $this->assertTrue($resC['success']);
+        $this->assertCount(1, $resC['data']);
+        $this->assertEquals('VIP Table 7', $resC['data'][0]['hold_reference']);
+
+        // Case D: Search by invoice number
+        $takeawayDraft = SaleInvoice::where('hold_reference', 'Takeaway Express')->first();
+        $this->assertNotNull($takeawayDraft);
+        $resD = $instance->getHeldInvoices($takeawayDraft->invoice_number);
+        $this->assertTrue($resD['success']);
+        $this->assertCount(1, $resD['data']);
+        $this->assertEquals('Takeaway Express', $resD['data'][0]['hold_reference']);
+
+        // Case E: Search with non-matching string
+        $resE = $instance->getHeldInvoices('NonExistentQueryXYZ');
+        $this->assertTrue($resE['success']);
+        $this->assertCount(0, $resE['data']);
+
+        // Assert search does NOT overwrite heldCartsCount badge
+        $this->assertEquals(3, $component->get('heldCartsCount'));
+
+        // Case F: Blank/null search returns all store drafts
+        $resF = $instance->getHeldInvoices(null);
+        $this->assertTrue($resF['success']);
+        $this->assertCount(3, $resF['data']);
+    }
+
+    public function test_fetch_draft_invoice_rehydrates_complete_cart_data_accurately(): void
+    {
+        $this->actingAs($this->user);
+
+        $customer = Customer::factory()->create([
+            'company_id' => $this->company->id,
+            'name' => 'Jane Smith',
+        ]);
+
+        $destination = ShippingDestination::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'name' => 'Downtown Express',
+            'cost' => 15.00,
+        ]);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 4,
+                'discount_amount' => 5.0,
+                'discount_type' => 'fixed',
+            ],
+        ];
+
+        $extraItems = [
+            [
+                'name' => 'Gift Wrap',
+                'amount' => 3.50,
+                'action_type' => 'addition',
+                'notes' => 'Blue Ribbon',
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'card',
+                'hold_reference' => 'VIP Table',
+                'customer_id' => $customer->id,
+                'global_discount_type' => 'fixed',
+                'global_discount_amount' => 10.0,
+                'shipping_destination_id' => $destination->id,
+                'shipping_cost' => 15.0,
+                'shipping_address' => '123 Main St, Apt 4B',
+                'extra_items' => $extraItems,
+            ]);
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->draft()->first();
+        $this->assertNotNull($invoice);
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->fetchDraftInvoice($invoice->id);
+
+        $this->assertTrue($response['success']);
+        $data = $response['data'];
+
+        $this->assertEquals($invoice->id, $data['id']);
+        $this->assertEquals($invoice->invoice_number, $data['invoice_number']);
+        $this->assertEquals('VIP Table', $data['hold_reference']);
+        $this->assertEquals($customer->id, $data['customer_id']);
+        $this->assertEquals('Jane Smith', $data['customer_name']);
+        $this->assertEquals('card', $data['payment_method']);
+        $this->assertEquals('fixed', $data['global_discount_type']);
+        $this->assertEquals(10.0, $data['global_discount_amount']);
+        $this->assertEquals($destination->id, $data['shipping_destination_id']);
+        $this->assertEquals(15.0, $data['shipping_cost']);
+        $this->assertEquals('123 Main St, Apt 4B', $data['shipping_address']);
+        $this->assertFalse($data['has_stock_warning']);
+
+        $this->assertCount(1, $data['extra_items']);
+        $this->assertEquals('Gift Wrap', $data['extra_items'][0]['name']);
+        $this->assertEquals(3.5, $data['extra_items'][0]['amount']);
+        $this->assertEquals('addition', $data['extra_items'][0]['action_type']);
+
+        $this->assertCount(1, $data['cart_items']);
+        $item = $data['cart_items'][0];
+        $this->assertEquals($this->variant->id, $item['variant_id']);
+        $this->assertEquals(4.0, $item['qty']);
+        $this->assertEquals('retail', $item['priceType']);
+        $this->assertEquals('fixed', $item['discountType']);
+        $this->assertEquals(5.0, $item['discountAmount']);
+        $this->assertFalse($item['stock_warning']);
+    }
+
+    public function test_fetch_draft_invoice_flags_stock_warning_when_variant_stock_is_insufficient(): void
+    {
+        $this->actingAs($this->user);
+
+        // Create variant with stock = 10
+        $lowStockVariant = ProductVariant::factory()->withStock(10)->create([
+            'company_id' => $this->company->id,
+            'store_id' => $this->store->id,
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+        ]);
+
+        // Hold cart requesting 5 units (valid when held)
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $lowStockVariant->id, 'qty' => 5, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Stock Test',
+            ])
+        );
+
+        // Later, physical stock drops to 2 (e.g. sold elsewhere)
+        $lowStockVariant->update(['quantity' => 2]);
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->fetchDraftInvoice($invoice->id);
+
+        $this->assertTrue($response['success']);
+        $data = $response['data'];
+
+        $this->assertTrue($data['has_stock_warning']);
+        $this->assertCount(1, $data['cart_items']);
+        $this->assertTrue($data['cart_items'][0]['stock_warning']);
+        $this->assertEquals(2.0, $data['cart_items'][0]['stock']);
+        $this->assertEquals(5.0, $data['cart_items'][0]['qty']);
+    }
+
+    public function test_checkout_resumed_draft_finalizes_in_place_without_duplicate_invoice(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Initial hold
+        $cartInitial = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartInitial, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'Table Resumed',
+                'shipping_cost' => 0,
+            ]);
+
+        $initialDraft = SaleInvoice::where('store_id', $this->store->id)->draft()->first();
+        $this->assertNotNull($initialDraft);
+        $draftId = $initialDraft->id;
+        $draftNumber = $initialDraft->invoice_number;
+
+        $this->assertEquals(1, SaleInvoice::count());
+
+        // 2. Checkout resumed draft with updated quantity (3 units) and draft_invoice_id
+        $cartUpdated = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 3,
+            ],
+        ];
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cartUpdated, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $draftId,
+                'hold_reference' => 'Table Resumed',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('checkout-successful');
+
+        // Verify NO duplicate invoice was created!
+        $this->assertEquals(1, SaleInvoice::count());
+
+        // Verify the existing invoice was finalized in-place
+        $finalizedInvoice = SaleInvoice::find($draftId);
+        $this->assertNotNull($finalizedInvoice);
+        $this->assertEquals($draftNumber, $finalizedInvoice->invoice_number);
+        $this->assertEquals(SaleInvoiceStatus::Finalized, $finalizedInvoice->status);
+        $this->assertEquals(3 * 20.00, (float) $finalizedInvoice->total_amount);
+
+        // Verify inventory movements occurred for the finalized items
+        $this->assertDatabaseHas('inventory_movements', [
+            'store_id' => $this->store->id,
+            'variant_id' => $this->variant->id,
+            'type' => MovementType::Sale->value,
+        ]);
+        $this->assertEquals(47.0, (float) $this->variant->fresh()->quantity);
+
+        // Verify heldCartsCount is now 0
+        $this->assertEquals(0, $component->get('heldCartsCount'));
+    }
+
+    public function test_reholding_resumed_draft_updates_draft_in_place_without_duplicate_invoice(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Initial hold
+        $cartInitial = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartInitial, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'Table Old Note',
+                'shipping_cost' => 0,
+            ]);
+
+        $initialDraft = SaleInvoice::where('store_id', $this->store->id)->draft()->first();
+        $draftId = $initialDraft->id;
+
+        $this->assertEquals(1, SaleInvoice::count());
+
+        // 2. Re-hold with draft_invoice_id, updated reference, and updated qty
+        $cartUpdated = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 4,
+            ],
+        ];
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartUpdated, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $draftId,
+                'hold_reference' => 'Table New Note',
+                'shipping_cost' => 0,
+            ])
+            ->assertDispatched('cart-held-successful');
+
+        // Verify NO duplicate invoice was created
+        $this->assertEquals(1, SaleInvoice::count());
+
+        $updatedDraft = SaleInvoice::find($draftId);
+        $this->assertEquals(SaleInvoiceStatus::Draft, $updatedDraft->status);
+        $this->assertEquals('Table New Note', $updatedDraft->hold_reference);
+        $this->assertEquals(1, $updatedDraft->items()->count());
+        $this->assertEquals(4.0, (float) $updatedDraft->items()->first()->quantity);
+
+        $this->assertEquals(1, $component->get('heldCartsCount'));
+    }
+
+    public function test_discard_draft_invoice_deletes_record_and_cascades_relations(): void
+    {
+        $this->actingAs($this->user);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+
+        $extraItems = [
+            [
+                'name' => 'Packing Box',
+                'amount' => 5.0,
+                'action_type' => 'addition',
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'hold_reference' => 'To Discard',
+                'extra_items' => $extraItems,
+                'shipping_cost' => 0,
+            ]);
+
+        $invoice = SaleInvoice::where('store_id', $this->store->id)->draft()->first();
+        $this->assertNotNull($invoice);
+        $invoiceId = $invoice->id;
+
+        $component = Livewire::test(PosTerminal::class);
+        $this->assertEquals(1, $component->get('heldCartsCount'));
+
+        $response = $component->instance()->discardDraftInvoice($invoiceId);
+
+        $this->assertTrue($response['success']);
+        $this->assertDatabaseMissing('sale_invoices', ['id' => $invoiceId]);
+        $this->assertDatabaseMissing('sale_invoice_items', ['sale_invoice_id' => $invoiceId]);
+        $this->assertDatabaseMissing('sale_invoice_extra_items', ['sale_invoice_id' => $invoiceId]);
+
+        $this->assertEquals(0, $component->get('heldCartsCount'));
+    }
+
+    public function test_cannot_fetch_or_discard_draft_invoice_from_another_store(): void
+    {
+        $this->actingAs($this->user);
+
+        $otherStore = Store::factory()->create(['company_id' => $this->company->id]);
+        $otherUser = User::factory()->create(['company_id' => $this->company->id, 'store_id' => $otherStore->id]);
+        $otherVariant = ProductVariant::factory()->withStock(10)->create([
+            'company_id' => $this->company->id,
+            'store_id' => $otherStore->id,
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+        ]);
+
+        $this->actingAs($otherUser);
+        $otherInvoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $otherVariant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $otherStore->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Protected Store B',
+            ])
+        );
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+
+        // Attempt to fetch other store's draft
+        $fetchResponse = $component->instance()->fetchDraftInvoice($otherInvoice->id);
+        $this->assertFalse($fetchResponse['success']);
+
+        // Attempt to discard other store's draft
+        $discardResponse = $component->instance()->discardDraftInvoice($otherInvoice->id);
+        $this->assertFalse($discardResponse['success']);
+
+        // Assert record is untouched
+        $this->assertDatabaseHas('sale_invoices', ['id' => $otherInvoice->id]);
+    }
+
+    public function test_thermal_receipt_print_route_displays_hold_reference_and_draft_disclaimer(): void
+    {
+        Permission::firstOrCreate(['name' => 'view_sale_invoice', 'guard_name' => 'web']);
+        setPermissionsTeamId($this->company->id);
+        $this->user->givePermissionTo('view_sale_invoice');
+
+        $this->actingAs($this->user);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 2, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Table VIP 99',
+            ])
+        );
+
+        $response = $this->get("/print/invoice/sale_invoice/{$invoice->id}");
+
+        $response->assertOk();
+        $response->assertSee('Table VIP 99');
+        $response->assertSee(__('app.draft_invoice_disclaimer'));
+    }
+
+    public function test_process_checkout_handles_validation_failure_gracefully_without_throwing_halt(): void
+    {
+        $this->actingAs($this->user);
+
+        // Call processCheckout with empty cart -> validation fails
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', [], [
+                'payment_method' => 'cash',
+            ])
+            ->assertNotDispatched('checkout-successful');
+
+        $this->assertDatabaseCount('sale_invoices', 0);
+    }
+
+    public function test_create_shipping_destination_validates_and_handles_exceptions_via_rpc_response(): void
+    {
+        $this->actingAs($this->user);
+        $component = Livewire::test(PosTerminal::class);
+        $instance = $component->instance();
+
+        // 1. Validation error: missing name and cost
+        $invalidRes = $instance->createShippingDestination([]);
+        $this->assertFalse($invalidRes['success']);
+        $this->assertArrayHasKey('name', $invalidRes['errors']);
+        $this->assertArrayHasKey('cost', $invalidRes['errors']);
+
+        // 2. Success path
+        $validRes = $instance->createShippingDestination([
+            'name' => 'Northern Suburbs',
+            'cost' => 12.5,
+        ]);
+        $this->assertTrue($validRes['success']);
+        $this->assertEquals('Northern Suburbs', $validRes['data']['name']);
+        $this->assertEquals(12.5, $validRes['data']['cost']);
+        $this->assertDatabaseHas('shipping_destinations', [
+            'name' => 'Northern Suburbs',
+            'cost' => 12.5,
+        ]);
+
+        // Verify public component list was appended
+        $destinations = $component->get('shippingDestinationList');
+        $this->assertContains('Northern Suburbs', array_column($destinations, 'name'));
+    }
+
+    public function test_create_customer_validates_and_handles_exceptions_via_rpc_response(): void
+    {
+        $this->actingAs($this->user);
+        $component = Livewire::test(PosTerminal::class);
+        $instance = $component->instance();
+
+        // 1. Validation error: missing name
+        $invalidRes = $instance->createCustomer([]);
+        $this->assertFalse($invalidRes['success']);
+        $this->assertArrayHasKey('name', $invalidRes['errors']);
+
+        // 2. Success path
+        $validRes = $instance->createCustomer([
+            'name' => 'Grace Hopper',
+            'phone' => '01122334455',
+        ]);
+        $this->assertTrue($validRes['success']);
+        $this->assertEquals('Grace Hopper', $validRes['data']['name']);
+        $this->assertDatabaseHas('customers', [
+            'name' => 'Grace Hopper',
+            'phone' => '01122334455',
+        ]);
+
+        // Verify public component list was appended
+        $customers = $component->get('customerList');
+        $this->assertContains('Grace Hopper', array_column($customers, 'name'));
+    }
+
+    public function test_change_store_handles_unauthorized_and_invalid_stores_gracefully(): void
+    {
+        $this->actingAs($this->user);
+
+        // Store-level user cannot change store
+        $otherStore = Store::factory()->create(['company_id' => $this->company->id]);
+        $component = Livewire::test(PosTerminal::class)
+            ->call('changeStore', $otherStore->id);
+
+        // Store ID must remain unchanged for store-level user
+        $this->assertEquals($this->store->id, $component->get('storeId'));
+
+        // Admin (company-level) user attempting to switch to non-existent store
+        $admin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null, // Company-level
+        ]);
+        $this->actingAs($admin);
+
+        Livewire::test(PosTerminal::class)
+            ->call('changeStore', 999999); // Non-existent store ID completes without 500 error
+    }
+
+    public function test_get_extra_item_presets_handles_exception_gracefully(): void
+    {
+        $this->actingAs($this->user);
+
+        try {
+            InvoiceExtraItemPreset::addGlobalScope('simulate_failure', function () {
+                throw new \RuntimeException('Simulated query failure');
+            });
+
+            $component = Livewire::test(PosTerminal::class);
+            $component->call('getExtraItemPresets')
+                ->assertNotified(__('pos.extra_item_presets_load_failed'));
+
+            $this->assertSame([], $component->instance()->getExtraItemPresets());
+        } finally {
+            $reflection = new \ReflectionClass(InvoiceExtraItemPreset::class);
+            $property = $reflection->getProperty('globalScopes');
+            $scopes = $property->getValue();
+            unset($scopes[InvoiceExtraItemPreset::class]['simulate_failure']);
+            $property->setValue(null, $scopes);
+        }
+    }
+
+    public function test_fetch_draft_invoice_handles_exception_gracefully(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->call('fetchDraftInvoice', 999999);
+
+        $result->assertNotified(__('pos.draft_resume_failed'));
+        $response = $result->instance()->fetchDraftInvoice(999999);
+        $this->assertFalse($response['success']);
+        $this->assertNotNull($response['message']);
+    }
+
+    public function test_discard_draft_invoice_handles_exception_gracefully(): void
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->call('discardDraftInvoice', 999999);
+
+        $result->assertNotified(__('pos.draft_discard_failed'));
+        $response = $result->instance()->discardDraftInvoice(999999);
+        $this->assertFalse($response['success']);
+        $this->assertNotNull($response['message']);
+    }
+
+    public function test_get_held_invoices_handles_missing_store_with_danger_notification(): void
+    {
+        $admin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null, // Company-level, no store selected initially
+        ]);
+        $this->actingAs($admin);
+
+        $component = Livewire::test(PosTerminal::class);
+        $result = $component->call('getHeldInvoices');
+
+        $result->assertNotified(__('pos.select_store_first'));
+        $response = $result->instance()->getHeldInvoices();
+        $this->assertFalse($response['success']);
     }
 }

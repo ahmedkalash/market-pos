@@ -474,6 +474,9 @@ settings
 - [] review blade, js, alpine
 - [] front end validations
 - [] fix checkout error `"error":"خصم الفاتورة الإجمالي يخفض إجمالي المبلغ عن الحد الأدنى المسموح به."`
+- []  why the halt in this method is displayed as an exception in filament custom page? 
+  - i use it inside a filament page that extend the \Filament\Pages\Page class
+
 
 
 

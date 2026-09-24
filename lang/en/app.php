@@ -212,6 +212,7 @@ return [
     'search_by_product_placeholder' => 'Type to search...',
     'finalize' => 'Finalize',
     'unknown_product' => 'Unknown Product',
+    'unknown' => 'Unknown',
     'success' => 'Success',
     'created_by' => 'Created By',
     'finalized_by' => 'Finalized By',

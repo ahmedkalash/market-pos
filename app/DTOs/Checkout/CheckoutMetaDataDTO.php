@@ -22,6 +22,8 @@ readonly class CheckoutMetaDataDTO
         public ?float $shippingCost = null,
         public ?string $shippingAddress = null,
         public array $extraItems = [],
+        public ?int $draftInvoiceId = null,
+        public ?string $holdReference = null,
     ) {}
 
     /**
@@ -88,6 +90,8 @@ readonly class CheckoutMetaDataDTO
             shippingCost: $shippingCost,
             shippingAddress: isset($data['shipping_address']) && filled($data['shipping_address']) ? $data['shipping_address'] : null,
             extraItems: $extraItems,
+            draftInvoiceId: isset($data['draft_invoice_id']) && filled($data['draft_invoice_id']) ? (int) $data['draft_invoice_id'] : null,
+            holdReference: isset($data['hold_reference']) && filled($data['hold_reference']) ? trim((string) $data['hold_reference']) : null,
         );
     }
 }

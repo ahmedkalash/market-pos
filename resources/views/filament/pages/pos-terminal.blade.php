@@ -158,9 +158,13 @@
                 </div>
 
                 <!-- Tool Icons -->
-                <div class="flex items-center gap-1 border-x border-gray-200 px-3 mx-1">
+                <div class="flex items-center gap-1.5 border-x border-gray-200 px-3 mx-1">
                     <button @click="openCustomerModal()" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="{{ __('pos.create_customer') }}"><i class="ph ph-user-plus text-xl"></i></button>
-                    <button class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i class="ph ph-receipt text-xl"></i></button>
+                    <button @click="openHeldInvoicesModal()" class="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs font-bold" :class="heldCartsCount > 0 ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'" title="{{ __('pos.held_carts') }} (F4)">
+                        <i class="ph ph-pause-circle text-base"></i>
+                        <span class="hidden md:inline">{{ __('pos.held_carts') }}</span>
+                        <span x-show="heldCartsCount > 0" x-text="heldCartsCount" class="flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-extrabold leading-none"></span>
+                    </button>
                     <button @click="toggleFullscreen()" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><i class="ph ph-corners-out text-xl"></i></button>
                 </div>
 
@@ -199,12 +203,19 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button type="button"
+                                @click="openHeldInvoicesModal()"
+                                class="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 text-gray-500 transition-all shadow-sm group relative"
+                                title="{{ __('pos.held_carts') }} (F4)">
+                            <i class="ph ph-receipt font-bold text-lg group-hover:scale-110 transition-transform"></i>
+                            <span x-show="heldCartsCount > 0" x-text="heldCartsCount" class="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white ring-2 ring-white"></span>
+                        </button>
                         <button @click="openExtraItemsModal()" class="w-9 h-9 flex items-center justify-center text-primary-600 bg-primary-50 rounded-xl border border-primary-100 hover:bg-primary-100 hover:border-primary-200 transition-all shadow-sm group relative" title="{{ __('pos.extra_items_tooltip') }}">
                             <i class="ph ph-plus-minus font-bold text-lg group-hover:scale-110 transition-transform"></i>
                             <span x-show="extraItems.length > 0" class="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-danger-500 text-[9px] font-bold text-white ring-2 ring-white"></span>
                         </button>
                         <button type="button"
-                                @click="holdCartAction()"
+                                @click="openHoldModal()"
                                 :disabled="cart.length === 0 || isProcessing || hasInvalidCartItems"
                                 :class="(cart.length === 0 || isProcessing || hasInvalidCartItems) ? 'opacity-40 cursor-not-allowed' : 'hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 text-gray-500'"
                                 class="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 transition-all shadow-sm group"
@@ -224,6 +235,28 @@
 
                 <!-- Cart Items Container -->
                 <div class="flex-1 overflow-y-auto p-3 bg-gray-50/30">
+                    <!-- Resumed Draft Banner -->
+                    <div x-show="resumedInvoiceId" x-cloak class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900 shadow-sm">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <i class="ph ph-note-pencil text-amber-600 text-base shrink-0"></i>
+                            <div class="truncate">
+                                <span class="font-bold">{{ __('pos.editing_held_cart') }}:</span>
+                                <span class="font-mono font-extrabold text-amber-800" x-text="resumedInvoiceNumber"></span>
+                                <template x-if="resumedHoldReference">
+                                    <span class="ms-1.5 px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 font-extrabold" x-text="resumedHoldReference"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0 ms-2">
+                            <button type="button" @click="printDraftSlip(resumedInvoiceId)" class="p-1.5 text-amber-700 hover:text-amber-950 hover:bg-amber-100 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-bold" title="{{ __('pos.print_slip') }}">
+                                <i class="ph ph-printer text-sm"></i>
+                                <span class="hidden sm:inline">{{ __('pos.print_slip') }}</span>
+                            </button>
+                            <button type="button" @click="unlinkResumedCart()" class="text-[11px] font-bold text-amber-700 hover:text-amber-950 underline px-1 py-0.5 transition-colors" title="{{ __('pos.unlink_draft') }}">
+                                {{ __('pos.unlink_draft') }}
+                            </button>
+                        </div>
+                    </div>
                     <template x-for="(item, index) in cart" :key="item.variant_id">
                         <div class="flex flex-col p-3 mb-2 bg-white rounded-xl border border-gray-200 shadow-sm relative group hover:border-primary-200 transition-colors">
                             <div class="flex justify-between items-start mb-3">
@@ -523,7 +556,7 @@
                         </div>
                         <button type="button"
                                 class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                                @click="holdCartAction()"
+                                @click="openHoldModal()"
                                 :disabled="cart.length === 0 || isProcessing || hasInvalidCartItems"
                                 :title="hasInvalidCartItems ? '{{ __('pos.resolve_cart_issues') }}' : '{{ __('pos.hold_cart_tooltip') }}'">
                             <i class="ph ph-pause-circle text-xl" x-show="!isProcessing"></i>
@@ -1268,6 +1301,286 @@
                         </div>
                     </template>
                 </div>
+
+                <!-- Hold Cart Modal -->
+                <div x-show="activeModal === 'holdCart'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center p-4" x-cloak>
+                    <template x-if="activeModal === 'holdCart'">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.outside="closeModal()">
+                            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-amber-50/70">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                                        <i class="ph ph-pause-circle text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-extrabold text-gray-800 text-base">{{ __('pos.hold_cart_title') }}</h3>
+                                        <p class="text-xs text-gray-500">{{ __('pos.hold_cart_tooltip') }}</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="closeModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-white flex items-center justify-center transition-colors">
+                                    <i class="ph ph-x text-lg"></i>
+                                </button>
+                            </div>
+
+                            <div class="p-6 space-y-4">
+                                <div>
+                                    <label for="holdReferenceInput" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                                        {{ __('pos.hold_reference_label') }}
+                                    </label>
+                                    <input type="text"
+                                           id="holdReferenceInput"
+                                           x-model="holdReferenceInput"
+                                           maxlength="255"
+                                           @keydown.enter.prevent="confirmHoldCart(false)"
+                                           placeholder="{{ __('pos.hold_reference_placeholder') }}"
+                                           class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-gray-50/50">
+                                    <p class="text-[11px] text-gray-400 mt-1.5">
+                                        {{ __('pos.hold_reference_helper') }}
+                                    </p>
+                                </div>
+
+                                <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-center text-xs">
+                                    <span class="text-gray-500">{{ __('pos.items') }}: <strong class="text-gray-800" x-text="cartItemCount"></strong></span>
+                                    <span class="text-gray-500">{{ __('pos.total_payable') }}: <strong class="text-gray-800 text-sm font-extrabold" x-text="currencySymbol + ' ' + cartTotal.toFixed(2)"></strong></span>
+                                </div>
+                            </div>
+
+                            <div class="p-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-end gap-2.5">
+                                <button type="button"
+                                        @click="closeModal()"
+                                        class="px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs transition-colors">
+                                    {{ __('pos.cancel') }} (Esc)
+                                </button>
+                                <button type="button"
+                                        @click="confirmHoldCart(true)"
+                                        :disabled="isProcessing"
+                                        class="px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm">
+                                    <i class="ph ph-printer text-base"></i>
+                                    <span>{{ __('pos.hold_and_print') }}</span>
+                                </button>
+                                <button type="button"
+                                        @click="confirmHoldCart(false)"
+                                        :disabled="isProcessing"
+                                        class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-md">
+                                    <i class="ph ph-pause text-base" x-show="!isProcessing"></i>
+                                    <i class="ph ph-spinner animate-spin text-base" x-show="isProcessing" x-cloak></i>
+                                    <span>{{ __('pos.hold_only') }} (Enter)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Held Carts List Modal -->
+                <div x-show="activeModal === 'heldCarts'" class="fixed inset-0 bg-gray-900/50 z-[100] flex items-center justify-center p-4" x-cloak>
+                    <template x-if="activeModal === 'heldCarts'">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden" @click.outside="closeModal()">
+                            <!-- Header -->
+                            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/60 shrink-0">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                                        <i class="ph ph-receipt text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="font-extrabold text-gray-800 text-lg">{{ __('pos.held_carts_modal_title') }}</h3>
+                                            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold" x-text="heldInvoicesList.length"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-400">{{ __('pos.search_held_carts') }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" @click="searchHeldInvoices()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white flex items-center justify-center transition-colors" title="{{ __('pos.reset') }}">
+                                        <i class="ph ph-arrows-clockwise text-lg" :class="isLoadingHeldInvoices ? 'animate-spin' : ''"></i>
+                                    </button>
+                                    <button type="button" @click="closeModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white flex items-center justify-center transition-colors">
+                                        <i class="ph ph-x text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Search Filter Bar -->
+                            <div class="p-4 border-b border-gray-100 bg-white shrink-0">
+                                <div class="relative">
+                                    <i class="ph ph-magnifying-glass absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                                    <input type="text"
+                                           x-model="heldInvoicesSearch"
+                                           @input.debounce.300ms="searchHeldInvoices()"
+                                           placeholder="{{ __('pos.search_held_carts') }}"
+                                           class="w-full border border-gray-200 rounded-xl ps-11 pe-10 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-gray-50/50">
+                                    <button x-show="heldInvoicesSearch" @click="clearHeldSearch()" class="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                        <i class="ph ph-x-circle text-base"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Informational Hint Banner -->
+                            <div class="px-4 py-2 bg-gray-50/80 border-b border-gray-100 shrink-0" x-show="!isLoadingHeldInvoices">
+                                <!-- Idle Hint -->
+                                <div x-show="!heldInvoicesSearch.trim()" class="flex items-center gap-2 text-xs text-gray-500">
+                                    <i class="ph ph-info text-amber-500 text-sm shrink-0"></i>
+                                    <span>{{ __('pos.showing_latest_held_carts_hint', ['count' => 50]) }}</span>
+                                </div>
+                                <!-- Searching Hint -->
+                                <div x-show="heldInvoicesSearch.trim()" class="flex items-center justify-between text-xs text-gray-600">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <i class="ph ph-magnifying-glass text-amber-500 text-sm shrink-0"></i>
+                                        <span class="truncate" x-text="searchResultsHint"></span>
+                                    </div>
+                                    <button type="button" @click="clearHeldSearch()" class="text-amber-600 hover:text-amber-800 text-[11px] font-semibold shrink-0 ms-2">
+                                        {{ __('pos.reset') }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- List Body -->
+                            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/40">
+                                <!-- Loading State -->
+                                <div x-show="isLoadingHeldInvoices" class="py-12 text-center text-gray-400">
+                                    <i class="ph ph-spinner animate-spin text-3xl mx-auto mb-2 text-amber-500"></i>
+                                    <p class="text-sm font-medium">{{ __('pos.loading_products') }}</p>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div x-show="!isLoadingHeldInvoices && filteredHeldInvoices.length === 0" class="py-12 text-center text-gray-400">
+                                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 text-gray-300">
+                                        <i class="ph ph-tray text-3xl"></i>
+                                    </div>
+                                    <h4 class="font-bold text-gray-700 text-sm mb-1">{{ __('pos.no_held_carts') }}</h4>
+                                    <p class="text-xs text-gray-400 max-w-xs mx-auto">{{ __('pos.no_held_carts_desc') }}</p>
+                                </div>
+
+                                <!-- Cards -->
+                                <template x-for="inv in filteredHeldInvoices" :key="inv.id">
+                                    <div class="p-4 bg-white rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all flex flex-col gap-3 group">
+                                        <div class="flex items-start justify-between">
+                                            <div class="space-y-1">
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <template x-if="inv.hold_reference">
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200" x-text="inv.hold_reference"></span>
+                                                    </template>
+                                                    <span class="font-mono text-xs font-extrabold text-gray-700" x-text="inv.invoice_number"></span>
+                                                    <span class="text-xs text-gray-400" x-text="'• ' + inv.created_at_human"></span>
+                                                </div>
+                                                <div class="flex items-center gap-3 text-xs text-gray-600">
+                                                    <span class="font-bold flex items-center gap-1">
+                                                        <i class="ph ph-user text-gray-400"></i>
+                                                        <span x-text="inv.customer_name"></span>
+                                                    </span>
+                                                    <span class="text-gray-300">|</span>
+                                                    <span class="text-gray-400" x-text="inv.created_at_formatted"></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <p class="text-base font-extrabold text-gray-900" x-text="currencySymbol + ' ' + inv.total_amount.toFixed(2)"></p>
+                                                <p class="text-[11px] text-gray-400"><span x-text="inv.items_count"></span> {{ __('pos.items') }}</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Item Summary Preview -->
+                                        <div class="p-2 bg-gray-50 rounded-lg text-xs text-gray-500 font-medium truncate" x-text="inv.items_preview" :title="inv.items_preview"></div>
+
+                                        <!-- Card Action Buttons -->
+                                        <div class="flex items-center justify-between pt-1 border-t border-gray-100">
+                                            <span class="text-[11px] text-gray-400 flex items-center gap-1">
+                                                <i class="ph ph-identification-badge"></i>
+                                                <span x-text="inv.cashier_name"></span>
+                                            </span>
+                                            <div class="flex items-center gap-2">
+                                                <button type="button"
+                                                        @click="printDraftSlip(inv.id)"
+                                                        class="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-600 transition-colors flex items-center gap-1 text-xs font-bold"
+                                                        title="{{ __('pos.print_slip') }}">
+                                                    <i class="ph ph-printer text-base"></i>
+                                                    <span class="hidden sm:inline">{{ __('pos.print_slip') }}</span>
+                                                </button>
+                                                <button type="button"
+                                                        @click="confirmDiscardHeldCart(inv)"
+                                                        class="p-2 rounded-lg border border-gray-200 hover:bg-danger-50 hover:text-danger-600 hover:border-danger-200 text-gray-400 transition-colors flex items-center justify-center text-xs"
+                                                        title="{{ __('pos.discard_draft') }}">
+                                                    <i class="ph ph-trash text-base"></i>
+                                                </button>
+                                                <button type="button"
+                                                        @click="resumeHeldCart(inv.id)"
+                                                        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-sm flex items-center gap-1.5">
+                                                    <i class="ph ph-arrow-bend-up-left text-base"></i>
+                                                    <span>{{ __('pos.resume_cart') }}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Cart Conflict Modal -->
+                <div x-show="activeModal === 'cartConflict'" class="fixed inset-0 bg-gray-900/50 z-[110] flex items-center justify-center p-4" x-cloak>
+                    <template x-if="activeModal === 'cartConflict'">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.outside="closeModal()">
+                            <div class="p-5 border-b border-gray-100 bg-amber-50 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold shrink-0">
+                                    <i class="ph ph-warning-circle text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-800 text-base">{{ __('pos.cart_conflict_title') }}</h3>
+                                    <p class="text-xs text-gray-500">{{ __('pos.cart_conflict_desc') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="p-5 space-y-3">
+                                <button type="button"
+                                        @click="conflictHoldActiveAndResume()"
+                                        class="w-full text-start p-3.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-all flex items-center justify-between group">
+                                    <div>
+                                        <p class="font-bold text-sm text-amber-900">{{ __('pos.conflict_hold_active_and_resume') }}</p>
+                                        <p class="text-xs text-amber-700">{{ __('pos.hold_cart_tooltip') }}</p>
+                                    </div>
+                                    <i class="ph ph-pause-circle text-xl text-amber-600 group-hover:scale-110 transition-transform"></i>
+                                </button>
+
+                                <button type="button"
+                                        @click="conflictDiscardActiveAndResume()"
+                                        class="w-full text-start p-3.5 rounded-xl border border-danger-200 bg-danger-50 hover:bg-danger-100 transition-all flex items-center justify-between group">
+                                    <div>
+                                        <p class="font-bold text-sm text-danger-900">{{ __('pos.conflict_discard_active_and_resume') }}</p>
+                                        <p class="text-xs text-danger-700">{{ __('pos.clear') }}</p>
+                                    </div>
+                                    <i class="ph ph-trash text-xl text-danger-600 group-hover:scale-110 transition-transform"></i>
+                                </button>
+                            </div>
+
+                            <div class="p-4 border-t border-gray-100 bg-gray-50 text-end">
+                                <button type="button" @click="closeModal()" class="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs transition-colors">
+                                    {{ __('pos.cancel') }}
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Confirm Discard Modal -->
+                <div x-show="activeModal === 'confirmDiscard'" class="fixed inset-0 bg-gray-900/50 z-[110] flex items-center justify-center p-4" x-cloak>
+                    <template x-if="activeModal === 'confirmDiscard'">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" @click.outside="closeModal()">
+                            <div class="p-6 text-center">
+                                <div class="w-14 h-14 rounded-full bg-danger-100 text-danger-600 flex items-center justify-center mx-auto mb-4">
+                                    <i class="ph ph-warning text-3xl"></i>
+                                </div>
+                                <h3 class="font-bold text-gray-800 text-base mb-1">{{ __('pos.confirm_discard_draft_title') }}</h3>
+                                <p class="text-xs text-gray-500 mb-6">{{ __('pos.confirm_discard_draft_desc') }}</p>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" @click="closeModal()" class="flex-1 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs transition-colors">
+                                        {{ __('pos.cancel') }}
+                                    </button>
+                                    <button type="button" @click="executeDiscardDraft()" class="flex-1 py-2.5 rounded-xl bg-danger-600 hover:bg-danger-700 text-white font-bold text-xs transition-all shadow-md">
+                                        {{ __('pos.discard_draft') }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </template>
         </div>
@@ -1446,10 +1759,38 @@
                 completedInvoiceTotal: 0,
 
                 // New modals state
-                activeModal: null, // 'itemDiscount', 'extraItems', 'globalDiscount', 'shipping', 'confirmClearCart', 'newCustomer', 'checkout'
+                activeModal: null, // 'itemDiscount', 'extraItems', 'globalDiscount', 'shipping', 'confirmClearCart', 'newCustomer', 'checkout', 'holdCart', 'heldCarts', 'cartConflict', 'confirmDiscard'
                 showNewDestinationForm: false,
                 newDestination: { name: '', cost: 0 },
                 modalData: createDefaultModalData(),
+
+                // Held Carts & Resumed Draft state
+                get heldCartsCount() {
+                    return this.$wire.heldCartsCount || 0;
+                },
+                heldInvoicesList: [],
+                heldInvoicesSearch: '',
+                isLoadingHeldInvoices: false,
+                holdReferenceInput: '',
+                pendingResumeDraftId: null,
+                discardTargetInvoice: null,
+                shouldPrintHeldSlip: false,
+
+                // Tracking resumed draft invoice currently loaded in cart
+                resumedInvoiceId: null,
+                resumedInvoiceNumber: '',
+                resumedHoldReference: '',
+
+                get filteredHeldInvoices() {
+                    return this.heldInvoicesList;
+                },
+
+                get searchResultsHint() {
+                    const template = @js(__('pos.search_results_count_hint', ['count' => ':count', 'query' => ':query']));
+                    return template
+                        .replace(':count', this.heldInvoicesList.length)
+                        .replace(':query', this.heldInvoicesSearch);
+                },
 
                 // Checkout Settlement State
                 checkoutModalData: {
@@ -1481,6 +1822,11 @@
                                 this.submitCheckout();
                                 return;
                             }
+                            if (this.activeModal === 'holdCart') {
+                                e.preventDefault();
+                                this.confirmHoldCart(false);
+                                return;
+                            }
                         }
                         // Don't intercept shortcuts if a modal is open
                         if (this.activeModal || this.showSuccessModal) return;
@@ -1493,9 +1839,13 @@
                             e.preventDefault();
                             this.confirmClearCart();
                         }
+                        if (e.key === 'F6' || (e.altKey && e.key.toLowerCase() === 'h')) {
+                            e.preventDefault();
+                            this.openHeldInvoicesModal();
+                        }
                         if (e.key === 'F8') {
                             e.preventDefault();
-                            this.holdCartAction();
+                            this.openHoldModal();
                         }
                     });
 
@@ -1726,6 +2076,8 @@
                     this.shippingCost = 0;
                     this.shippingDestinationId = null;
                     this.shippingAddress = '';
+                    this.selectCustomer(null);
+                    this.unlinkResumedCart();
                 },
 
                 // Modal helpers
@@ -2018,10 +2370,34 @@
                         shipping_destination_id: this.shippingDestinationId || null,
                         shipping_cost: parseFloat(this.shippingCost) || 0,
                         shipping_address: this.shippingAddress || null,
+                        draft_invoice_id: this.resumedInvoiceId || null,
+                        hold_reference: this.resumedHoldReference || null,
                         extra_items: this.extraItems,
                     }).finally(() => {
                         this.isProcessing = false;
                     });
+                },
+
+                openHoldModal() {
+                    if (this.cart.length === 0 || this.isProcessing || this.hasInvalidCartItems) return;
+                    this.holdReferenceInput = this.resumedHoldReference || '';
+                    this.shouldPrintHeldSlip = false;
+                    this.openModal('holdCart');
+                    this.$nextTick(() => {
+                        const input = document.getElementById('holdReferenceInput');
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    });
+                },
+
+                confirmHoldCart(printSlip = false) {
+                    this.shouldPrintHeldSlip = printSlip;
+                    const ref = this.holdReferenceInput ? this.holdReferenceInput.trim() : '';
+                    this.resumedHoldReference = ref;
+                    this.closeModal();
+                    this.holdCartAction();
                 },
 
                 holdCartAction() {
@@ -2036,6 +2412,8 @@
                         price_type: item.priceType
                     }));
 
+                    const ref = this.holdReferenceInput ? this.holdReferenceInput.trim() : (this.resumedHoldReference || null);
+
                     this.$wire.holdCart(formattedCart, {
                         customer_id: this.selectedCustomerId || null,
                         store_id: this.storeId || null,
@@ -2045,6 +2423,8 @@
                         shipping_destination_id: this.shippingDestinationId || null,
                         shipping_cost: parseFloat(this.shippingCost) || 0,
                         shipping_address: this.shippingAddress || null,
+                        draft_invoice_id: this.resumedInvoiceId || null,
+                        hold_reference: ref,
                         extra_items: this.extraItems,
                     }).finally(() => {
                         this.isProcessing = false;
@@ -2073,8 +2453,227 @@
                 },
 
                 handleCartHeld(detail) {
+                    const invoiceId = detail?.invoice_id;
+                    if (this.shouldPrintHeldSlip && invoiceId) {
+                        this.printDraftSlip(invoiceId);
+                    }
                     this.clearCart();
                     this.focusSearch();
+                },
+
+                async openHeldInvoicesModal() {
+                    this.heldInvoicesSearch = '';
+                    this.isLoadingHeldInvoices = true;
+                    this.openModal('heldCarts');
+
+                    try {
+                        const response = await this.$wire.getHeldInvoices();
+                        if (response && response.success) {
+                            this.heldInvoicesList = response.data || [];
+                        } else {
+                            console.error('Failed to load held invoices', response);
+                        }
+                    } catch (e) {
+                        console.error('Network error loading held invoices', e);
+                    } finally {
+                        this.isLoadingHeldInvoices = false;
+                    }
+                },
+
+                async searchHeldInvoices() {
+                    this.isLoadingHeldInvoices = true;
+                    try {
+                        const query = (this.heldInvoicesSearch || '').trim();
+                        const response = await this.$wire.getHeldInvoices(query);
+                        if (response && response.success) {
+                            this.heldInvoicesList = response.data || [];
+                        } else {
+                            console.error('Failed to search held invoices', response);
+                        }
+                    } catch (e) {
+                        console.error('Network error searching held invoices', e);
+                    } finally {
+                        this.isLoadingHeldInvoices = false;
+                    }
+                },
+
+                clearHeldSearch() {
+                    this.heldInvoicesSearch = '';
+                    this.searchHeldInvoices();
+                },
+
+                resumeHeldCart(invoiceId) {
+                    if (this.cart.length > 0) {
+                        this.pendingResumeDraftId = invoiceId;
+                        this.openModal('cartConflict');
+                    } else {
+                        this.closeModal();
+                        this.executeResumeDraft(invoiceId);
+                    }
+                },
+
+                async executeResumeDraft(invoiceId) {
+                    this.isProcessing = true;
+                    try {
+                        const response = await this.$wire.fetchDraftInvoice(invoiceId);
+                        if (!response || !response.success || !response.data) {
+                            console.error('Failed to resume draft invoice', response);
+                            return;
+                        }
+
+                        const draft = response.data;
+
+                        // Clear current cart state without triggering modal resets
+                        this.cart = [];
+                        this.extraItems = [];
+
+                        // Set draft invoice tracking metadata
+                        this.resumedInvoiceId = draft.id;
+                        this.resumedInvoiceNumber = draft.invoice_number;
+                        this.resumedHoldReference = draft.hold_reference || '';
+
+                        // Hydrate customer
+                        this.selectedCustomerId = draft.customer_id;
+                        this.selectedCustomerName = draft.customer_name || '{{ __('pos.walk_in') }}';
+
+                        // Hydrate payment method
+                        this.paymentMethod = draft.payment_method || 'cash';
+
+                        // Hydrate discounts
+                        this.globalDiscountType = draft.global_discount_type || 'fixed';
+                        this.globalDiscountAmount = parseFloat(draft.global_discount_amount) || 0;
+
+                        // Hydrate shipping
+                        this.shippingDestinationId = draft.shipping_destination_id;
+                        this.shippingCost = parseFloat(draft.shipping_cost) || 0;
+                        this.shippingAddress = draft.shipping_address || '';
+
+                        // Hydrate extra items
+                        this.extraItems = draft.extra_items || [];
+
+                        // Hydrate cart lines
+                        this.cart = (draft.cart_items || []).map(ci => ({
+                            variant_id: ci.variant_id,
+                            product_id: ci.product_id,
+                            category_id: ci.category_id,
+                            name: ci.name,
+                            retail_price: ci.retail_price,
+                            wholesale_price: ci.wholesale_price,
+                            wholesale_enabled: ci.wholesale_enabled,
+                            retail_is_price_negotiable: ci.retail_is_price_negotiable,
+                            min_retail_price: ci.min_retail_price,
+                            wholesale_is_price_negotiable: ci.wholesale_is_price_negotiable,
+                            min_wholesale_price: ci.min_wholesale_price,
+                            wholesale_qty_threshold: ci.wholesale_qty_threshold,
+                            uom_name: ci.uom_name,
+                            stock: ci.stock,
+                            qty: ci.qty,
+                            priceType: ci.priceType,
+                            discountType: ci.discountType,
+                            discountAmount: ci.discountAmount,
+                            stock_warning: ci.stock_warning,
+                        }));
+
+                        this.closeModal();
+                        this.pendingResumeDraftId = null;
+                        this.focusSearch();
+                    } catch (e) {
+                        console.error('Error executing draft rehydration', e);
+                    } finally {
+                        this.isProcessing = false;
+                    }
+                },
+
+                async conflictHoldActiveAndResume() {
+                    const nextDraftId = this.pendingResumeDraftId;
+                    if (!nextDraftId) return;
+
+                    this.closeModal();
+
+                    if (this.cart.length > 0) {
+                        this.isProcessing = true;
+                        const formattedCart = this.cart.map(item => ({
+                            variant_id: item.variant_id,
+                            qty: item.qty,
+                            discount_type: item.discountType,
+                            discount_amount: item.discountAmount,
+                            price_type: item.priceType
+                        }));
+
+                        try {
+                            await this.$wire.holdCart(formattedCart, {
+                                customer_id: this.selectedCustomerId || null,
+                                store_id: this.storeId || null,
+                                payment_method: this.paymentMethod,
+                                global_discount_type: this.globalDiscountType,
+                                global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
+                                shipping_destination_id: this.shippingDestinationId || null,
+                                shipping_cost: parseFloat(this.shippingCost) || 0,
+                                shipping_address: this.shippingAddress || null,
+                                draft_invoice_id: this.resumedInvoiceId || null,
+                                hold_reference: this.resumedHoldReference || null,
+                                extra_items: this.extraItems,
+                            });
+                        } catch (e) {
+                            console.error('Error holding current cart during conflict resolution', e);
+                            this.isProcessing = false;
+                            return;
+                        }
+                    }
+
+                    await this.executeResumeDraft(nextDraftId);
+                },
+
+                conflictDiscardActiveAndResume() {
+                    const nextDraftId = this.pendingResumeDraftId;
+                    this.closeModal();
+                    this.clearCart();
+                    if (nextDraftId) {
+                        this.executeResumeDraft(nextDraftId);
+                    }
+                },
+
+                unlinkResumedCart() {
+                    this.resumedInvoiceId = null;
+                    this.resumedInvoiceNumber = '';
+                    this.resumedHoldReference = '';
+                    this.pendingResumeDraftId = null;
+                },
+
+                confirmDiscardHeldCart(invoice) {
+                    this.discardTargetInvoice = invoice;
+                    this.openModal('confirmDiscard');
+                },
+
+                async executeDiscardDraft() {
+                    if (!this.discardTargetInvoice) return;
+                    const targetId = this.discardTargetInvoice.id;
+                    this.isProcessing = true;
+
+                    try {
+                        const response = await this.$wire.discardDraftInvoice(targetId);
+                        if (response && response.success) {
+                            this.heldInvoicesList = this.heldInvoicesList.filter(inv => inv.id !== targetId);
+
+                            if (this.resumedInvoiceId === targetId) {
+                                this.clearCart();
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error discarding held cart', e);
+                    } finally {
+                        this.closeModal();
+                        this.discardTargetInvoice = null;
+                        this.isProcessing = false;
+                    }
+                },
+
+                printDraftSlip(invoiceId) {
+                    if (!invoiceId) return;
+                    const printFrame = document.getElementById('receiptPrintFrame');
+                    if (printFrame) {
+                        printFrame.src = `/print/invoice/sale_invoice/${invoiceId}`;
+                    }
                 }
             }));
         });

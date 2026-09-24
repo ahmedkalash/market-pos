@@ -25,6 +25,7 @@ class SaleInvoice extends Model
         'store_id',
         'customer_id',
         'invoice_number',
+        'hold_reference',
         'status',
         'return_status',
         'payment_method',
@@ -162,6 +163,14 @@ class SaleInvoice extends Model
     public function draft(Builder $query): Builder
     {
         return $query->where('status', SaleInvoiceStatus::Draft);
+    }
+
+    #[Scope]
+    public function heldForStore(Builder $query, int $storeId): Builder
+    {
+        return $query->where('store_id', $storeId)
+            ->draft()
+            ->latest();
     }
 
     #[Scope]
