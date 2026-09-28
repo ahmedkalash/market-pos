@@ -241,4 +241,5 @@ return [
     'thank_you_business' => 'Thank you for your business!',
     'thank_you_visit' => 'Thank you for your visit!',
     'draft_invoice_disclaimer' => 'DRAFT / NOT A FINAL RECEIPT',
+    'operation_failed' => 'Operation Failed',
 ];

@@ -229,7 +229,7 @@ return [
     'conflict_hold_active_and_resume' => 'Hold Current Cart & Resume',
     'conflict_discard_active_and_resume' => 'Discard Current Cart & Resume',
     'editing_held_cart' => 'Editing Held Cart',
-    'unlink_draft' => 'Unlink / New Cart',
+    'unlink_draft' => 'Detach as New Sale',
     'draft_resumed_success' => 'Draft invoice :number resumed into register',
     'draft_stock_warning' => 'Some items in this draft have less available stock than when held. Please review line items.',
     'more_items' => 'more',
@@ -241,4 +241,8 @@ return [
     'held_invoices_load_failed' => 'Failed to load held carts',
     'draft_resume_failed' => 'Failed to resume draft invoice',
     'draft_discard_failed' => 'Failed to discard held cart',
+    'draft_already_settled' => 'Draft Invoice Unavailable',
+    'draft_already_settled_hint' => 'This held cart was completed or discarded by another register. To prevent duplicate charges, checkout is blocked. Please clear the cart (F7) or unlink it manually.',
+    'draft_not_found' => 'The selected draft invoice was not found or has been removed.',
+    'draft_not_found_hint' => 'The selected draft invoice no longer exists. Please clear the cart or unlink it manually.',
 ];

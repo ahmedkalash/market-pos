@@ -3340,4 +3340,528 @@ class PosTerminalTest extends TestCase
         $response = $result->instance()->getHeldInvoices();
         $this->assertFalse($response['success']);
     }
+
+    public function test_draft_rehydration_payload_includes_barcodes_and_image(): void
+    {
+        $this->actingAs($this->user);
+
+        ProductBarcode::create([
+            'product_variant_id' => $this->variant->id,
+            'barcode' => 'BAR-CODE-998877',
+        ]);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 3, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Schema Contract Test',
+            ])
+        );
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->fetchDraftInvoice($invoice->id);
+
+        $this->assertTrue($response['success']);
+        $this->assertNotEmpty($response['data']['cart_items']);
+
+        $item = $response['data']['cart_items'][0];
+        $this->assertArrayHasKey('variant_id', $item);
+        $this->assertArrayHasKey('product_id', $item);
+        $this->assertArrayHasKey('category_id', $item);
+        $this->assertArrayHasKey('name', $item);
+        $this->assertArrayHasKey('barcodes', $item);
+        $this->assertArrayHasKey('image', $item);
+        $this->assertArrayHasKey('retail_price', $item);
+        $this->assertArrayHasKey('wholesale_price', $item);
+        $this->assertArrayHasKey('stock', $item);
+        $this->assertArrayHasKey('qty', $item);
+        $this->assertArrayHasKey('priceType', $item);
+        $this->assertArrayHasKey('discountType', $item);
+        $this->assertArrayHasKey('discountAmount', $item);
+        $this->assertArrayHasKey('stock_warning', $item);
+
+        $this->assertIsArray($item['barcodes']);
+        $this->assertContains('BAR-CODE-998877', $item['barcodes']);
+        $this->assertEquals(3.0, $item['qty']);
+    }
+
+    public function test_checkout_with_deleted_draft_invoice_id_returns_graceful_error(): void
+    {
+        $this->actingAs($this->user);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 2, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Concurrent Cashier Test',
+            ])
+        );
+
+        $draftId = $invoice->id;
+
+        // Simulate another cashier discarding/deleting the draft
+        $invoice->delete();
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $draftId,
+                'shipping_cost' => 0,
+            ])
+            ->assertNotified(__('pos.checkout_failed'))
+            ->assertNotDispatched('checkout-successful');
+
+        $this->assertDatabaseMissing('sale_invoices', [
+            'id' => $draftId,
+            'status' => SaleInvoiceStatus::Finalized->value,
+        ]);
+    }
+
+    public function test_rehold_with_deleted_draft_invoice_id_returns_graceful_error(): void
+    {
+        $this->actingAs($this->user);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Concurrent Hold Test',
+            ])
+        );
+
+        $draftId = $invoice->id;
+        $invoice->delete();
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 3,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cart, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $draftId,
+                'shipping_cost' => 0,
+            ])
+            ->assertNotified(__('pos.cart_hold_failed'))
+            ->assertNotDispatched('cart-held-successful');
+    }
+
+    public function test_checkout_with_already_finalized_draft_invoice_returns_draft_unavailable_error(): void
+    {
+        $this->actingAs($this->user);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Already Finalized Test',
+            ])
+        );
+
+        // Simulate another cashier finalizing the draft (row still exists, but status is Finalized)
+        $invoice->update(['status' => SaleInvoiceStatus::Finalized]);
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        // Passes exists:sale_invoices,id validation, but PosCheckoutService rejects it via DraftInvoiceUnavailableException
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cart, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $invoice->id,
+                'shipping_cost' => 0,
+            ])
+            ->assertNotified(__('pos.draft_already_settled'))
+            ->assertNotDispatched('draft-unlinked')
+            ->assertNotDispatched('checkout-successful');
+    }
+
+    public function test_checkout_with_draft_from_different_store_is_rejected(): void
+    {
+        $this->actingAs($this->user);
+
+        $storeB = Store::factory()->create(['company_id' => $this->company->id]);
+        $variantB = ProductVariant::factory()->withStock(20)->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+            'retail_price' => 25.00,
+        ]);
+
+        // Hold a draft in Store A
+        $draftStoreA = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Store A Draft',
+            ])
+        );
+
+        // Cashier user assigned to Store B
+        $userStoreB = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+        ]);
+        $this->actingAs($userStoreB);
+
+        $cartB = [
+            [
+                'variant_id' => $variantB->id,
+                'name' => $variantB->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        // Attempting to checkout in Store B with Store A's draft ID
+        Livewire::test(PosTerminal::class)
+            ->call('processCheckout', $cartB, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $draftStoreA->id,
+                'shipping_cost' => 0,
+            ])
+            ->assertNotified(__('pos.draft_not_found'))
+            ->assertNotDispatched('draft-unlinked')
+            ->assertNotDispatched('checkout-successful');
+
+        // Verify Store A's draft is untouched and still Draft
+        $this->assertDatabaseHas('sale_invoices', [
+            'id' => $draftStoreA->id,
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft->value,
+        ]);
+    }
+
+    public function test_rehold_with_draft_from_different_store_is_rejected(): void
+    {
+        $this->actingAs($this->user);
+
+        $storeB = Store::factory()->create(['company_id' => $this->company->id]);
+        $variantB = ProductVariant::factory()->withStock(20)->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+            'product_id' => $this->variant->product_id,
+            'uom_id' => $this->variant->uom_id,
+        ]);
+
+        $draftStoreA = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Store A Isolation Test',
+            ])
+        );
+
+        $userStoreB = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+        ]);
+        $this->actingAs($userStoreB);
+
+        $cartB = [
+            [
+                'variant_id' => $variantB->id,
+                'name' => $variantB->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 2,
+            ],
+        ];
+
+        Livewire::test(PosTerminal::class)
+            ->call('holdCart', $cartB, [
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $draftStoreA->id,
+                'shipping_cost' => 0,
+            ])
+            ->assertNotified(__('pos.draft_not_found'))
+            ->assertNotDispatched('draft-unlinked')
+            ->assertNotDispatched('cart-held-successful');
+
+        $this->assertDatabaseHas('sale_invoices', [
+            'id' => $draftStoreA->id,
+            'store_id' => $this->store->id,
+            'status' => SaleInvoiceStatus::Draft->value,
+        ]);
+    }
+
+    public function test_consecutive_checkout_attempts_on_settled_draft_remain_blocked_without_duplicate_sale(): void
+    {
+        $this->actingAs($this->user);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Collision Block Test',
+            ])
+        );
+
+        // Finalize by another cashier
+        PosCheckoutService::make()->checkout(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'draft_invoice_id' => $invoice->id,
+            ])
+        );
+
+        $this->assertEquals(49.0, (float) $this->variant->fresh()->quantity);
+        $this->assertEquals(1, SaleInvoice::where('company_id', $this->company->id)->count());
+
+        $cart = [
+            [
+                'variant_id' => $this->variant->id,
+                'name' => $this->variant->full_qualified_name,
+                'price_type' => 'retail',
+                'qty' => 1,
+            ],
+        ];
+
+        $component = Livewire::test(PosTerminal::class);
+
+        // First attempt by cashier who still had draft loaded
+        $component->call('processCheckout', $cart, [
+            'payment_method' => 'cash',
+            'draft_invoice_id' => $invoice->id,
+            'shipping_cost' => 0,
+        ])
+            ->assertNotified(__('pos.draft_already_settled'))
+            ->assertNotDispatched('draft-unlinked')
+            ->assertNotDispatched('checkout-successful');
+
+        // Second consecutive attempt (e.g. cashier double-clicks or tries again)
+        $component->call('processCheckout', $cart, [
+            'payment_method' => 'cash',
+            'draft_invoice_id' => $invoice->id,
+            'shipping_cost' => 0,
+        ])
+            ->assertNotified(__('pos.draft_already_settled'))
+            ->assertNotDispatched('draft-unlinked')
+            ->assertNotDispatched('checkout-successful');
+
+        // Confirm zero duplicate invoices were created and stock was not double-deducted
+        $this->assertEquals(1, SaleInvoice::where('company_id', $this->company->id)->count());
+        $this->assertEquals(49.0, (float) $this->variant->fresh()->quantity);
+
+        // Now cashier intentionally unlinks to create a separate new sale
+        $component->call('processCheckout', $cart, [
+            'payment_method' => 'cash',
+            'draft_invoice_id' => null,
+            'shipping_cost' => 0,
+        ])
+            ->assertDispatched('checkout-successful');
+
+        $this->assertEquals(2, SaleInvoice::where('company_id', $this->company->id)->count());
+        $this->assertEquals(48.0, (float) $this->variant->fresh()->quantity);
+    }
+
+    public function test_rehydrated_draft_uses_current_variant_price_not_held_price(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Initial price is 20.00
+        $this->assertEquals(20.00, (float) $this->variant->retail_price);
+
+        $invoice = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 2, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Dynamic Price Verification',
+            ])
+        );
+
+        // 2. Retail price is updated to 35.00
+        $this->variant->update(['retail_price' => 35.00]);
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->fetchDraftInvoice($invoice->id);
+
+        $this->assertTrue($response['success']);
+        $item = $response['data']['cart_items'][0];
+
+        // 3. Dynamic price reflects current 35.00, NOT the old held price 20.00
+        $this->assertEquals(35.00, (float) $item['retail_price']);
+    }
+
+    public function test_change_store_resets_held_carts_count_and_reference_lists(): void
+    {
+        $admin = User::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => null, // Company-level user
+        ]);
+        $this->actingAs($admin);
+
+        $storeB = Store::factory()->create(['company_id' => $this->company->id]);
+        ShippingDestination::factory()->create([
+            'company_id' => $this->company->id,
+            'store_id' => $storeB->id,
+            'name' => 'Store B Shipping Zone',
+        ]);
+
+        // Hold a draft in Store A
+        PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+                'hold_reference' => 'Store A Held Cart',
+            ])
+        );
+
+        $component = Livewire::test(PosTerminal::class)
+            ->call('changeStore', $this->store->id);
+
+        $this->assertEquals(1, $component->get('heldCartsCount'));
+
+        // Switch to Store B (has 0 held carts)
+        $component->call('changeStore', $storeB->id);
+
+        $this->assertEquals($storeB->id, $component->get('storeId'));
+        $this->assertEquals(0, $component->get('heldCartsCount'));
+
+        $shippingList = $component->get('shippingDestinationList');
+        $this->assertContains('Store B Shipping Zone', array_column($shippingList, 'name'));
+    }
+
+    public function test_hold_and_resume_draft_atomically_holds_current_cart_and_returns_resumed_draft(): void
+    {
+        $this->actingAs($this->user);
+
+        $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+
+        // 1. Create an existing held draft (Draft B)
+        $draftB = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 5, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'customer_id' => $customer->id,
+                'payment_method' => 'card',
+                'hold_reference' => 'Draft B Waiting For Resumption',
+            ])
+        );
+
+        $this->assertEquals(1, SaleInvoice::where('store_id', $this->store->id)->draft()->count());
+
+        // 2. Active cart in POS (Draft A) to be held
+        $cartA = [
+            [
+                'variant_id' => $this->variant->id,
+                'qty' => 2,
+                'price_type' => 'retail',
+            ],
+        ];
+
+        $metaA = [
+            'store_id' => $this->store->id,
+            'company_id' => $this->company->id,
+            'customer_id' => $customer->id,
+            'payment_method' => 'cash',
+            'hold_reference' => 'Active Cart Newly Held',
+        ];
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->holdAndResumeDraft($cartA, $metaA, $draftB->id);
+
+        $this->assertTrue($response['success']);
+        $this->assertNotNull($response['data']['held_invoice_id']);
+        $this->assertEquals('Active Cart Newly Held', $response['data']['held_reference']);
+        $this->assertEquals($draftB->id, $response['data']['resumed_draft']['id']);
+        $this->assertEquals('Draft B Waiting For Resumption', $response['data']['resumed_draft']['hold_reference']);
+        $this->assertEquals(5.0, (float) $response['data']['resumed_draft']['cart_items'][0]['qty']);
+
+        // 3. Database should now contain 2 draft invoices
+        $this->assertEquals(2, SaleInvoice::where('store_id', $this->store->id)->draft()->count());
+        $this->assertEquals(2, $component->get('heldCartsCount'));
+    }
+
+    public function test_hold_and_resume_draft_fails_gracefully_when_resume_target_is_not_found(): void
+    {
+        $this->actingAs($this->user);
+
+        $cartA = [
+            [
+                'variant_id' => $this->variant->id,
+                'qty' => 2,
+                'price_type' => 'retail',
+            ],
+        ];
+
+        $metaA = [
+            'store_id' => $this->store->id,
+            'company_id' => $this->company->id,
+            'payment_method' => 'cash',
+            'hold_reference' => 'Cart With Non-Existent Resume Target',
+        ];
+
+        $component = Livewire::test(PosTerminal::class);
+        $response = $component->instance()->holdAndResumeDraft($cartA, $metaA, 999999);
+
+        $this->assertFalse($response['success']);
+        $this->assertStringContainsString(__('pos.draft_not_found_hint'), $response['message']);
+    }
+
+    public function test_hold_and_resume_draft_fails_when_validation_fails(): void
+    {
+        $this->actingAs($this->user);
+
+        $draftB = PosCheckoutService::make()->holdCart(
+            [CartItemDTO::fromArray(['variant_id' => $this->variant->id, 'qty' => 1, 'price_type' => 'retail'])],
+            CheckoutMetaDataDTO::fromArray([
+                'store_id' => $this->store->id,
+                'company_id' => $this->company->id,
+                'payment_method' => 'cash',
+            ])
+        );
+
+        $component = Livewire::test(PosTerminal::class);
+        // Empty cart triggers validation failure
+        $response = $component->instance()->holdAndResumeDraft([], [
+            'store_id' => $this->store->id,
+            'company_id' => $this->company->id,
+            'payment_method' => 'cash',
+        ], $draftB->id);
+
+        $this->assertFalse($response['success']);
+    }
 }

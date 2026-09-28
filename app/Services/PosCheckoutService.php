@@ -6,6 +6,7 @@ use App\DTOs\Checkout\CartItemDTO;
 use App\DTOs\Checkout\CheckoutMetaDataDTO;
 use App\Enums\SaleInvoiceStatus;
 use App\Enums\SequenceType;
+use App\Exceptions\DraftInvoiceUnavailableException;
 use App\Models\ProductVariant;
 use App\Models\SaleInvoice;
 use App\Models\SaleInvoiceExtraItem;
@@ -124,13 +125,20 @@ class PosCheckoutService
         $companyId = $metaData->companyId;
 
         if ($draftInvoiceId) {
-            /** @var SaleInvoice $invoice */
+            /** @var SaleInvoice|null $invoice */
             $invoice = SaleInvoice::where('id', $draftInvoiceId)
                 ->filterByCompany($companyId)
                 ->filterByStore($storeId)
-                ->draft()
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->first();
+
+            if (! $invoice) {
+                throw DraftInvoiceUnavailableException::notFound();
+            }
+
+            if (! $invoice->isDraft()) {
+                throw DraftInvoiceUnavailableException::alreadySettled();
+            }
 
             $invoice->update([
                 'customer_id' => $metaData->customerId,
@@ -307,7 +315,7 @@ class PosCheckoutService
      */
     public function getDraftInvoiceForRehydration(int $invoiceId, int $storeId): array
     {
-        /** @var SaleInvoice $invoice */
+        /** @var SaleInvoice|null $invoice */
         $invoice = SaleInvoice::where('id', $invoiceId)
             ->where('store_id', $storeId)
             ->draft()
@@ -319,7 +327,19 @@ class PosCheckoutService
                 'items.variant.unitOfMeasure',
                 'items.variant.barcodes',
             ])
-            ->firstOrFail();
+            ->first();
+
+        if (! $invoice) {
+            $existingInvoice = SaleInvoice::where('id', $invoiceId)
+                ->where('store_id', $storeId)
+                ->first();
+
+            if ($existingInvoice && $existingInvoice->status !== SaleInvoiceStatus::Draft) {
+                throw DraftInvoiceUnavailableException::alreadySettled();
+            }
+
+            throw DraftInvoiceUnavailableException::notFound();
+        }
 
         $cartItems = [];
         $hasStockWarning = false;
@@ -343,6 +363,8 @@ class PosCheckoutService
                 'product_id' => $variant->product_id,
                 'category_id' => $variant->product?->category_id,
                 'name' => $variant->full_qualified_name,
+                'barcodes' => $variant->getAllBarcodesAsArray(),
+                'image' => ($variant->product && method_exists($variant->product, 'getFirstMediaUrl') ? $variant->product->getFirstMediaUrl('image', 'thumb') : null) ?: null,
                 'retail_price' => (float) $variant->retail_price,
                 'wholesale_price' => (float) $variant->wholesale_price,
                 'wholesale_enabled' => (bool) $variant->wholesale_enabled,

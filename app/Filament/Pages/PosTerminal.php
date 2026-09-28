@@ -8,6 +8,7 @@ use App\Enums\DiscountType;
 use App\Enums\ExtraItemActionType;
 use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
+use App\Exceptions\BusinessLogicException;
 use App\Models\Customer;
 use App\Models\InvoiceExtraItemPreset;
 use App\Models\ProductBarcode;
@@ -190,7 +191,7 @@ class PosTerminal extends Page
                 'uom_name' => $variant->unitOfMeasure?->name ?? '',
                 'stock' => (float) $variant->quantity,
                 'barcodes' => $variant->getAllBarcodesAsArray(),
-                'image' => (method_exists($variant->product, 'getFirstMediaUrl') ? $variant->product->getFirstMediaUrl('image', 'thumb') : null) ?: null,
+                'image' => ($variant->product && method_exists($variant->product, 'getFirstMediaUrl') ? $variant->product->getFirstMediaUrl('image', 'thumb') : null) ?: null,
             ];
         });
 
@@ -265,17 +266,31 @@ class PosTerminal extends Page
                 'total' => (float) $invoice->total_amount,
             ]);
 
-        } catch (Throwable $e) {
-            Log::error('POS Checkout Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        } catch (BusinessLogicException $e) {
+            Notification::make()
+                ->danger()
+                ->title($e->getTitle())
+                ->body($e->getMessage())
+                ->send();
 
-            $errorMessage = $e instanceof ValidationException
-                ? $e->validator->errors()->first()
-                : $e->getMessage();
+            return;
+        } catch (ValidationException $e) {
+            $errorMessage = $e->validator->errors()->first();
 
             Notification::make()
                 ->danger()
                 ->title(__('pos.checkout_failed'))
                 ->body($errorMessage)
+                ->send();
+
+            return;
+        } catch (Throwable $e) {
+            Log::error('POS Checkout Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.checkout_failed'))
+                ->body($e->getMessage())
                 ->send();
 
             return;
@@ -352,12 +367,16 @@ class PosTerminal extends Page
                 'total' => (float) $invoice->total_amount,
             ]);
 
-        } catch (Throwable $e) {
-            Log::error('POS Hold Cart Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+        } catch (BusinessLogicException $e) {
+            Notification::make()
+                ->danger()
+                ->title($e->getTitle())
+                ->body($e->getMessage())
+                ->send();
 
-            $errorMessage = $e instanceof ValidationException
-                ? $e->validator->errors()->first()
-                : $e->getMessage();
+            return;
+        } catch (ValidationException $e) {
+            $errorMessage = $e->validator->errors()->first();
 
             Notification::make()
                 ->danger()
@@ -366,6 +385,116 @@ class PosTerminal extends Page
                 ->send();
 
             return;
+        } catch (Throwable $e) {
+            Log::error('POS Hold Cart Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.cart_hold_failed'))
+                ->body($e->getMessage())
+                ->send();
+
+            return;
+        }
+    }
+
+    /**
+     * Atomically hold the active POS cart and fetch the selected draft invoice for rehydration.
+     *
+     * ### Transaction Boundary: Delegated (Boundary: `delegated`)
+     * - **Manages Transaction:** Delegated to `PosCheckoutService::holdCart()`.
+     * - **Return:** Standardized RpcResponse envelope containing both the held invoice metadata and resumed draft data.
+     *
+     * @param  array<int, array{
+     *     variant_id: int,
+     *     qty: float|int,
+     *     price_type: string,
+     *     discount_amount?: float|int|null,
+     *     discount_type?: string|null
+     * }> $cartData Raw cart items payload from Alpine.js client.
+     * @param  array{
+     *     store_id?: int|null,
+     *     customer_id?: int|null,
+     *     payment_method?: string|null,
+     *     global_discount_amount?: float|int|null,
+     *     global_discount_type?: string|null,
+     *     shipping_destination_id?: int|null,
+     *     shipping_cost?: float|int|null,
+     *     shipping_address?: string|null,
+     *     draft_invoice_id?: int|null,
+     *     hold_reference?: string|null,
+     *     extra_items?: array<int, array{
+     *         presetId?: string|int|null,
+     *         name: string,
+     *         amount: float|int,
+     *         action_type?: string|null,
+     *         notes?: string|null
+     *     }>
+     * }  $metaData Checkout metadata payload from Alpine.js client.
+     * @param  int  $resumeDraftId  ID of the held draft invoice to rehydrate into the POS terminal.
+     * @return array<string, mixed>
+     */
+    public function holdAndResumeDraft(array $cartData, array $metaData, int $resumeDraftId): array
+    {
+        try {
+            if (! $this->storeId) {
+                throw new Exception(__('pos.select_store_first'));
+            }
+
+            $metaData['store_id'] = (int) $this->storeId;
+            $metaData['company_id'] = (int) $this->user->company_id;
+
+            $this->validateCheckoutPayload($cartData, $metaData);
+
+            $cartItems = array_map(fn (array $item): CartItemDTO => CartItemDTO::fromArray($item), $cartData);
+            $metaDto = CheckoutMetaDataDTO::fromArray($metaData);
+
+            $heldInvoice = PosCheckoutService::make()->holdCart($cartItems, $metaDto);
+
+            Notification::make()
+                ->success()
+                ->title(__('pos.cart_held_success'))
+                ->body(__('pos.draft_invoice_created', ['number' => $heldInvoice->invoice_number]))
+                ->send();
+
+            $this->heldCartsCount = SaleInvoice::query()->filterByStore($this->storeId)->draft()->count();
+
+            $draftData = PosCheckoutService::make()->getDraftInvoiceForRehydration($resumeDraftId, (int) $this->storeId);
+
+            return RpcResponse::success(data: [
+                'resumed_draft' => $draftData,
+                'held_invoice_id' => $heldInvoice->id,
+                'held_invoice_number' => $heldInvoice->invoice_number,
+                'held_reference' => $heldInvoice->hold_reference,
+            ]);
+        } catch (BusinessLogicException $e) {
+            Notification::make()
+                ->danger()
+                ->title($e->getTitle())
+                ->body($e->getMessage())
+                ->send();
+
+            return RpcResponse::error(message: $e->getMessage());
+        } catch (ValidationException $e) {
+            $errorMessage = $e->validator->errors()->first();
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.cart_hold_failed'))
+                ->body($errorMessage)
+                ->send();
+
+            return RpcResponse::error(message: $errorMessage);
+        } catch (Throwable $e) {
+            Log::error('POS Hold and Resume Draft Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+            Notification::make()
+                ->danger()
+                ->title(__('pos.cart_hold_failed'))
+                ->body($e->getMessage())
+                ->send();
+
+            return RpcResponse::error(message: $e->getMessage());
         }
     }
 
@@ -417,6 +546,7 @@ class PosTerminal extends Page
                 'cart.min' => __('pos.cart_empty'),
                 'meta.store_id.required' => __('pos.select_store_first'),
                 'meta.store_id.exists' => __('pos.store_not_found'),
+                'meta.draft_invoice_id.exists' => __('pos.draft_not_found'),
             ]
         )->validate();
     }
@@ -672,6 +802,14 @@ class PosTerminal extends Page
             $draftData = PosCheckoutService::make()->getDraftInvoiceForRehydration($invoiceId, $this->storeId);
 
             return RpcResponse::success(data: $draftData);
+        } catch (BusinessLogicException $e) {
+            Notification::make()
+                ->danger()
+                ->title(__('pos.draft_resume_failed'))
+                ->body($e->getMessage())
+                ->send();
+
+            return RpcResponse::error(message: $e->getMessage());
         } catch (Throwable $e) {
             Log::error('POS Fetch Draft Invoice Failed', [
                 'invoice_id' => $invoiceId,

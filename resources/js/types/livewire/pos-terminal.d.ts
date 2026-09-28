@@ -134,6 +134,61 @@ interface PosTerminalWire {
     ): Promise<void>;
 
     /**
+     * Atomically hold the active POS cart and fetch the selected draft invoice for rehydration.
+     * Returns an RpcResponse envelope containing both the held invoice metadata and resumed draft data.
+     */
+    holdAndResumeDraft(
+        cartData: Array<{
+            variant_id: number;
+            qty: number;
+            discount_type: string | null;
+            discount_amount: number;
+            price_type: string;
+        }>,
+        metaData: {
+            customer_id?: number | null;
+            store_id?: number | null;
+            payment_method?: string;
+            global_discount_type?: string;
+            global_discount_amount?: number;
+            shipping_destination_id?: number | null;
+            shipping_cost?: number;
+            shipping_address?: string | null;
+            draft_invoice_id?: number | null;
+            hold_reference?: string | null;
+            extra_items?: Array<{
+                presetId?: string | number | null;
+                name: string;
+                amount: number;
+                action_type?: string;
+                notes?: string | null;
+            }>;
+        },
+        resumeDraftId: number
+    ): Promise<{
+        success: boolean;
+        data: {
+            resumed_draft: Record<string, any>;
+            held_invoice_id: number;
+            held_invoice_number: string;
+            held_reference?: string | null;
+        } | null;
+        message: string | null;
+        errors: Record<string, string[]>;
+    }>;
+
+    /**
+     * Fetch a held draft invoice for client-side cart rehydration.
+     * Returns an RpcResponse envelope containing the draft invoice data.
+     */
+    fetchDraftInvoice(invoiceId: number): Promise<{
+        success: boolean;
+        data: Record<string, any> | null;
+        message: string | null;
+        errors: Record<string, string[]>;
+    }>;
+
+    /**
      * Switch the active store context. Reloads all reference data (categories,
      * customers, shipping destinations) for the newly selected store.
      *

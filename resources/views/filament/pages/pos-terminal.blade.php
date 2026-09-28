@@ -99,7 +99,7 @@
                     </button>
                     <div x-show="open" x-transition x-cloak class="absolute top-full mt-2 left-0 min-w-[200px] bg-white border border-gray-200 shadow-lg rounded-xl z-50 py-2 max-h-64 overflow-y-auto">
                         <template x-for="store in $wire.storeList" :key="store.id">
-                            <button @click="$wire.changeStore(store.id); cart = []; open = false" class="w-full text-start px-4 py-2 hover:bg-gray-50 text-sm font-medium" :class="$wire.storeId === store.id ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
+                            <button @click="$wire.changeStore(store.id); clearCart(); open = false" class="w-full text-start px-4 py-2 hover:bg-gray-50 text-sm font-medium" :class="$wire.storeId === store.id ? 'text-primary-600 bg-primary-50' : 'text-gray-700'">
                                 <span x-text="store.name"></span>
                             </button>
                         </template>
@@ -1531,7 +1531,8 @@
                             <div class="p-5 space-y-3">
                                 <button type="button"
                                         @click="conflictHoldActiveAndResume()"
-                                        class="w-full text-start p-3.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-all flex items-center justify-between group">
+                                        :disabled="isProcessing"
+                                        class="w-full text-start p-3.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-between group">
                                     <div>
                                         <p class="font-bold text-sm text-amber-900">{{ __('pos.conflict_hold_active_and_resume') }}</p>
                                         <p class="text-xs text-amber-700">{{ __('pos.hold_cart_tooltip') }}</p>
@@ -1541,7 +1542,8 @@
 
                                 <button type="button"
                                         @click="conflictDiscardActiveAndResume()"
-                                        class="w-full text-start p-3.5 rounded-xl border border-danger-200 bg-danger-50 hover:bg-danger-100 transition-all flex items-center justify-between group">
+                                        :disabled="isProcessing"
+                                        class="w-full text-start p-3.5 rounded-xl border border-danger-200 bg-danger-50 hover:bg-danger-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-between group">
                                     <div>
                                         <p class="font-bold text-sm text-danger-900">{{ __('pos.conflict_discard_active_and_resume') }}</p>
                                         <p class="text-xs text-danger-700">{{ __('pos.clear') }}</p>
@@ -1562,7 +1564,7 @@
                 <!-- Confirm Discard Modal -->
                 <div x-show="activeModal === 'confirmDiscard'" class="fixed inset-0 bg-gray-900/50 z-[110] flex items-center justify-center p-4" x-cloak>
                     <template x-if="activeModal === 'confirmDiscard'">
-                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" @click.outside="closeModal()">
+                        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" @click.outside="openModal('heldCarts')">
                             <div class="p-6 text-center">
                                 <div class="w-14 h-14 rounded-full bg-danger-100 text-danger-600 flex items-center justify-center mx-auto mb-4">
                                     <i class="ph ph-warning text-3xl"></i>
@@ -1570,7 +1572,7 @@
                                 <h3 class="font-bold text-gray-800 text-base mb-1">{{ __('pos.confirm_discard_draft_title') }}</h3>
                                 <p class="text-xs text-gray-500 mb-6">{{ __('pos.confirm_discard_draft_desc') }}</p>
                                 <div class="flex items-center gap-3">
-                                    <button type="button" @click="closeModal()" class="flex-1 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs transition-colors">
+                                    <button type="button" @click="openModal('heldCarts')" class="flex-1 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs transition-colors">
                                         {{ __('pos.cancel') }}
                                     </button>
                                     <button type="button" @click="executeDiscardDraft()" class="flex-1 py-2.5 rounded-xl bg-danger-600 hover:bg-danger-700 text-white font-bold text-xs transition-all shadow-md">
@@ -2457,11 +2459,14 @@
                     if (this.shouldPrintHeldSlip && invoiceId) {
                         this.printDraftSlip(invoiceId);
                     }
-                    this.clearCart();
+                    if (!this.pendingResumeDraftId) {
+                        this.clearCart();
+                    }
                     this.focusSearch();
                 },
 
                 async openHeldInvoicesModal() {
+                    if (!this.storeId) return;
                     this.heldInvoicesSearch = '';
                     this.isLoadingHeldInvoices = true;
                     this.openModal('heldCarts');
@@ -2512,71 +2517,77 @@
                     }
                 },
 
+                applyDraftToCart(draft) {
+                    if (!draft) return;
+
+                    // Clear current cart state without triggering modal resets
+                    this.cart = [];
+                    this.extraItems = [];
+
+                    // Set draft invoice tracking metadata
+                    this.resumedInvoiceId = draft.id;
+                    this.resumedInvoiceNumber = draft.invoice_number;
+                    this.resumedHoldReference = draft.hold_reference || '';
+
+                    // Hydrate customer
+                    this.selectedCustomerId = draft.customer_id;
+                    this.selectedCustomerName = draft.customer_name || '{{ __('pos.walk_in') }}';
+
+                    // Hydrate payment method
+                    this.paymentMethod = draft.payment_method || 'cash';
+
+                    // Hydrate discounts
+                    this.globalDiscountType = draft.global_discount_type || 'fixed';
+                    this.globalDiscountAmount = parseFloat(draft.global_discount_amount) || 0;
+
+                    // Hydrate shipping
+                    this.shippingDestinationId = draft.shipping_destination_id;
+                    this.shippingCost = parseFloat(draft.shipping_cost) || 0;
+                    this.shippingAddress = draft.shipping_address || '';
+
+                    // Hydrate extra items
+                    this.extraItems = draft.extra_items || [];
+
+                    // Hydrate cart lines
+                    this.cart = (draft.cart_items || []).map(ci => ({
+                        variant_id: ci.variant_id,
+                        product_id: ci.product_id,
+                        category_id: ci.category_id,
+                        name: ci.name,
+                        barcodes: ci.barcodes || [],
+                        image: ci.image || null,
+                        retail_price: ci.retail_price,
+                        wholesale_price: ci.wholesale_price,
+                        wholesale_enabled: ci.wholesale_enabled,
+                        retail_is_price_negotiable: ci.retail_is_price_negotiable,
+                        min_retail_price: ci.min_retail_price,
+                        wholesale_is_price_negotiable: ci.wholesale_is_price_negotiable,
+                        min_wholesale_price: ci.min_wholesale_price,
+                        wholesale_qty_threshold: ci.wholesale_qty_threshold,
+                        uom_name: ci.uom_name,
+                        stock: ci.stock,
+                        qty: ci.qty,
+                        priceType: ci.priceType,
+                        discountType: ci.discountType,
+                        discountAmount: ci.discountAmount,
+                        stock_warning: ci.stock_warning,
+                    }));
+
+                    this.closeModal();
+                    this.pendingResumeDraftId = null;
+                    this.focusSearch();
+                },
+
                 async executeResumeDraft(invoiceId) {
                     this.isProcessing = true;
                     try {
                         const response = await this.$wire.fetchDraftInvoice(invoiceId);
-                        if (!response || !response.success || !response.data) {
+                        if (!response || !response.success) {
                             console.error('Failed to resume draft invoice', response);
                             return;
                         }
 
-                        const draft = response.data;
-
-                        // Clear current cart state without triggering modal resets
-                        this.cart = [];
-                        this.extraItems = [];
-
-                        // Set draft invoice tracking metadata
-                        this.resumedInvoiceId = draft.id;
-                        this.resumedInvoiceNumber = draft.invoice_number;
-                        this.resumedHoldReference = draft.hold_reference || '';
-
-                        // Hydrate customer
-                        this.selectedCustomerId = draft.customer_id;
-                        this.selectedCustomerName = draft.customer_name || '{{ __('pos.walk_in') }}';
-
-                        // Hydrate payment method
-                        this.paymentMethod = draft.payment_method || 'cash';
-
-                        // Hydrate discounts
-                        this.globalDiscountType = draft.global_discount_type || 'fixed';
-                        this.globalDiscountAmount = parseFloat(draft.global_discount_amount) || 0;
-
-                        // Hydrate shipping
-                        this.shippingDestinationId = draft.shipping_destination_id;
-                        this.shippingCost = parseFloat(draft.shipping_cost) || 0;
-                        this.shippingAddress = draft.shipping_address || '';
-
-                        // Hydrate extra items
-                        this.extraItems = draft.extra_items || [];
-
-                        // Hydrate cart lines
-                        this.cart = (draft.cart_items || []).map(ci => ({
-                            variant_id: ci.variant_id,
-                            product_id: ci.product_id,
-                            category_id: ci.category_id,
-                            name: ci.name,
-                            retail_price: ci.retail_price,
-                            wholesale_price: ci.wholesale_price,
-                            wholesale_enabled: ci.wholesale_enabled,
-                            retail_is_price_negotiable: ci.retail_is_price_negotiable,
-                            min_retail_price: ci.min_retail_price,
-                            wholesale_is_price_negotiable: ci.wholesale_is_price_negotiable,
-                            min_wholesale_price: ci.min_wholesale_price,
-                            wholesale_qty_threshold: ci.wholesale_qty_threshold,
-                            uom_name: ci.uom_name,
-                            stock: ci.stock,
-                            qty: ci.qty,
-                            priceType: ci.priceType,
-                            discountType: ci.discountType,
-                            discountAmount: ci.discountAmount,
-                            stock_warning: ci.stock_warning,
-                        }));
-
-                        this.closeModal();
-                        this.pendingResumeDraftId = null;
-                        this.focusSearch();
+                        this.applyDraftToCart(response.data);
                     } catch (e) {
                         console.error('Error executing draft rehydration', e);
                     } finally {
@@ -2590,38 +2601,51 @@
 
                     this.closeModal();
 
-                    if (this.cart.length > 0) {
-                        this.isProcessing = true;
-                        const formattedCart = this.cart.map(item => ({
-                            variant_id: item.variant_id,
-                            qty: item.qty,
-                            discount_type: item.discountType,
-                            discount_amount: item.discountAmount,
-                            price_type: item.priceType
-                        }));
-
-                        try {
-                            await this.$wire.holdCart(formattedCart, {
-                                customer_id: this.selectedCustomerId || null,
-                                store_id: this.storeId || null,
-                                payment_method: this.paymentMethod,
-                                global_discount_type: this.globalDiscountType,
-                                global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
-                                shipping_destination_id: this.shippingDestinationId || null,
-                                shipping_cost: parseFloat(this.shippingCost) || 0,
-                                shipping_address: this.shippingAddress || null,
-                                draft_invoice_id: this.resumedInvoiceId || null,
-                                hold_reference: this.resumedHoldReference || null,
-                                extra_items: this.extraItems,
-                            });
-                        } catch (e) {
-                            console.error('Error holding current cart during conflict resolution', e);
-                            this.isProcessing = false;
-                            return;
-                        }
+                    if (this.cart.length === 0) {
+                        await this.executeResumeDraft(nextDraftId);
+                        return;
                     }
 
-                    await this.executeResumeDraft(nextDraftId);
+                    this.isProcessing = true;
+                    const formattedCart = this.cart.map(item => ({
+                        variant_id: item.variant_id,
+                        qty: item.qty,
+                        discount_type: item.discountType,
+                        discount_amount: item.discountAmount,
+                        price_type: item.priceType
+                    }));
+
+                    const metaData = {
+                        customer_id: this.selectedCustomerId || null,
+                        store_id: this.storeId || null,
+                        payment_method: this.paymentMethod,
+                        global_discount_type: this.globalDiscountType,
+                        global_discount_amount: parseFloat(this.globalDiscountAmount) || 0,
+                        shipping_destination_id: this.shippingDestinationId || null,
+                        shipping_cost: parseFloat(this.shippingCost) || 0,
+                        shipping_address: this.shippingAddress || null,
+                        draft_invoice_id: this.resumedInvoiceId || null,
+                        hold_reference: this.resumedHoldReference || null,
+                        extra_items: this.extraItems,
+                    };
+
+                    try {
+                        const response = await this.$wire.holdAndResumeDraft(formattedCart, metaData, nextDraftId);
+                        if (!response || !response.success) {
+                            console.error('Failed to hold current cart and resume draft', response);
+                            return;
+                        }
+
+                        if (this.shouldPrintHeldSlip && response.data?.held_invoice_id) {
+                            this.printDraftSlip(response.data.held_invoice_id);
+                        }
+
+                        this.applyDraftToCart(response.data?.resumed_draft);
+                    } catch (e) {
+                        console.error('Error holding current cart during conflict resolution', e);
+                    } finally {
+                        this.isProcessing = false;
+                    }
                 },
 
                 conflictDiscardActiveAndResume() {
@@ -2662,7 +2686,7 @@
                     } catch (e) {
                         console.error('Error discarding held cart', e);
                     } finally {
-                        this.closeModal();
+                        this.openModal('heldCarts');
                         this.discardTargetInvoice = null;
                         this.isProcessing = false;
                     }
@@ -2672,7 +2696,7 @@
                     if (!invoiceId) return;
                     const printFrame = document.getElementById('receiptPrintFrame');
                     if (printFrame) {
-                        printFrame.src = `/print/invoice/sale_invoice/${invoiceId}`;
+                        printFrame.src = `/print/invoice/sale_invoice/${invoiceId}?_t=${Date.now()}`;
                     }
                 }
             }));
